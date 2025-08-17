@@ -1,0 +1,63 @@
+---
+name: Tidewave MCP/editor integration issue
+description: File a bug report related to Tidewave and your editor/MCP client
+
+body:
+  - type: markdown
+    attributes:
+      value: >
+        Thanks for taking the time to fill out this bug report.
+        Before moving forward, check out
+        [our MCP Troubleshooting guide](https://hexdocs.pm/tidewave/mcp_troubleshooting.html).
+
+  - type: input
+    id: mcp-client
+    attributes:
+      label: Which editor/MCP client are you using?
+
+  - type: input
+    id: mcp-proxy
+    attributes:
+      label: Are you using a MCP proxy?
+      description: Which one and which version? Have you tried updating it? Have you tried another proxy?
+
+  - type: input
+    id: mcp-server
+    attributes:
+      label: Is your Tidewave MCP server working correctly?
+      description: >
+        For HTTP transport: Paste the output of `curl -v http://localhost:PORT/tidewave/mcp` (default PORT is 4000)
+        For STDIO transport: Describe any error messages when running `npx tidewave mcp --stdio`
+
+  - type: input
+    id: os
+    attributes:
+      label: What is your operating system?
+    validations:
+      required: true
+
+  - type: input
+    id: tidewave-version
+    attributes:
+      label: What is your Tidewave version?
+    validations:
+      required: true
+
+  - type: textarea
+    id: current-behavior
+    attributes:
+      label: Current behavior
+      description: >
+        If reporting a bug, please errors, stacktraces, and reproducing steps.
+
+        If using an editor or MCP client, include your configuration.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+      description: A short description on how you expected it to behave.
+    validations:
+      required: true
