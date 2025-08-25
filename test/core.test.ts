@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { isExtractError, createExtractError } from '../../src/core/types';
-import type { SymbolInfo, ExtractionRequest, ExtractError } from '../../src/core/types';
+import { isExtractError, createExtractError } from '../src/core';
+import type { SymbolInfo, ExtractionRequest, ExtractError } from '../src/core';
 
 describe('Core Types', () => {
   describe('isExtractError', () => {

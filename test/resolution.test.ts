@@ -1,13 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as ts from 'typescript';
-import {
-  extractSymbol,
-  extractDocs,
-  getSourcePath,
-  formatOutput,
-} from '../../src/extraction/typescript';
-import { isExtractError } from '../../src/core/types';
-import type { SymbolInfo } from '../../src/core/types';
+import { extractSymbol, extractDocs, getSourcePath, formatOutput } from '../src/resolution';
+import { isExtractError } from '../src/core';
+import type { SymbolInfo } from '../src/core';
 import path from 'node:path';
 
 describe('TypeScript Extraction', () => {

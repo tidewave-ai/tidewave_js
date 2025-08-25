@@ -1,8 +1,8 @@
 // src/index.ts
-export { extractSymbol, extractDocs, getSourcePath, formatOutput } from './extraction/typescript';
-export * from './core/types';
+export { extractSymbol, extractDocs, getSourcePath, formatOutput } from './resolution';
+export * from './core';
 
-import { extractDocs, getSourcePath, formatOutput } from './extraction/typescript';
+import { extractDocs, getSourcePath, formatOutput } from './resolution';
 
 export const TidewaveExtractor = {
   extractDocs,

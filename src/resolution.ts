@@ -1,7 +1,7 @@
 // src/extraction/typescript.ts
 import ts from 'typescript';
 import path from 'node:path';
-import type { ExtractionRequest, ExtractResult, ExtractorOptions, SymbolInfo } from '../core/types';
+import type { ExtractionRequest, ExtractResult, ExtractorOptions, SymbolInfo } from './core';
 
 // Load TypeScript configuration
 function loadTsConfig(tsConfigPath?: string): {
@@ -14,7 +14,7 @@ function loadTsConfig(tsConfigPath?: string): {
   let compilerOptions: ts.CompilerOptions = {
     target: ts.ScriptTarget.ES2020,
     module: ts.ModuleKind.CommonJS,
-    moduleResolution: ts.ModuleResolutionKind.NodeJs,
+    moduleResolution: ts.ModuleResolutionKind.Bundler,
     esModuleInterop: true,
     allowSyntheticDefaultImports: true,
     skipLibCheck: true,
@@ -71,24 +71,69 @@ function resolveModule(
   moduleName: string,
   compilerOptions: ts.CompilerOptions,
 ): { sourceFile: ts.SourceFile; program: ts.Program } | null {
-  // Use TypeScript's built-in module resolution
+  // First try normal module resolution
   const moduleResolver = ts.resolveModuleName(
     moduleName,
-    path.resolve('./index.ts'), // Use absolute path for containing file
+    path.resolve('./index.ts'),
     compilerOptions,
     ts.sys,
   );
 
   if (moduleResolver.resolvedModule) {
     const { resolvedFileName } = moduleResolver.resolvedModule;
-
-    // Create a dedicated program for this file like
     const dedicatedProgram = ts.createProgram([resolvedFileName], compilerOptions);
     const sourceFile = dedicatedProgram.getSourceFile(resolvedFileName);
 
     if (sourceFile) {
       return { sourceFile, program: dedicatedProgram };
     }
+  }
+
+  return null;
+}
+
+// Handle global symbols from lib.d.ts (like Math, console, etc.)
+function resolveGlobalSymbol(
+  symbolName: string,
+  compilerOptions: ts.CompilerOptions,
+): { sourceFile: ts.SourceFile; program: ts.Program; isGlobal: true } | null {
+  try {
+    // Create a minimal TypeScript file that references the global symbol
+    const virtualFileName = 'virtual-globals.ts';
+    const virtualContent = `// Global symbol reference\nconst _ref = ${symbolName};`;
+
+    // Create program with default host and proper lib files
+    const program = ts.createProgram(
+      [virtualFileName],
+      {
+        ...compilerOptions,
+        lib: compilerOptions.lib || ['lib.es2020.d.ts'],
+        skipLibCheck: false,
+        moduleResolution: ts.ModuleResolutionKind.NodeJs,
+      },
+      {
+        ...ts.createCompilerHost(compilerOptions),
+        getSourceFile: (fileName: string, languageVersion: ts.ScriptTarget) => {
+          if (fileName === virtualFileName) {
+            return ts.createSourceFile(virtualFileName, virtualContent, languageVersion, true);
+          }
+          // Use the default compiler host for everything else (including lib.d.ts files)
+          return ts.createCompilerHost(compilerOptions).getSourceFile(fileName, languageVersion);
+        },
+        fileExists: (fileName: string) => {
+          if (fileName === virtualFileName) return true;
+          return ts.createCompilerHost(compilerOptions).fileExists(fileName);
+        },
+      },
+    );
+
+    const sourceFile = program.getSourceFile(virtualFileName);
+    if (sourceFile) {
+      return { sourceFile, program, isGlobal: true };
+    }
+  } catch (error) {
+    // If global symbol resolution fails, return null
+    console.debug(`Failed to resolve global symbol ${symbolName}:`, error);
   }
 
   return null;
@@ -334,45 +379,73 @@ export async function extractDocs(
 ): Promise<SymbolInfo | null> {
   try {
     const { module, symbol, member, isStatic } = parseModulePath(modulePath);
-
-    // Load config like
     const config = loadTsConfig(options.tsConfigPath);
 
-    // Resolve module with dedicated program like
-    const resolvedModule = resolveModule(module, config.options);
+    // Try to resolve as a regular module first
+    let resolvedModule = resolveModule(module, config.options);
+    let isGlobalModule = false;
+
+    // If regular module resolution fails, try as a global symbol
+    if (!resolvedModule) {
+      const globalResolution = resolveGlobalSymbol(module, config.options);
+      if (globalResolution) {
+        resolvedModule = globalResolution;
+        isGlobalModule = true;
+      }
+    }
+
     if (!resolvedModule) {
       throw new Error(`Module '${module}' not found`);
     }
 
     const { sourceFile, program } = resolvedModule;
     const checker = program.getTypeChecker();
-
-    // Get the module symbol
-    const moduleSymbol = checker.getSymbolAtLocation(sourceFile);
     let targetSymbol: ts.Symbol | undefined;
 
-    if (moduleSymbol) {
-      // TypeScript module with proper exports
-      const exports = checker.getExportsOfModule(moduleSymbol);
-      targetSymbol = exports.find(exp => exp.getName() === symbol);
+    if (isGlobalModule) {
+      // For global modules, get the symbol from the global scope
+      const globalSymbols = checker.getSymbolsInScope(sourceFile, ts.SymbolFlags.Value);
+      targetSymbol = globalSymbols.find(s => s.getName() === module);
 
       if (!targetSymbol) {
-        throw new Error(
-          `Symbol '${symbol}' not found in module '${module}'. Available exports: ${exports
-            .map(e => e.getName())
-            .join(', ')}`,
-        );
+        // Try getting it from the AST node directly
+        const [identifierNode] = sourceFile.statements;
+        if (ts.isVariableStatement(identifierNode)) {
+          const [declaration] = identifierNode.declarationList.declarations;
+          if (ts.isVariableDeclaration(declaration) && declaration.initializer) {
+            targetSymbol = checker.getSymbolAtLocation(declaration.initializer);
+          }
+        }
       }
     } else {
-      // JavaScript file - look for symbols in statements
-      targetSymbol = findSymbolInJavaScriptFile(sourceFile, checker, symbol);
+      // Regular module handling
+      const moduleSymbol = checker.getSymbolAtLocation(sourceFile);
 
-      if (!targetSymbol) {
-        throw new Error(`Symbol '${symbol}' not found in JavaScript module '${module}'`);
+      if (moduleSymbol) {
+        const exports = checker.getExportsOfModule(moduleSymbol);
+        targetSymbol = exports.find(exp => exp.getName() === symbol);
+
+        if (!targetSymbol) {
+          throw new Error(
+            `Symbol '${symbol}' not found in module '${module}'. Available exports: ${exports
+              .map(e => e.getName())
+              .join(', ')}`,
+          );
+        }
+      } else {
+        // JavaScript file - look for symbols in statements
+        targetSymbol = findSymbolInJavaScriptFile(sourceFile, checker, symbol);
+
+        if (!targetSymbol) {
+          throw new Error(`Symbol '${symbol}' not found in JavaScript module '${module}'`);
+        }
       }
     }
 
-    // Get symbol info like
+    if (!targetSymbol) {
+      throw new Error(`Symbol '${isGlobalModule ? module : symbol}' not found`);
+    }
+
     const result = getSymbolInfo(checker, targetSymbol, member, isStatic);
     return result;
   } catch (error) {

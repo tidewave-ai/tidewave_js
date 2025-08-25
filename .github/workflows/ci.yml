@@ -36,7 +36,7 @@ jobs:
         run: npm run lint
 
       - name: Type check
-        run: npm run type-check
+        run: npm run type:check
 
   test:
     runs-on: ubuntu-latest
