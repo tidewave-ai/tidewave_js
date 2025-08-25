@@ -16,11 +16,11 @@ The CLI serves as a bridge between the main TypeScript Tidewave server and
 JavaScript/Node.js ecosystem:
 
 - **Documentation Extraction**: Uses TypeScript Compiler API to extract docs and
-  type information from modules
-- **Source Resolution**: Resolves module paths for both local files and
-  dependencies
-- **MCP Server**: Provides Model Context Protocol server in both HTTP and STDIO
-  transports
+  type information from modules, JavaScript files, and Node.js builtin modules
+- **Source Resolution**: Resolves module paths for local files, dependencies,
+  and builtin modules
+- **Multi-Format Support**: Works with TypeScript (.ts), JavaScript (.js),
+  declaration files (.d.ts), and Node.js builtin modules
 - **Multi-Runtime Support**: Works with Node.js (npx), Bun (bunx), and Deno
 
 ### Integration with Tidewave Ecosystem
@@ -31,6 +31,34 @@ server manages MCP protocol and editor integration. Reference the TypeScript
 project structure in `../ts/tc/src/lib/tools/` for understanding expected tool
 interfaces.
 
+## Current Project Structure
+
+The project has been fully implemented with the following structure:
+
+```
+├── package.json              # ✅ Complete with all dependencies
+├── tsconfig.json            # ✅ Modern TypeScript config (bundler mode)
+├── eslint.config.js         # ✅ Functional programming oriented ESLint
+├── vitest.config.js         # ✅ Test configuration
+├── bun.lock                # ✅ Bun lockfile
+├── src/
+│   ├── index.ts            # ✅ Main library exports
+│   ├── cli/
+│   │   └── index.ts        # ✅ CLI implementation with Commander.js
+│   ├── core/
+│   │   ├── types.ts        # ✅ TypeScript type definitions
+│   │   ├── analyzer.ts     # Analyzer functionality
+│   │   └── extractor.ts    # Core extraction logic
+│   ├── extraction/
+│   │   └── typescript.ts   # ✅ TypeScript Compiler API integration
+│   ├── interfaces/
+│   │   └── cli/           # CLI interface definitions
+│   └── resolution/
+│       ├── base.ts        # Base resolution logic
+│       └── node.ts        # Node.js module resolution
+└── test/                   # ✅ Complete test suite with Vitest
+```
+
 ## Development Setup
 
 ### Development Environment
@@ -39,46 +67,55 @@ The project is configured for **Bun-first development** with Nix flake support:
 
 - **Primary Runtime**: Bun (via `bunx` commands)
 - **Nix Environment**: `flake.nix` provides Bun, Node.js 22, TypeScript, and npm
-- **Direnv**: `.envrc` configures Bun installation and TypeScript loader
+- **TypeScript**: Modern bundler-mode configuration with strict settings
+- **Testing**: Vitest with both Node.js and Bun runtime support
 
-### Essential Missing Files
+### Current CLI Commands
 
-The project is in early setup phase and needs these core files:
-
-```
-package.json              # Project definition and scripts
-tsconfig.json            # TypeScript configuration
-bun.lockb                # Bun lock file
-src/
-  ├── cli.ts              # Main CLI entry point
-  ├── commands/           # CLI subcommands (docs, source, mcp)
-  └── lib/                # Core functionality libraries
-```
-
-### Expected CLI Commands
-
-Based on README specifications:
+The CLI is fully implemented with these working commands:
 
 ```bash
 # Documentation extraction
-bunx tidewave docs <module-path>   # Extract docs for symbols (preferred)
-npx tidewave docs <module-path>    # Extract docs for symbols
-bunx tidewave source <module>      # Get source file paths
+bunx tidewave docs <module-path>       # Extract symbol documentation
+npx tidewave docs <module-path>        # Extract symbol documentation (Node)
 
-# MCP server
-bunx tidewave mcp --port 4000      # HTTP transport
-bunx tidewave mcp --stdio          # STDIO transport (recommended)
+# Source file resolution
+bunx tidewave source <module>          # Get source file path for a module
+npx tidewave source <module>           # Get source file path for a module (Node)
+
+# Options for docs command:
+--config <path>    # Path to tsconfig.json
+--json            # Output as JSON
+
+# Module path formats for docs command:
+module:symbol                          # Extract a top-level symbol
+module:Class#method                    # Extract an instance method
+module:Class.method                    # Extract a static method
+
+# Examples:
+bunx tidewave docs src/types.ts:SymbolInfo
+bunx tidewave docs typescript:createProgram
+bunx tidewave docs commander:Command#parse
+bunx tidewave docs Math:max                  # Node.js builtin
+bunx tidewave source typescript
+bunx tidewave source ./src/core/types
 ```
 
-### Development Commands (When Implemented)
+### Development Commands
 
 ```bash
-bun run build             # Compile TypeScript (preferred)
-bun run dev              # Run with Bun for development
-bun test                 # Run tests
+bun run build             # Compile TypeScript
+bun run dev              # Run CLI with Bun
+bun run start            # Run compiled CLI with Node.js
+bun test                 # Run tests with Vitest
+bun run test:watch       # Run tests in watch mode
+bun run test:bun         # Run tests with Bun runtime
 bun run lint             # ESLint checking
+bun run lint:fix         # ESLint with auto-fix
 bun run format           # Prettier formatting
+bun run format:check     # Check Prettier formatting
 bun run type-check       # TypeScript type checking
+bun run clean            # Clean dist directory
 ```
 
 ### CI/CD Configuration
@@ -89,22 +126,33 @@ All workflows have been updated for Node.js/TypeScript:
 - **Publishing**: Publishes to npm registry (not Hex)
 - **Release Please**: Configured for Node.js package releases
 
-## Implementation Reference
+## Implementation Status
 
-The proof-of-concept implementation can be found in
-`../tidewave_js_poc/src/index.ts` which demonstrates:
+The CLI has been fully implemented based on the proof-of-concept in
+`../tidewave_js_poc/src/index.ts` with these features:
 
-- TypeScript Compiler API usage for documentation extraction
-- Module resolution with support for local files and dependencies
-- Symbol analysis including classes, functions, and member access
-- CLI interface using Commander.js
+### ✅ Completed Features
 
-Key classes and patterns from the PoC:
+- **TypeScript Compiler API**: Full integration for documentation extraction
+- **Module Resolution**: Support for local files, dependencies, and builtin
+  modules
+- **Symbol Analysis**: Classes, functions, interfaces, enums, and member access
+- **Multi-Format Support**: TypeScript (.ts), JavaScript (.js), and declaration
+  files (.d.ts)
+- **CLI Interface**: Commander.js with comprehensive help text and examples
+- **Error Handling**: Proper error messages and graceful failure handling
+- **Testing**: Comprehensive test suite with 51 passing tests
 
-- `TidewaveExtractor`: Main class for TypeScript analysis
-- Module path parsing: `module:symbol[#instanceMember|.staticMember]`
-- TypeScript program creation and type checking
-- JavaScript file analysis for symbols without exports
+### Key Implementation Patterns
+
+- **Functional Architecture**: Uses functional `TidewaveExtractor` object
+  instead of classes
+- **Module Path Parsing**: `module:symbol[#instanceMember|.staticMember]` format
+- **Dedicated Programs**: Creates dedicated TypeScript programs for optimal type
+  checking
+- **JavaScript Support**: Handles plain JS files with JSDoc extraction
+- **Builtin Module Support**: Works with Node.js builtin modules like Math, fs,
+  etc.
 
 ## Release Configuration
 

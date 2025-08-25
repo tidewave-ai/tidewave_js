@@ -22,9 +22,9 @@
         name = "tidewave-javascript";
         packages = with pkgs; [
           bun
-          nodejs_22
+          # nodejs_24
+          # nodePackages.npm
           typescript
-          nodePackages.npm
         ] ++ lib.optional stdenv.isLinux [inotify-tools];
       };
     });

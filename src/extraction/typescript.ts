@@ -1,53 +1,263 @@
 // src/extraction/typescript.ts
 import ts from 'typescript';
 import path from 'node:path';
-import { isResolveError } from '../core/types';
-import type { ExtractionRequest, ExtractResult, ExtractorOptions } from '../core/types';
-import * as NodeResolver from '../resolution/node';
+import type { ExtractionRequest, ExtractResult, ExtractorOptions, SymbolInfo } from '../core/types';
 
 // Load TypeScript configuration
-const loadTsConfig = (tsConfigPath?: string) => {
+function loadTsConfig(tsConfigPath?: string): {
+  fileNames: string[];
+  options: ts.CompilerOptions;
+} {
   const configPath =
     tsConfigPath || ts.findConfigFile(process.cwd(), ts.sys.fileExists, 'tsconfig.json');
 
-  if (configPath) {
-    const configFile = ts.readConfigFile(configPath, ts.sys.readFile);
-    const parsedConfig = ts.parseJsonConfigFileContent(
-      configFile.config,
-      ts.sys,
-      path.dirname(configPath),
-    );
-    return parsedConfig.options;
-  }
-
-  // Default options
-  return {
+  let compilerOptions: ts.CompilerOptions = {
     target: ts.ScriptTarget.ES2020,
     module: ts.ModuleKind.CommonJS,
     moduleResolution: ts.ModuleResolutionKind.NodeJs,
-    allowJs: true,
     esModuleInterop: true,
+    allowSyntheticDefaultImports: true,
     skipLibCheck: true,
+    allowJs: true,
+    declaration: true,
+    typeRoots: ['./node_modules/@types'],
+    baseUrl: '.',
   };
-};
 
-// Extract symbol documentation
-const extractDocumentation = (symbol: ts.Symbol, checker: ts.TypeChecker): string =>
-  ts.displayPartsToString(symbol.getDocumentationComment(checker));
+  let rootNames: string[] = [];
 
-// Extract JSDoc tags
-const extractJsDoc = (symbol: ts.Symbol, checker: ts.TypeChecker): string => {
-  const tags = symbol.getJsDocTags(checker);
-  return tags
-    .map(tag => {
-      const text = tag.text ? ts.displayPartsToString(tag.text) : '';
-      return `@${tag.name}${text ? ' ' + text : ''}`;
-    })
-    .join('\n');
-};
+  if (configPath) {
+    const configFile = ts.readConfigFile(configPath, ts.sys.readFile);
+    if (configFile.config) {
+      const parsedConfig = ts.parseJsonConfigFileContent(
+        configFile.config,
+        ts.sys,
+        path.dirname(configPath),
+      );
+      compilerOptions = { ...compilerOptions, ...parsedConfig.options };
+      rootNames = parsedConfig.fileNames;
+    }
+  }
+
+  return {
+    fileNames: rootNames,
+    options: compilerOptions,
+  };
+}
+
+function parseModulePath(modulePath: string): ExtractionRequest {
+  const [module, symbolPath] = modulePath.split(':');
+
+  if (!symbolPath) {
+    throw new Error(`Invalid format. Expected 'module:symbol', got '${modulePath}'`);
+  }
+
+  // Check for instance member (Constructor#instanceMember)
+  if (symbolPath.includes('#')) {
+    const [symbol, member] = symbolPath.split('#');
+    return { module, symbol, member, isStatic: false };
+  }
+
+  // Check for static member (Constructor.staticMember)
+  if (symbolPath.includes('.')) {
+    const [symbol, member] = symbolPath.split('.');
+    return { module, symbol, member, isStatic: true };
+  }
+
+  return { module, symbol: symbolPath };
+}
+
+function resolveModule(
+  moduleName: string,
+  compilerOptions: ts.CompilerOptions,
+): { sourceFile: ts.SourceFile; program: ts.Program } | null {
+  // Use TypeScript's built-in module resolution
+  const moduleResolver = ts.resolveModuleName(
+    moduleName,
+    path.resolve('./index.ts'), // Use absolute path for containing file
+    compilerOptions,
+    ts.sys,
+  );
+
+  if (moduleResolver.resolvedModule) {
+    const { resolvedFileName } = moduleResolver.resolvedModule;
+
+    // Create a dedicated program for this file like
+    const dedicatedProgram = ts.createProgram([resolvedFileName], compilerOptions);
+    const sourceFile = dedicatedProgram.getSourceFile(resolvedFileName);
+
+    if (sourceFile) {
+      return { sourceFile, program: dedicatedProgram };
+    }
+  }
+
+  return null;
+}
+
+// Find symbol in JavaScript file
+function findSymbolInJavaScriptFile(
+  sourceFile: ts.SourceFile,
+  checker: ts.TypeChecker,
+  symbolName: string,
+): ts.Symbol | undefined {
+  // Look through statements for function declarations, class declarations, etc.
+  for (const statement of sourceFile.statements) {
+    if (ts.isFunctionDeclaration(statement) && statement.name?.text === symbolName) {
+      return checker.getSymbolAtLocation(statement.name);
+    }
+    if (ts.isClassDeclaration(statement) && statement.name?.text === symbolName) {
+      return checker.getSymbolAtLocation(statement.name);
+    }
+    if (ts.isVariableStatement(statement)) {
+      for (const declaration of statement.declarationList.declarations) {
+        if (ts.isIdentifier(declaration.name) && declaration.name.text === symbolName) {
+          return checker.getSymbolAtLocation(declaration.name);
+        }
+      }
+    }
+  }
+  return undefined;
+}
+
+// Get symbol info with member access
+function getSymbolInfo(
+  checker: ts.TypeChecker,
+  symbol: ts.Symbol,
+  member?: string,
+  isStatic?: boolean,
+): SymbolInfo {
+  const type = checker.getTypeOfSymbolAtLocation(symbol, symbol.valueDeclaration!);
+  const symbolName = symbol.getName();
+
+  let targetSymbol = symbol;
+  let targetType = type;
+  let name = symbolName;
+
+  // Handle member access like
+  if (member) {
+    if (isStatic) {
+      // Static member: look in the constructor/class itself
+      const staticMembers = checker.getPropertiesOfType(type);
+      const staticMember = staticMembers.find(s => s.getName() === member);
+      if (staticMember) {
+        targetSymbol = staticMember;
+        targetType = checker.getTypeOfSymbolAtLocation(
+          staticMember,
+          staticMember.valueDeclaration!,
+        );
+        name = `${symbolName}.${member}`;
+      } else {
+        throw new Error(`Static member '${member}' not found on '${symbolName}'`);
+      }
+    } else {
+      // Instance member: look in the instance type
+      let instanceType: ts.Type | undefined;
+
+      // Check if this is a class symbol
+      if (symbol.flags & ts.SymbolFlags.Class) {
+        // For classes, get the instance type directly
+        instanceType = checker.getTypeOfSymbolAtLocation(symbol, symbol.valueDeclaration!);
+
+        // Try getting instance type from construct signatures
+        const constructSignatures = instanceType.getConstructSignatures();
+        if (constructSignatures.length > 0) {
+          const [constructSignature] = constructSignatures;
+          const instanceTypeFromConstruct = checker.getReturnTypeOfSignature(constructSignature);
+          const instanceMembers = checker.getPropertiesOfType(instanceTypeFromConstruct);
+
+          const instanceMember = instanceMembers.find(s => s.getName() === member);
+
+          if (instanceMember) {
+            targetSymbol = instanceMember;
+            targetType = checker.getTypeOfSymbolAtLocation(
+              instanceMember,
+              instanceMember.valueDeclaration!,
+            );
+            name = `${symbolName}#${member}`;
+          } else {
+            throw new Error(
+              `Instance member '${member}' not found on '${symbolName}'. Available: ${instanceMembers
+                .map(m => m.getName())
+                .join(', ')}`,
+            );
+          }
+        } else {
+          // Fallback: try direct property access
+          const instanceMembers = checker.getPropertiesOfType(instanceType);
+
+          const instanceMember = instanceMembers.find(s => s.getName() === member);
+
+          if (instanceMember) {
+            targetSymbol = instanceMember;
+            targetType = checker.getTypeOfSymbolAtLocation(
+              instanceMember,
+              instanceMember.valueDeclaration!,
+            );
+            name = `${symbolName}#${member}`;
+          } else {
+            throw new Error(
+              `Instance member '${member}' not found on '${symbolName}'. Available: ${instanceMembers
+                .map(m => m.getName())
+                .join(', ')}`,
+            );
+          }
+        }
+      } else {
+        // Try constructor signatures
+        const callSignatures = type.getCallSignatures();
+        const constructSignatures = type.getConstructSignatures();
+
+        if (constructSignatures.length > 0) {
+          // This is a constructor, get the instance type
+          const [constructSignature] = constructSignatures;
+          instanceType = checker.getReturnTypeOfSignature(constructSignature);
+        } else if (callSignatures.length > 0) {
+          // This might be a function that returns an instance
+          const [callSignature] = callSignatures;
+          instanceType = checker.getReturnTypeOfSignature(callSignature);
+        }
+
+        if (instanceType) {
+          const instanceMembers = checker.getPropertiesOfType(instanceType);
+          const instanceMember = instanceMembers.find(s => s.getName() === member);
+
+          if (instanceMember) {
+            targetSymbol = instanceMember;
+            targetType = checker.getTypeOfSymbolAtLocation(
+              instanceMember,
+              instanceMember.valueDeclaration!,
+            );
+            name = `${symbolName}#${member}`;
+          } else {
+            throw new Error(`Instance member '${member}' not found on '${symbolName}'`);
+          }
+        } else {
+          throw new Error(`'${symbolName}' is not a constructor or class`);
+        }
+      }
+    }
+  }
+
+  const typeString = checker.typeToString(targetType);
+  const signature = getSignature(checker, targetSymbol, targetType);
+  const documentation = getDocumentation(checker, targetSymbol);
+  const jsDoc = getJSDoc(checker, targetSymbol);
+  const kind = getSymbolKind(targetSymbol);
+  const location = getLocation(targetSymbol);
+
+  return {
+    name,
+    kind,
+    type: typeString,
+    documentation,
+    jsDoc,
+    signature,
+    location,
+  };
+}
 
 // Get symbol kind
-const getSymbolKind = (symbol: ts.Symbol): string => {
+function getSymbolKind(symbol: ts.Symbol): string {
   const flags = symbol.getFlags();
 
   if (flags & ts.SymbolFlags.Function) return 'function';
@@ -61,10 +271,10 @@ const getSymbolKind = (symbol: ts.Symbol): string => {
   if (flags & ts.SymbolFlags.Module) return 'module';
 
   return 'unknown';
-};
+}
 
-// Get symbol location
-const getSymbolLocation = (symbol: ts.Symbol): string => {
+// Get location
+function getLocation(symbol: ts.Symbol): string {
   if (symbol.valueDeclaration) {
     const sourceFile = symbol.valueDeclaration.getSourceFile();
     const { line, character } = sourceFile.getLineAndCharacterOfPosition(
@@ -73,10 +283,10 @@ const getSymbolLocation = (symbol: ts.Symbol): string => {
     return `${sourceFile.fileName}:${line + 1}:${character + 1}`;
   }
   return 'unknown';
-};
+}
 
-// Get symbol signature
-const getSignature = (type: ts.Type, checker: ts.TypeChecker): string => {
+// Get signature
+function getSignature(checker: ts.TypeChecker, symbol: ts.Symbol, type: ts.Type): string {
   const signatures = checker.getSignaturesOfType(type, ts.SignatureKind.Call);
 
   if (signatures.length > 0) {
@@ -84,201 +294,242 @@ const getSignature = (type: ts.Type, checker: ts.TypeChecker): string => {
   }
 
   const constructSignatures = checker.getSignaturesOfType(type, ts.SignatureKind.Construct);
-
   if (constructSignatures.length > 0) {
     return constructSignatures.map(sig => 'new ' + checker.signatureToString(sig)).join('\n');
   }
 
-  return checker.typeToString(type);
-};
-
-// Find symbol in source file
-const findSymbol = (
-  sourceFile: ts.SourceFile,
-  symbolName: string,
-  checker: ts.TypeChecker,
-): ts.Symbol | null => {
-  // Try module exports first
-  const moduleSymbol = checker.getSymbolAtLocation(sourceFile);
-  if (moduleSymbol) {
-    const exports = checker.getExportsOfModule(moduleSymbol);
-    const found = exports.find(exp => exp.getName() === symbolName);
-    if (found) return found;
+  // For properties, show the declaration
+  if (symbol.valueDeclaration) {
+    const sourceFile = symbol.valueDeclaration.getSourceFile();
+    const start = symbol.valueDeclaration.getStart();
+    const end = symbol.valueDeclaration.getEnd();
+    const text = sourceFile.text.substring(start, end);
+    return text.split('\n')[0].trim(); // Just the first line
   }
 
-  // For JavaScript files, look through statements
-  for (const statement of sourceFile.statements) {
-    if (ts.isFunctionDeclaration(statement) && statement.name?.text === symbolName) {
-      return checker.getSymbolAtLocation(statement.name) || null;
+  return checker.typeToString(type);
+}
+
+// Get documentation
+function getDocumentation(checker: ts.TypeChecker, symbol: ts.Symbol): string {
+  return ts.displayPartsToString(symbol.getDocumentationComment(checker));
+}
+
+// Get JSDoc
+function getJSDoc(checker: ts.TypeChecker, symbol: ts.Symbol): string {
+  const jsDocTags = symbol.getJsDocTags(checker);
+  return jsDocTags
+    .map(tag => {
+      const tagName = tag.name;
+      const tagText = tag.text ? ts.displayPartsToString(tag.text) : '';
+      return `@${tagName}${tagText ? ' ' + tagText : ''}`;
+    })
+    .join('\n');
+}
+
+// Extract documentation for a module:symbol path
+export async function extractDocs(
+  modulePath: string,
+  options: ExtractorOptions = {},
+): Promise<SymbolInfo | null> {
+  try {
+    const { module, symbol, member, isStatic } = parseModulePath(modulePath);
+
+    // Load config like
+    const config = loadTsConfig(options.tsConfigPath);
+
+    // Resolve module with dedicated program like
+    const resolvedModule = resolveModule(module, config.options);
+    if (!resolvedModule) {
+      throw new Error(`Module '${module}' not found`);
     }
 
-    if (ts.isClassDeclaration(statement) && statement.name?.text === symbolName) {
-      return checker.getSymbolAtLocation(statement.name) || null;
-    }
+    const { sourceFile, program } = resolvedModule;
+    const checker = program.getTypeChecker();
 
-    if (ts.isVariableStatement(statement)) {
-      for (const declaration of statement.declarationList.declarations) {
-        if (ts.isIdentifier(declaration.name) && declaration.name.text === symbolName) {
-          return checker.getSymbolAtLocation(declaration.name) || null;
-        }
+    // Get the module symbol
+    const moduleSymbol = checker.getSymbolAtLocation(sourceFile);
+    let targetSymbol: ts.Symbol | undefined;
+
+    if (moduleSymbol) {
+      // TypeScript module with proper exports
+      const exports = checker.getExportsOfModule(moduleSymbol);
+      targetSymbol = exports.find(exp => exp.getName() === symbol);
+
+      if (!targetSymbol) {
+        throw new Error(
+          `Symbol '${symbol}' not found in module '${module}'. Available exports: ${exports
+            .map(e => e.getName())
+            .join(', ')}`,
+        );
+      }
+    } else {
+      // JavaScript file - look for symbols in statements
+      targetSymbol = findSymbolInJavaScriptFile(sourceFile, checker, symbol);
+
+      if (!targetSymbol) {
+        throw new Error(`Symbol '${symbol}' not found in JavaScript module '${module}'`);
       }
     }
+
+    // Get symbol info like
+    const result = getSymbolInfo(checker, targetSymbol, member, isStatic);
+    return result;
+  } catch (error) {
+    console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+    return null;
   }
+}
 
-  return null;
-};
+// Get source path for a module
+export async function getSourcePath(
+  moduleName: string,
+  options: ExtractorOptions = {},
+): Promise<string | null> {
+  try {
+    const config = loadTsConfig(options.tsConfigPath);
 
-// Handle member access
-const resolveMember = (
-  symbol: ts.Symbol,
-  member: string,
-  isStatic: boolean,
-  checker: ts.TypeChecker,
-): ts.Symbol | null => {
-  const type = checker.getTypeOfSymbolAtLocation(symbol, symbol.valueDeclaration!);
+    const moduleResolver = ts.resolveModuleName(
+      moduleName,
+      path.resolve('./index.ts'),
+      config.options,
+      ts.sys,
+    );
 
-  if (isStatic) {
-    // Look for static members
-    const properties = checker.getPropertiesOfType(type);
-    return properties.find(p => p.getName() === member) || null;
-  } else {
-    // Look for instance members
-    const constructSignatures = type.getConstructSignatures();
-    if (constructSignatures.length > 0) {
-      const instanceType = checker.getReturnTypeOfSignature(constructSignatures[0]!);
-      const properties = checker.getPropertiesOfType(instanceType);
-      return properties.find(p => p.getName() === member) || null;
+    if (moduleResolver.resolvedModule) {
+      const { resolvedFileName } = moduleResolver.resolvedModule;
+      const cwd = process.cwd();
+
+      // Try to make it relative to cwd if possible
+      if (resolvedFileName.startsWith(cwd)) {
+        const relativePath = path.relative(cwd, resolvedFileName);
+        return relativePath.startsWith('..') ? resolvedFileName : relativePath;
+      }
+
+      return resolvedFileName;
     }
+
+    throw new Error(`Module '${moduleName}' not found`);
+  } catch (error) {
+    console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+    return null;
+  }
+}
+
+// Format output for display
+export function formatOutput(info: SymbolInfo): string {
+  const output: string[] = [];
+
+  output.push(`\n${info.name}`);
+  output.push(`Kind: ${info.kind}`);
+  output.push(`Location: ${info.location}`);
+  output.push('');
+
+  if (info.signature) {
+    output.push('Signature:');
+    output.push(info.signature);
+    output.push('');
   }
 
-  return null;
-};
+  if (info.documentation) {
+    output.push('Documentation:');
+    output.push(info.documentation);
+    output.push('');
+  }
+
+  if (info.jsDoc) {
+    output.push('JSDoc Tags:');
+    output.push(info.jsDoc);
+    output.push('');
+  }
+
+  output.push('Type:');
+  output.push(info.type);
+
+  return output.join('\n');
+}
 
 // Main extraction function
-export const extractSymbol = async (
+export async function extractSymbol(
   request: ExtractionRequest,
   options: ExtractorOptions = {},
-): Promise<ExtractResult> => {
+): Promise<ExtractResult> {
   try {
-    // Resolve module path
-    const resolved = await NodeResolver.resolveModule({
-      specifier: request.module,
-      source: path.resolve(process.cwd(), 'index.ts'),
-      runtime: options.runtime || 'node',
-    });
-
-    if (isResolveError(resolved)) {
+    if (!request.symbol) {
       return {
-        success: false,
         error: {
           code: 'INVALID_REQUEST',
-          message: `Cannot resolve module: ${resolved.error.message}`,
-          details: resolved.error,
+          message: 'Symbol name is required',
         },
       };
     }
 
-    // Create TypeScript program
-    const compilerOptions = loadTsConfig(options.tsConfigPath);
-    const program = ts.createProgram([resolved.path], compilerOptions);
+    const config = loadTsConfig(options.tsConfigPath);
+
+    // Resolve module with dedicated program
+    const resolvedModule = resolveModule(request.module, config.options);
+    if (!resolvedModule) {
+      return {
+        error: {
+          code: 'MODULE_NOT_FOUND',
+          message: `Module '${request.module}' not found`,
+        },
+      };
+    }
+
+    const { sourceFile, program } = resolvedModule;
     const checker = program.getTypeChecker();
-    const sourceFile = program.getSourceFile(resolved.path);
 
-    if (!sourceFile) {
-      return {
-        success: false,
-        error: {
-          code: 'PARSE_ERROR',
-          message: `Cannot parse file: ${resolved.path}`,
-        },
-      };
-    }
+    // Get the module symbol
+    const moduleSymbol = checker.getSymbolAtLocation(sourceFile);
+    let targetSymbol: ts.Symbol | undefined;
 
-    // If no symbol specified, extract module info
-    if (!request.symbol) {
-      const moduleSymbol = checker.getSymbolAtLocation(sourceFile);
-      if (!moduleSymbol) {
+    if (moduleSymbol) {
+      // TypeScript module with proper exports
+      const exports = checker.getExportsOfModule(moduleSymbol);
+      targetSymbol = exports.find(exp => exp.getName() === request.symbol);
+
+      if (!targetSymbol) {
         return {
-          success: false,
           error: {
             code: 'SYMBOL_NOT_FOUND',
-            message: 'No module symbol found',
+            message: `Symbol '${request.symbol}' not found in module '${request.module}'. Available exports: ${exports
+              .map(e => e.getName())
+              .join(', ')}`,
           },
         };
       }
+    } else {
+      // JavaScript file - look for symbols in statements
+      targetSymbol = findSymbolInJavaScriptFile(sourceFile, checker, request.symbol);
 
-      const type = checker.getTypeOfSymbolAtLocation(moduleSymbol, sourceFile);
-
-      return {
-        name: path.basename(resolved.path, path.extname(resolved.path)),
-        kind: 'module',
-        type: checker.typeToString(type),
-        documentation: extractDocumentation(moduleSymbol, checker),
-        signature: '',
-        location: resolved.path,
-        jsDoc: extractJsDoc(moduleSymbol, checker),
-      };
-    }
-
-    // Find the requested symbol
-    let targetSymbol = findSymbol(sourceFile, request.symbol, checker);
-
-    if (!targetSymbol) {
-      return {
-        success: false,
-        error: {
-          code: 'SYMBOL_NOT_FOUND',
-          message: `Symbol '${request.symbol}' not found in module`,
-        },
-      };
-    }
-
-    // Handle member access
-    if (request.member) {
-      const memberSymbol = resolveMember(
-        targetSymbol,
-        request.member,
-        request.isStatic || false,
-        checker,
-      );
-
-      if (!memberSymbol) {
+      if (!targetSymbol) {
         return {
-          success: false,
           error: {
             code: 'SYMBOL_NOT_FOUND',
-            message: `Member '${request.member}' not found on '${request.symbol}'`,
+            message: `Symbol '${request.symbol}' not found in JavaScript module '${request.module}'`,
           },
         };
       }
-
-      targetSymbol = memberSymbol;
     }
 
-    // Extract symbol information
-    const type = checker.getTypeOfSymbolAtLocation(targetSymbol, targetSymbol.valueDeclaration!);
-
-    const symbolName = request.member
-      ? `${request.symbol}${request.isStatic ? '.' : '#'}${request.member}`
-      : request.symbol;
-
-    return {
-      name: symbolName,
-      kind: getSymbolKind(targetSymbol),
-      type: checker.typeToString(type),
-      documentation: extractDocumentation(targetSymbol, checker),
-      signature: getSignature(type, checker),
-      location: getSymbolLocation(targetSymbol),
-      jsDoc: extractJsDoc(targetSymbol, checker),
-    };
+    try {
+      const result = getSymbolInfo(checker, targetSymbol, request.member, request.isStatic);
+      return result;
+    } catch (memberError) {
+      return {
+        error: {
+          code: 'MEMBER_NOT_FOUND',
+          message: memberError instanceof Error ? memberError.message : String(memberError),
+        },
+      };
+    }
   } catch (error) {
     return {
-      success: false,
       error: {
         code: 'PARSE_ERROR',
-        message: `Extraction failed: ${error}`,
-        details: error,
+        message: `Extraction failed: ${error instanceof Error ? error.message : String(error)}`,
       },
     };
   }
-};
+}
