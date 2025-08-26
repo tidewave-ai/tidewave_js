@@ -1,6 +1,6 @@
 /**
- * A simple test function for JavaScript support
- * @param {string} name - The name to greet
+ * A sample function for testing
+ * @param {string} name - The user's name
  * @returns {string} A greeting message
  */
 function greetUser(name) {
@@ -8,11 +8,11 @@ function greetUser(name) {
 }
 
 /**
- * A test class with JSDoc
+ * A sample class for testing
  */
 class TestClass {
   /**
-   * Constructor for TestClass
+   * Constructor
    * @param {number} value - Initial value
    */
   constructor(value) {
@@ -20,7 +20,7 @@ class TestClass {
   }
 
   /**
-   * Get the current value
+   * Get the value
    * @returns {number} The current value
    */
   getValue() {
@@ -28,9 +28,9 @@ class TestClass {
   }
 
   /**
-   * Static method to create a new instance
-   * @param {number} value - The value to use
-   * @returns {TestClass} A new TestClass instance
+   * Static factory method
+   * @param {number} value - The value
+   * @returns {TestClass} New instance
    */
   static create(value) {
     return new TestClass(value);

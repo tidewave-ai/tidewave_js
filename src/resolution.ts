@@ -48,30 +48,53 @@ function loadTsConfig(tsConfigPath?: string): {
 function parseModulePath(modulePath: string): ExtractionRequest {
   const [module, symbolPath] = modulePath.split(':');
 
-  if (!symbolPath) {
+  if (!module || !symbolPath) {
     throw new Error(`Invalid format. Expected 'module:symbol', got '${modulePath}'`);
   }
 
   // Check for instance member (Constructor#instanceMember)
   if (symbolPath.includes('#')) {
     const [symbol, member] = symbolPath.split('#');
+    if (!symbol || !member) {
+      throw new Error(`Invalid format. Expected 'symbol#instance-member', got '${symbolPath}'`);
+    }
     return { module, symbol, member, isStatic: false };
   }
 
   // Check for static member (Constructor.staticMember)
   if (symbolPath.includes('.')) {
     const [symbol, member] = symbolPath.split('.');
+    if (!symbol || !member) {
+      throw new Error(`Invalid format. Expected 'symbol.static-member', got '${symbolPath}'`);
+    }
     return { module, symbol, member, isStatic: true };
   }
 
-  return { module, symbol: symbolPath };
+  return { module, symbol: symbolPath, member: undefined, isStatic: false };
 }
 
 function resolveModule(
   moduleName: string,
   compilerOptions: ts.CompilerOptions,
 ): { sourceFile: ts.SourceFile; program: ts.Program } | null {
-  // First try normal module resolution
+  // For local files, check if the exact path exists first (to prefer .js over .ts)
+  if (
+    moduleName.startsWith('./') ||
+    moduleName.startsWith('../') ||
+    (moduleName.includes('.') && !moduleName.includes('/'))
+  ) {
+    const absolutePath = path.resolve(moduleName);
+    if (ts.sys.fileExists(absolutePath)) {
+      const dedicatedProgram = ts.createProgram([absolutePath], compilerOptions);
+      const sourceFile = dedicatedProgram.getSourceFile(absolutePath);
+
+      if (sourceFile) {
+        return { sourceFile, program: dedicatedProgram };
+      }
+    }
+  }
+
+  // Fall back to normal module resolution for non-local modules
   const moduleResolver = ts.resolveModuleName(
     moduleName,
     path.resolve('./index.ts'),
@@ -145,7 +168,7 @@ function findSymbolInJavaScriptFile(
   checker: ts.TypeChecker,
   symbolName: string,
 ): ts.Symbol | undefined {
-  // Look through statements for function declarations, class declarations, etc.
+  // First, look through top-level declarations
   for (const statement of sourceFile.statements) {
     if (ts.isFunctionDeclaration(statement) && statement.name?.text === symbolName) {
       return checker.getSymbolAtLocation(statement.name);
@@ -160,7 +183,99 @@ function findSymbolInJavaScriptFile(
         }
       }
     }
+
+    // Look for CommonJS exports: module.exports = { symbolName, ... }
+    if (ts.isExpressionStatement(statement)) {
+      const { expression } = statement;
+
+      // Check for module.exports assignment
+      if (
+        ts.isBinaryExpression(expression) &&
+        expression.operatorToken.kind === ts.SyntaxKind.EqualsToken
+      ) {
+        const { left, right } = expression;
+
+        // module.exports = { ... }
+        if (
+          ts.isPropertyAccessExpression(left) &&
+          ts.isIdentifier(left.expression) &&
+          left.expression.text === 'module' &&
+          ts.isIdentifier(left.name) &&
+          left.name.text === 'exports' &&
+          ts.isObjectLiteralExpression(right)
+        ) {
+          // Look for the symbol in the object literal
+          for (const prop of right.properties) {
+            if (ts.isPropertyAssignment(prop) || ts.isShorthandPropertyAssignment(prop)) {
+              const propName = ts.isIdentifier(prop.name) ? prop.name.text : undefined;
+
+              if (propName === symbolName) {
+                let targetIdentifier: ts.Identifier | undefined;
+
+                if (ts.isShorthandPropertyAssignment(prop)) {
+                  // { greetUser } - shorthand
+                  targetIdentifier = prop.name;
+                } else if (ts.isPropertyAssignment(prop) && ts.isIdentifier(prop.initializer)) {
+                  // { greetUser: greetUser } - full form
+                  targetIdentifier = prop.initializer;
+                }
+
+                if (targetIdentifier) {
+                  // For CommonJS exports, we prioritize finding the original declaration
+                  // over the export reference to get proper TypeScript symbol flags
+
+                  // FIRST: Try to find the original declaration in the source file
+                  for (const statement of sourceFile.statements) {
+                    // Check for function declarations with matching name
+                    if (
+                      ts.isFunctionDeclaration(statement) &&
+                      statement.name?.text === targetIdentifier.text
+                    ) {
+                      const originalSymbol = checker.getSymbolAtLocation(statement.name);
+                      if (originalSymbol) {
+                        return originalSymbol;
+                      }
+                    }
+
+                    // Check for class declarations with matching name
+                    if (
+                      ts.isClassDeclaration(statement) &&
+                      statement.name?.text === targetIdentifier.text
+                    ) {
+                      const originalSymbol = checker.getSymbolAtLocation(statement.name);
+                      if (originalSymbol) {
+                        return originalSymbol;
+                      }
+                    }
+
+                    // Check for variable declarations (function expressions, class expressions)
+                    if (ts.isVariableStatement(statement)) {
+                      for (const declaration of statement.declarationList.declarations) {
+                        if (
+                          ts.isIdentifier(declaration.name) &&
+                          declaration.name.text === targetIdentifier.text
+                        ) {
+                          const originalSymbol = checker.getSymbolAtLocation(declaration.name);
+                          if (originalSymbol) {
+                            return originalSymbol;
+                          }
+                        }
+                      }
+                    }
+                  }
+
+                  // FALLBACK: If original declaration not found, use export symbol
+                  const exportSymbol = checker.getSymbolAtLocation(targetIdentifier);
+                  return exportSymbol;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   }
+
   return undefined;
 }
 
@@ -207,24 +322,26 @@ function getSymbolInfo(
         const constructSignatures = instanceType.getConstructSignatures();
         if (constructSignatures.length > 0) {
           const [constructSignature] = constructSignatures;
-          const instanceTypeFromConstruct = checker.getReturnTypeOfSignature(constructSignature);
-          const instanceMembers = checker.getPropertiesOfType(instanceTypeFromConstruct);
+          if (constructSignature) {
+            const instanceTypeFromConstruct = checker.getReturnTypeOfSignature(constructSignature);
+            const instanceMembers = checker.getPropertiesOfType(instanceTypeFromConstruct);
 
-          const instanceMember = instanceMembers.find(s => s.getName() === member);
+            const instanceMember = instanceMembers.find(s => s.getName() === member);
 
-          if (instanceMember) {
-            targetSymbol = instanceMember;
-            targetType = checker.getTypeOfSymbolAtLocation(
-              instanceMember,
-              instanceMember.valueDeclaration!,
-            );
-            name = `${symbolName}#${member}`;
-          } else {
-            throw new Error(
-              `Instance member '${member}' not found on '${symbolName}'. Available: ${instanceMembers
-                .map(m => m.getName())
-                .join(', ')}`,
-            );
+            if (instanceMember) {
+              targetSymbol = instanceMember;
+              targetType = checker.getTypeOfSymbolAtLocation(
+                instanceMember,
+                instanceMember.valueDeclaration!,
+              );
+              name = `${symbolName}#${member}`;
+            } else {
+              throw new Error(
+                `Instance member '${member}' not found on '${symbolName}'. Available: ${instanceMembers
+                  .map(m => m.getName())
+                  .join(', ')}`,
+              );
+            }
           }
         } else {
           // Fallback: try direct property access
@@ -255,11 +372,15 @@ function getSymbolInfo(
         if (constructSignatures.length > 0) {
           // This is a constructor, get the instance type
           const [constructSignature] = constructSignatures;
-          instanceType = checker.getReturnTypeOfSignature(constructSignature);
+          if (constructSignature) {
+            instanceType = checker.getReturnTypeOfSignature(constructSignature);
+          }
         } else if (callSignatures.length > 0) {
           // This might be a function that returns an instance
           const [callSignature] = callSignatures;
-          instanceType = checker.getReturnTypeOfSignature(callSignature);
+          if (callSignature) {
+            instanceType = checker.getReturnTypeOfSignature(callSignature);
+          }
         }
 
         if (instanceType) {
@@ -315,6 +436,22 @@ function getSymbolKind(symbol: ts.Symbol): string {
   if (flags & ts.SymbolFlags.Enum) return 'enum';
   if (flags & ts.SymbolFlags.Module) return 'module';
 
+  // For JavaScript CommonJS exports, check the value declaration to infer the type
+  if (symbol.valueDeclaration) {
+    if (ts.isFunctionDeclaration(symbol.valueDeclaration)) {
+      return 'function';
+    }
+    if (ts.isClassDeclaration(symbol.valueDeclaration)) {
+      return 'class';
+    }
+    if (ts.isVariableDeclaration(symbol.valueDeclaration)) {
+      return 'variable';
+    }
+    if (ts.isMethodDeclaration(symbol.valueDeclaration)) {
+      return 'method';
+    }
+  }
+
   return 'unknown';
 }
 
@@ -325,33 +462,111 @@ function getLocation(symbol: ts.Symbol): string {
     const { line, character } = sourceFile.getLineAndCharacterOfPosition(
       symbol.valueDeclaration.getStart(),
     );
-    return `${sourceFile.fileName}:${line + 1}:${character + 1}`;
+
+    // Convert absolute paths to relative paths for better display
+    let { fileName } = sourceFile;
+    const cwd = process.cwd();
+    if (fileName.startsWith(cwd)) {
+      fileName = path.relative(cwd, fileName);
+    }
+
+    return `${fileName}:${line + 1}:${character + 1}`;
   }
+
+  // Try alternative approaches if valueDeclaration is not available
+  if (symbol.declarations && symbol.declarations.length > 0) {
+    const [firstDeclaration] = symbol.declarations;
+    const sourceFile = firstDeclaration?.getSourceFile();
+    if (sourceFile === undefined || firstDeclaration === undefined) return 'unknown';
+
+    const { line, character } = sourceFile.getLineAndCharacterOfPosition(
+      firstDeclaration.getStart(),
+    );
+
+    let fileName = sourceFile?.fileName;
+    const cwd = process.cwd();
+    if (fileName?.startsWith(cwd)) {
+      fileName = path.relative(cwd, fileName);
+    }
+
+    return `${fileName}:${line + 1}:${character + 1}`;
+  }
+
   return 'unknown';
 }
 
 // Get signature
 function getSignature(checker: ts.TypeChecker, symbol: ts.Symbol, type: ts.Type): string {
+  // Try to get call signatures first (for functions)
   const signatures = checker.getSignaturesOfType(type, ts.SignatureKind.Call);
-
   if (signatures.length > 0) {
-    return signatures.map(sig => checker.signatureToString(sig)).join('\n');
+    return signatures
+      .map(sig => {
+        const sigString = checker.signatureToString(sig);
+        // Prepend function name to signature for better readability
+        return `${symbol.getName()}${sigString}`;
+      })
+      .join('\n');
   }
 
+  // Try construct signatures (for classes)
   const constructSignatures = checker.getSignaturesOfType(type, ts.SignatureKind.Construct);
   if (constructSignatures.length > 0) {
     return constructSignatures.map(sig => 'new ' + checker.signatureToString(sig)).join('\n');
   }
 
-  // For properties, show the declaration
-  if (symbol.valueDeclaration) {
-    const sourceFile = symbol.valueDeclaration.getSourceFile();
-    const start = symbol.valueDeclaration.getStart();
-    const end = symbol.valueDeclaration.getEnd();
+  // For interfaces, classes, and other types, try to get a better representation
+  if (symbol.valueDeclaration || (symbol.declarations && symbol.declarations.length > 0)) {
+    const declaration = symbol.valueDeclaration || symbol.declarations![0];
+    const sourceFile = declaration.getSourceFile();
+
+    if (ts.isFunctionDeclaration(declaration) && declaration.name) {
+      // For function declarations, create a signature from the declaration
+      const functionType = checker.getTypeOfSymbolAtLocation(symbol, declaration);
+      const functionSignatures = checker.getSignaturesOfType(functionType, ts.SignatureKind.Call);
+      if (functionSignatures.length > 0) {
+        return functionSignatures.map(sig => checker.signatureToString(sig)).join('\n');
+      }
+    }
+
+    if (ts.isInterfaceDeclaration(declaration) || ts.isTypeAliasDeclaration(declaration)) {
+      // For interfaces and type aliases, show the declaration syntax
+      const start = declaration.getStart();
+      const end = declaration.getEnd();
+      const text = sourceFile.text.substring(start, end);
+      const firstLine = text.split('\n')[0].trim();
+      // Clean up the signature to just show the essential parts
+      return firstLine.replace(/\s+/g, ' ');
+    }
+
+    if (ts.isClassDeclaration(declaration)) {
+      // For classes, show constructor signature if available
+      const classType = checker.getTypeOfSymbolAtLocation(symbol, declaration);
+      const classConstructSignatures = checker.getSignaturesOfType(
+        classType,
+        ts.SignatureKind.Construct,
+      );
+      if (classConstructSignatures.length > 0) {
+        return classConstructSignatures
+          .map(sig => 'new ' + checker.signatureToString(sig))
+          .join('\n');
+      } else {
+        // Fallback to class declaration
+        const start = declaration.getStart();
+        const end = Math.min(declaration.getStart() + 100, declaration.getEnd()); // Limit length
+        const text = sourceFile.text.substring(start, end);
+        return text.split('\n')[0].trim() + (text.includes('\n') ? '...' : '');
+      }
+    }
+
+    // For other declarations, show the first line
+    const start = declaration.getStart();
+    const end = Math.min(declaration.getStart() + 100, declaration.getEnd());
     const text = sourceFile.text.substring(start, end);
-    return text.split('\n')[0].trim(); // Just the first line
+    return text.split('\n')[0].trim() + (text.includes('\n') ? '...' : '');
   }
 
+  // Final fallback: just the type string
   return checker.typeToString(type);
 }
 
@@ -423,9 +638,24 @@ export async function extractDocs(
 
       if (moduleSymbol) {
         const exports = checker.getExportsOfModule(moduleSymbol);
-        targetSymbol = exports.find(exp => exp.getName() === symbol);
+        const exportSymbol = exports.find(exp => exp.getName() === symbol);
 
-        if (!targetSymbol) {
+        if (exportSymbol) {
+          // Check if the export symbol has a meaningful valueDeclaration
+          // OR if it's a type-only symbol like interface/type alias
+          if (
+            exportSymbol.valueDeclaration &&
+            (ts.isFunctionDeclaration(exportSymbol.valueDeclaration) ||
+              ts.isClassDeclaration(exportSymbol.valueDeclaration) ||
+              ts.isVariableDeclaration(exportSymbol.valueDeclaration))
+          ) {
+            targetSymbol = exportSymbol;
+          } else if (exportSymbol.flags & (ts.SymbolFlags.Interface | ts.SymbolFlags.TypeAlias)) {
+            targetSymbol = exportSymbol;
+          } else {
+            targetSymbol = findSymbolInJavaScriptFile(sourceFile, checker, symbol);
+          }
+        } else {
           throw new Error(
             `Symbol '${symbol}' not found in module '${module}'. Available exports: ${exports
               .map(e => e.getName())
@@ -460,6 +690,19 @@ export async function getSourcePath(
   options: ExtractorOptions = {},
 ): Promise<string | null> {
   try {
+    // For local files, check if the exact path exists first
+    if (moduleName.startsWith('./') || moduleName.startsWith('../')) {
+      const absolutePath = path.resolve(moduleName);
+      if (ts.sys.fileExists(absolutePath)) {
+        const cwd = process.cwd();
+        if (absolutePath.startsWith(cwd)) {
+          const relativePath = path.relative(cwd, absolutePath);
+          return relativePath.startsWith('..') ? absolutePath : relativePath;
+        }
+        return absolutePath;
+      }
+    }
+
     const config = loadTsConfig(options.tsConfigPath);
 
     const moduleResolver = ts.resolveModuleName(

@@ -1,6 +1,11 @@
 {
   "permissions": {
-    "allow": ["WebSearch", "Bash(bun run lint:*)"],
+    "allow": [
+      "WebSearch",
+      "Bash(bun run lint:*)",
+      "Bash(bun test:*)",
+      "Bash(bun run:*)"
+    ],
     "deny": [],
     "ask": []
   }
