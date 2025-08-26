@@ -15,7 +15,7 @@ function parseModulePath(modulePath: string): ExtractionRequest {
     // For node:Math -> module='node:Math', symbol='Math'
     // For node:Math.min -> module='node:Math', symbol='Math.min'
     const nodeSymbol = modulePath.slice(5); // Remove 'node:' prefix
-    const baseSymbol = nodeSymbol.split('.')[0]; // Get 'Math' from 'Math.min'
+    const [baseSymbol] = nodeSymbol.split('.'); // Get 'Math' from 'Math.min'
     module = `node:${baseSymbol}`; // 'node:Math'
     symbolPath = nodeSymbol; // 'Math' or 'Math.min'
   } else {

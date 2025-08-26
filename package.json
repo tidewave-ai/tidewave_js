@@ -28,18 +28,15 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc",
     "dist": "bun build --outdir dist --root src --external commander --external chalk --external typescript src/**/*.ts",
     "dev": "bun run src/cli/index.ts",
-    "start": "node dist/cli/index.js",
     "test": "bun test",
     "lint": "eslint src/ --ext .ts,.js",
     "lint:fix": "eslint src/ --ext .ts,.js --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "type:check": "tsc --noEmit",
-    "clean": "rm -rf dist/",
-    "prepublishOnly": "npm run clean && npm run build && npm run test && npm run lint"
+    "clean": "rm -rf dist/"
   },
   "dependencies": {
     "chalk": "^5.3.0",
