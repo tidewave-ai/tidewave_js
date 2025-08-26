@@ -279,6 +279,42 @@ function findSymbolInJavaScriptFile(
   return undefined;
 }
 
+// Get better type string representation, especially for interfaces
+function getTypeString(checker: ts.TypeChecker, symbol: ts.Symbol, type: ts.Type): string {
+  // For interfaces and type aliases, provide a more detailed representation
+  if (symbol.flags & (ts.SymbolFlags.Interface | ts.SymbolFlags.TypeAlias)) {
+    const declaration = symbol.valueDeclaration || (symbol.declarations && symbol.declarations[0]);
+
+    if (declaration && ts.isInterfaceDeclaration(declaration)) {
+      // For interfaces, show the object type structure
+      const properties = type.getProperties();
+      if (properties.length > 0) {
+        const propertyStrings = properties.map(prop => {
+          const propDeclaration =
+            prop.valueDeclaration || (prop.declarations && prop.declarations[0]);
+          const propType = propDeclaration
+            ? checker.getTypeOfSymbolAtLocation(prop, propDeclaration)
+            : checker.getTypeAtLocation(prop.declarations![0]!);
+          const propTypeString = checker.typeToString(propType);
+          const isOptional = prop.flags & ts.SymbolFlags.Optional;
+          return `${prop.getName()}${isOptional ? '?' : ''}: ${propTypeString}`;
+        });
+        return `{ ${propertyStrings.join('; ')} }`;
+      }
+    }
+  }
+
+  // Fallback to default type string
+  const defaultTypeString = checker.typeToString(type);
+
+  // If the default gives us "any" but we know it's an interface, be more descriptive
+  if (defaultTypeString === 'any' && symbol.flags & ts.SymbolFlags.Interface) {
+    return `interface ${symbol.getName()}`;
+  }
+
+  return defaultTypeString;
+}
+
 // Get symbol info with member access
 function getSymbolInfo(
   checker: ts.TypeChecker,
@@ -286,7 +322,11 @@ function getSymbolInfo(
   member?: string,
   isStatic?: boolean,
 ): SymbolInfo {
-  const type = checker.getTypeOfSymbolAtLocation(symbol, symbol.valueDeclaration!);
+  // For symbols without valueDeclaration (like interfaces), use the first declaration
+  const declaration = symbol.valueDeclaration || (symbol.declarations && symbol.declarations[0]);
+  const type = declaration
+    ? checker.getTypeOfSymbolAtLocation(symbol, declaration)
+    : checker.getTypeOfSymbolAtLocation(symbol, symbol.declarations![0]!);
   const symbolName = symbol.getName();
 
   let targetSymbol = symbol;
@@ -404,7 +444,7 @@ function getSymbolInfo(
     }
   }
 
-  const typeString = checker.typeToString(targetType);
+  const typeString = getTypeString(checker, targetSymbol, targetType);
   const signature = getSignature(checker, targetSymbol, targetType);
   const documentation = getDocumentation(checker, targetSymbol);
   const jsDoc = getJSDoc(checker, targetSymbol);
@@ -530,13 +570,33 @@ function getSignature(checker: ts.TypeChecker, symbol: ts.Symbol, type: ts.Type)
     }
 
     if (ts.isInterfaceDeclaration(declaration) || ts.isTypeAliasDeclaration(declaration)) {
-      // For interfaces and type aliases, show the declaration syntax
+      // For interfaces and type aliases, show the full declaration
       const start = declaration.getStart();
       const end = declaration.getEnd();
       const text = sourceFile.text.substring(start, end);
-      const firstLine = text.split('\n')[0].trim();
-      // Clean up the signature to just show the essential parts
-      return firstLine.replace(/\s+/g, ' ');
+
+      // Clean up whitespace and format nicely
+      const lines = text
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+
+      // For interfaces, show a compact but complete representation
+      if (ts.isInterfaceDeclaration(declaration)) {
+        // Extract just the interface body for a cleaner signature
+        const bodyStart = text.indexOf('{');
+        const bodyEnd = text.lastIndexOf('}');
+        if (bodyStart !== -1 && bodyEnd !== -1) {
+          const body = text.substring(bodyStart, bodyEnd + 1);
+          const interfaceName = `interface ${declaration.name.text}`;
+          // Format the body to be more compact
+          const compactBody = body.replace(/\s*\n\s*/g, ' ').replace(/\s+/g, ' ');
+          return `${interfaceName} ${compactBody}`;
+        }
+      }
+
+      // Fallback: return cleaned up full text
+      return lines.join(' ').replace(/\s+/g, ' ');
     }
 
     if (ts.isClassDeclaration(declaration)) {
