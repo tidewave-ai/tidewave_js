@@ -146,6 +146,7 @@ describe('TypeScript Extraction', () => {
     it('should return INVALID_REQUEST when symbol is not provided', async () => {
       const result = await extractSymbol({
         module: 'typescript',
+        symbol: '', // Empty symbol to trigger the error
       });
 
       expect(isExtractError(result)).toBe(true);

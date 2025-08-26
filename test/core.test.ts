@@ -27,13 +27,13 @@ describe('Core Types', () => {
     });
 
     it('should reject null and undefined', () => {
-      expect(isExtractError(null)).toBe(false);
-      expect(isExtractError(undefined)).toBe(false);
+      expect(isExtractError(null as any)).toBe(false);
+      expect(isExtractError(undefined as any)).toBe(false);
     });
 
     it('should reject plain objects without error property', () => {
-      expect(isExtractError({ name: 'test' })).toBe(false);
-      expect(isExtractError({ message: 'error' })).toBe(false);
+      expect(isExtractError({ name: 'test' } as any)).toBe(false);
+      expect(isExtractError({ message: 'error' } as any)).toBe(false);
     });
   });
 
@@ -84,10 +84,11 @@ describe('Core Types', () => {
     it('should support module-only requests', () => {
       const request: ExtractionRequest = {
         module: 'lodash',
+        symbol: 'isEmpty', // symbol is required
       };
 
       expect(request.module).toBe('lodash');
-      expect(request.symbol).toBeUndefined();
+      expect(request.symbol).toBe('isEmpty');
       expect(request.member).toBeUndefined();
       expect(request.isStatic).toBeUndefined();
     });

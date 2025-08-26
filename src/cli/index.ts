@@ -17,16 +17,18 @@ program
   .argument(
     '<module-path>',
     'Module path formats:\n' +
-      '  • module:symbol         - Extract a top-level symbol\n' +
-      '  • module:Class#method   - Extract an instance method\n' +
-      '  • module:Class.method   - Extract a static method\n' +
+      '  - module:symbol         - Extract a top-level symbol\n' +
+      '  - module:Class#method   - Extract an instance method\n' +
+      '  - module:Class.method   - Extract a static method\n' +
+      '  - node:Class#method     - Extract a global/builtin instance method\n' +
+      '  - node:Class.method     - Extract a global/builtin static method\n' +
       '\n' +
       'Examples:\n' +
-      '  • src/types.ts:SymbolInfo\n' +
-      '  • ./utils:parseConfig\n' +
-      '  • lodash:isEmpty\n' +
-      '  • react:Component#render\n' +
-      '  • Math:Math.max',
+      '  - src/types.ts:SymbolInfo\n' +
+      '  - ./utils:parseConfig\n' +
+      '  - lodash:isEmpty\n' +
+      '  - react:Component#render\n' +
+      '  - Math:Math.max',
   )
   .option('-c, --config <path>', 'Path to tsconfig.json')
   .option('-j, --json', 'Output as JSON')
@@ -57,9 +59,9 @@ program
   .argument(
     '<module>',
     'Module name to resolve:\n' +
-      '  • Local files: src/utils, ./types.ts, ../config\n' +
-      '  • Dependencies: lodash, react, @types/node\n' +
-      '  • Relative paths: ./src/components/Button',
+      '  - Local files: src/utils, ./types.ts, ../config\n' +
+      '  - Dependencies: lodash, react, @types/node\n' +
+      '  - Relative paths: ./src/components/Button',
   )
   .option('-c, --config <path>', 'Path to tsconfig.json')
   .action(async (moduleName: string, options) => {

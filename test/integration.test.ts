@@ -155,7 +155,7 @@ describe('Integration Tests', () => {
 
   describe('Builtin Modules', () => {
     it('should extract Math global', async () => {
-      const result = await TidewaveExtractor.extractDocs('Math:Math');
+      const result = await TidewaveExtractor.extractDocs('node:Math');
 
       expect(result).toBeTruthy();
       if (result) {
@@ -166,7 +166,7 @@ describe('Integration Tests', () => {
     });
 
     it('should extract Math.max static method', async () => {
-      const result = await TidewaveExtractor.extractDocs('Math:Math.max');
+      const result = await TidewaveExtractor.extractDocs('node:Math.max');
 
       expect(result).toBeTruthy();
       if (result) {

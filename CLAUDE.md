@@ -43,19 +43,15 @@ The project has been fully implemented with the following structure:
 ├── bun.lock                # ✅ Bun lockfile
 ├── src/
 │   ├── index.ts            # ✅ Main library exports
+│   ├── core.ts             # ✅ Core type definitions and utilities
 │   ├── cli/
 │   │   └── index.ts        # ✅ CLI implementation with Commander.js
-│   ├── core/
-│   │   ├── types.ts        # ✅ TypeScript type definitions
-│   │   ├── analyzer.ts     # Analyzer functionality
-│   │   └── extractor.ts    # Core extraction logic
-│   ├── extraction/
-│   │   └── typescript.ts   # ✅ TypeScript Compiler API integration
-│   ├── interfaces/
-│   │   └── cli/           # CLI interface definitions
-│   └── resolution/
-│       ├── base.ts        # Base resolution logic
-│       └── node.ts        # Node.js module resolution
+│   └── resolution/         # ✅ Modular extraction and resolution logic
+│       ├── index.ts        # Main extraction functions (extractDocs, extractSymbol, getSourcePath)
+│       ├── module-resolver.ts  # Module resolution and TypeScript config loading
+│       ├── symbol-finder.ts    # Symbol finding and info extraction
+│       ├── formatters.ts       # Type and signature formatting, output formatting
+│       └── utils.ts            # Helper functions (getLocation, getJSDoc, etc.)
 └── test/                   # ✅ Complete test suite with Vitest
 ```
 

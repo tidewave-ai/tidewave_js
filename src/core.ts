@@ -22,7 +22,7 @@ export interface ExtractionRequest {
   readonly module: string;
   readonly symbol: string;
   readonly member?: string;
-  readonly isStatic: boolean;
+  readonly isStatic?: boolean;
 }
 
 export interface SymbolInfo {
