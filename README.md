@@ -1,18 +1,40 @@
 # Tidewave
 
-Tidewave speeds up development with an AI assistant that understands your web
-application, how it runs, and what it delivers. Our current release connects
-your editor's assistant to your web framework runtime via
-[MCP](https://modelcontextprotocol.io/).
-
+Tidewave is a coding agent that runs in the browser alongside your web
+application, deeply integrated with Phoenix.
 [See our website](https://tidewave.ai) for more information.
 
-## Installation
+Our current release connects your editor's assistant to your web framework
+runtime via [MCP](https://modelcontextprotocol.io/). Support for Tidewave Web
+will come in future releases.
+
+## Usage
+
+### Standalone MCP (coming soon)
+
+Tidewave's MCP server gives your editor and coding agents access to the
+documentation, type annotations, and source location of the packages being
+currently used by your project, without relying on external systems.
+
+Simply configure your editor to run `tidewave` in the same directory as your
+`package.json` as a STDIO MCP Server:
+
+```bash
+npx tidewave mcp
+# or
+bunx tidewave mcp
+# or with Deno
+deno run npm:tidewave mcp
+```
+
+Available MCP options:
+
+- `--prefix path` - Specify the directory to find the `package.json` file
 
 ### CLI Usage
 
-Tidewave provides a CLI tool for extracting documentation and source information
-from TypeScript/JavaScript projects. Use it directly via npx/bunx:
+Tidewave also provides the MCP features over a CLI tool. Use it directly via
+npx/bunx/deno:
 
 ```bash
 # Extract documentation for a symbol
@@ -20,14 +42,9 @@ npx tidewave docs <module-path>
 
 # Get source file path for a module
 npx tidewave source <module>
-
-# Start MCP server for integration
-npx tidewave mcp [options]
 ```
 
-### Documentation Extraction
-
-Extract documentation and type information for any symbol:
+Here are some examples:
 
 ```bash
 # Local TypeScript/JavaScript files
@@ -43,43 +60,13 @@ npx tidewave source ./src/utils
 npx tidewave source typescript
 ```
 
-### MCP Server
+### Runtime Support
 
-Start the Tidewave MCP server for editor integration:
+Tidewave JavaScript supports multiple JavaScript runtimes:
 
-```bash
-npx tidewave mcp --port 4000
-# or
-bunx tidewave mcp --stdio
-# or with Deno
-deno run npm:tidewave mcp --port 4000
-```
-
-Available MCP options:
-
-- `--port <number>` - HTTP server port (default: 4000)
-- `--stdio` - Use STDIO transport instead of HTTP
-- `--allow-remote-access` - Allow connections from non-localhost addresses
-- `--allowed-origins <origins>` - Comma-separated list of allowed origins for
-  CORS
-
-The MCP endpoint will be available at http://localhost:4000/tidewave/mcp by
-default.
-[You must configure your editor and AI assistants accordingly](https://hexdocs.pm/tidewave/mcp.html).
-
-## Integration with TypeScript Projects
-
-Tidewave JavaScript acts as an FFI (Foreign Function Interface) for
-TypeScript-based Tidewave installations, providing:
-
-- TypeScript Compiler API access for documentation extraction
-- Node.js ecosystem integration
-- React/Next.js framework support
-- Package resolution and source location services
-
-When used alongside the main TypeScript Tidewave server, this tool handles
-JavaScript/TypeScript-specific operations while the main server manages the MCP
-protocol and editor integration.
+- **Node.js** - Full support with npm/npx
+- **Bun** - Native support with bunx
+- **Deno** - Support via npm: protocol
 
 ## Troubleshooting
 
@@ -102,13 +89,19 @@ access or automatically redirect the relevant ports, as done by
 See our [containers](https://hexdocs.pm/tidewave/containers.html) guide for more
 information.
 
-## Runtime Support
+## Contributing
 
-Tidewave JavaScript supports multiple JavaScript runtimes:
-
-- **Node.js** - Full support with npm/npx
-- **Bun** - Native support with bunx
-- **Deno** - Support via npm: protocol
+```bash
+bun install              # Install dependencies
+bun run build            # Compile TypeScript
+bun run dev              # Run CLI with Bun
+bun test                 # Run tests with Vitest
+bun run lint             # ESLint checking
+bun run lint:fix         # ESLint with auto-fix
+bun run format           # Prettier formatting
+bun run format:check     # Check Prettier formatting
+bun run clean            # Clean dist directory
+```
 
 ## License
 
