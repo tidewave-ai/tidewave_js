@@ -1,7 +1,16 @@
+import { z } from 'zod';
 import type { ExtractResult, ResolveResult } from './core';
 import { TidewaveExtractor } from '.';
 
-export interface Tool {
+export type DocsInputSchema = z.infer<typeof docsInputSchema>;
+export type SourceInputSchema = z.infer<typeof sourceInputSchema>;
+
+export interface Tool<Schema> {
+  mcp: {
+    name: string;
+    description: string;
+    inputSchema: Schema;
+  };
   cli: {
     command: string;
     description: string;
@@ -12,12 +21,42 @@ export interface Tool {
 }
 
 export interface Tools {
-  docs: Tool;
-  source: Tool;
+  docs: Tool<typeof docsInputSchema>;
+  source: Tool<typeof sourceInputSchema>;
 }
+
+const docsInputSchema = z.object({
+  module_path: z.string()
+    .describe(`Module path in format 'module:symbol[#method|.method]'. Supports local files, dependencies, and Node.js builtins.
+
+          Examples:
+          - src/types.ts:SymbolInfo (local file symbol)
+          - lodash:isEmpty (dependency function)  
+          - react:Component#render (instance method)
+          - node:Math.max (builtin static method)`),
+  config: z.string().optional().describe('Path to tsconfig.json file for TypeScript configuration'),
+});
+
+const sourceInputSchema = z.object({
+  module: z
+    .string()
+    .describe(
+      'Module name to resolve. Can be local files (src/utils, ./types.ts), dependencies (lodash, react), or relative paths (./src/components/Button).',
+    ),
+  config: z
+    .string()
+    .optional()
+    .describe('Path to a custom tsconfig.json file for TypeScript configuration'),
+});
 
 export const tools: Tools = {
   docs: {
+    mcp: {
+      name: 'get_docs',
+      description:
+        'Extract TypeScript/JavaScript documentation and type information for symbols, classes, functions, and methods',
+      inputSchema: docsInputSchema,
+    },
     cli: {
       command: 'docs',
       description: 'Extract documentation for a symbol',
@@ -48,6 +87,11 @@ export const tools: Tools = {
     },
   },
   source: {
+    mcp: {
+      name: 'get_source_path',
+      description: 'Resolve and return the file system path for TypeScript/JavaScript modules',
+      inputSchema: sourceInputSchema,
+    },
     cli: {
       command: 'source',
       description: 'Get the source file path for a module',
