@@ -7,29 +7,23 @@ Our current release connects your editor's assistant to your web framework runti
 
 ## Usage
 
-### MCP Server
+### Standalone MCP (coming soon)
 
 Tidewave's MCP server gives your editor and coding agents access to the documentation, type annotations, and source location of the packages being currently used by your project, without relying on external systems.
 
-Simply start the Tidewave MCP server for editor integration:
+Simply configure your editor to run `tidewave` in the same directory as your `package.json` as a STDIO MCP Server:
 
 ```bash
-npx tidewave mcp --port 4000
+npx tidewave mcp
 # or
-bunx tidewave mcp --stdio
+bunx tidewave mcp
 # or with Deno
-deno run npm:tidewave mcp --port 4000
+deno run npm:tidewave mcp
 ```
 
 Available MCP options:
 
-- `--port <number>` - HTTP server port (default: 4000)
-- `--stdio` - Use STDIO transport instead of HTTP
-- `--allow-remote-access` - Allow connections from non-localhost addresses
-- `--allowed-origins <origins>` - Comma-separated list of allowed origins for
-  CORS
-
-When using the HTTP transport, the MCP endpoint will be available at http://localhost:4000/tidewave/mcp by default. [You must configure your editor and AI assistants accordingly](https://hexdocs.pm/tidewave/mcp.html).
+- `--prefix path` - Specify the directory to find the `package.json` file
 
 ### CLI Usage
 
@@ -94,15 +88,11 @@ information.
 bun install              # Install dependencies
 bun run build            # Compile TypeScript
 bun run dev              # Run CLI with Bun
-bun run start            # Run CLI with Node.js
 bun test                 # Run tests with Vitest
-bun run test:watch       # Run tests in watch mode
-bun run test:bun         # Run tests with Bun runtime
 bun run lint             # ESLint checking
 bun run lint:fix         # ESLint with auto-fix
 bun run format           # Prettier formatting
 bun run format:check     # Check Prettier formatting
-bun run type-check       # TypeScript type checking
 bun run clean            # Clean dist directory
 ```
 
