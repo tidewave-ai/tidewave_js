@@ -1,17 +1,23 @@
 # Tidewave
 
-Tidewave is a coding agent that runs in the browser alongside your web application, deeply integrated with Phoenix. [See our website](https://tidewave.ai) for more information.
+Tidewave is a coding agent that runs in the browser alongside your web
+application, deeply integrated with Phoenix.
+[See our website](https://tidewave.ai) for more information.
 
-Our current release connects your editor's assistant to your web framework runtime via
-[MCP](https://modelcontextprotocol.io/). Support for Tidewave Web will come in future releases.
+Our current release connects your editor's assistant to your web framework
+runtime via [MCP](https://modelcontextprotocol.io/). Support for Tidewave Web
+will come in future releases.
 
 ## Usage
 
 ### Standalone MCP (coming soon)
 
-Tidewave's MCP server gives your editor and coding agents access to the documentation, type annotations, and source location of the packages being currently used by your project, without relying on external systems.
+Tidewave's MCP server gives your editor and coding agents access to the
+documentation, type annotations, and source location of the packages being
+currently used by your project, without relying on external systems.
 
-Simply configure your editor to run `tidewave` in the same directory as your `package.json` as a STDIO MCP Server:
+Simply configure your editor to run `tidewave` in the same directory as your
+`package.json` as a STDIO MCP Server:
 
 ```bash
 npx tidewave mcp
@@ -27,7 +33,8 @@ Available MCP options:
 
 ### CLI Usage
 
-Tidewave also provides the MCP features over a CLI tool. Use it directly via npx/bunx/deno:
+Tidewave also provides the MCP features over a CLI tool. Use it directly via
+npx/bunx/deno:
 
 ```bash
 # Extract documentation for a symbol
