@@ -1,51 +1,17 @@
 # Tidewave
 
-Tidewave speeds up development with an AI assistant that understands your web
-application, how it runs, and what it delivers. Our current release connects
-your editor's assistant to your web framework runtime via
-[MCP](https://modelcontextprotocol.io/).
+Tidewave is a coding agent that runs in the browser alongside your web application, deeply integrated with Phoenix. [See our website](https://tidewave.ai) for more information.
 
-[See our website](https://tidewave.ai) for more information.
+Our current release connects your editor's assistant to your web framework runtime via
+[MCP](https://modelcontextprotocol.io/). Support for Tidewave Web will come in future releases.
 
-## Installation
-
-### CLI Usage
-
-Tidewave provides a CLI tool for extracting documentation and source information
-from TypeScript/JavaScript projects. Use it directly via npx/bunx:
-
-```bash
-# Extract documentation for a symbol
-npx tidewave docs <module-path>
-
-# Get source file path for a module
-npx tidewave source <module>
-
-# Start MCP server for integration
-npx tidewave mcp [options]
-```
-
-### Documentation Extraction
-
-Extract documentation and type information for any symbol:
-
-```bash
-# Local TypeScript/JavaScript files
-npx tidewave docs ./src/utils:formatDate
-npx tidewave docs ./components:Button#onClick
-
-# Node.js dependencies
-npx tidewave docs typescript:createProgram
-npx tidewave docs react:Component#render
-
-# Get source file paths
-npx tidewave source ./src/utils
-npx tidewave source typescript
-```
+## Usage
 
 ### MCP Server
 
-Start the Tidewave MCP server for editor integration:
+Tidewave's MCP server gives your editor and coding agents access to the documentation, type annotations, and source location of the packages being currently used by your project, without relying on external systems.
+
+Simply start the Tidewave MCP server for editor integration:
 
 ```bash
 npx tidewave mcp --port 4000
@@ -63,23 +29,43 @@ Available MCP options:
 - `--allowed-origins <origins>` - Comma-separated list of allowed origins for
   CORS
 
-The MCP endpoint will be available at http://localhost:4000/tidewave/mcp by
-default.
-[You must configure your editor and AI assistants accordingly](https://hexdocs.pm/tidewave/mcp.html).
+When using the HTTP transport, the MCP endpoint will be available at http://localhost:4000/tidewave/mcp by default. [You must configure your editor and AI assistants accordingly](https://hexdocs.pm/tidewave/mcp.html).
 
-## Integration with TypeScript Projects
+### CLI Usage
 
-Tidewave JavaScript acts as an FFI (Foreign Function Interface) for
-TypeScript-based Tidewave installations, providing:
+Tidewave also provides the MCP features over a CLI tool. Use it directly via npx/bunx/deno:
 
-- TypeScript Compiler API access for documentation extraction
-- Node.js ecosystem integration
-- React/Next.js framework support
-- Package resolution and source location services
+```bash
+# Extract documentation for a symbol
+npx tidewave docs <module-path>
 
-When used alongside the main TypeScript Tidewave server, this tool handles
-JavaScript/TypeScript-specific operations while the main server manages the MCP
-protocol and editor integration.
+# Get source file path for a module
+npx tidewave source <module>
+```
+
+Here are some examples:
+
+```bash
+# Local TypeScript/JavaScript files
+npx tidewave docs ./src/utils:formatDate
+npx tidewave docs ./components:Button#onClick
+
+# Node.js dependencies
+npx tidewave docs typescript:createProgram
+npx tidewave docs react:Component#render
+
+# Get source file paths
+npx tidewave source ./src/utils
+npx tidewave source typescript
+```
+
+### Runtime Support
+
+Tidewave JavaScript supports multiple JavaScript runtimes:
+
+- **Node.js** - Full support with npm/npx
+- **Bun** - Native support with bunx
+- **Deno** - Support via npm: protocol
 
 ## Troubleshooting
 
@@ -102,13 +88,23 @@ access or automatically redirect the relevant ports, as done by
 See our [containers](https://hexdocs.pm/tidewave/containers.html) guide for more
 information.
 
-## Runtime Support
+## Contributing
 
-Tidewave JavaScript supports multiple JavaScript runtimes:
-
-- **Node.js** - Full support with npm/npx
-- **Bun** - Native support with bunx
-- **Deno** - Support via npm: protocol
+```bash
+bun install              # Install dependencies
+bun run build            # Compile TypeScript
+bun run dev              # Run CLI with Bun
+bun run start            # Run CLI with Node.js
+bun test                 # Run tests with Vitest
+bun run test:watch       # Run tests in watch mode
+bun run test:bun         # Run tests with Bun runtime
+bun run lint             # ESLint checking
+bun run lint:fix         # ESLint with auto-fix
+bun run format           # Prettier formatting
+bun run format:check     # Check Prettier formatting
+bun run type-check       # TypeScript type checking
+bun run clean            # Clean dist directory
+```
 
 ## License
 
