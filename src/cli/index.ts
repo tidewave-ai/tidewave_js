@@ -8,6 +8,8 @@ import { TidewaveExtractor } from '../index';
 import { isExtractError, isResolveError } from '../core';
 
 import { name, version } from '../../package.json';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { serveMcp } from '../mcp';
 
 // CLI Interface
 program
@@ -46,6 +48,22 @@ async function handleGetSourcePath(
 
   console.log(sourceResult.path);
 }
+
+const mcpTransport = {
+  stdio: StdioServerTransport,
+};
+
+async function handleMcp({ transport }: { transport?: string }): Promise<void> {
+  if (!transport || !(transport in mcpTransport)) {
+    console.error(chalk.red(`Error: expected to receive a transport layer, one of: 'stdio'`));
+    process.exit(1);
+  }
+
+  const layer = mcpTransport[transport as keyof typeof mcpTransport];
+  console.error(`Starting tidewave MCP server using ${transport}`)
+  serveMcp(new layer());
+}
+
 const {
   docs: { cli: docsCli },
   source: { cli: sourceCli },
@@ -66,5 +84,11 @@ program
   .option(sourceCli.options.config!.flag, sourceCli.options.config!.desc)
 
   .action(handleGetSourcePath);
+
+program
+  .command('mcp')
+  .description('Starts a MCP server given the transport layer and its options')
+  .option('-t, --transport', 'Defines the transport layer of the MCP server', 'stdio')
+  .action(handleMcp);
 
 program.parse(process.argv);

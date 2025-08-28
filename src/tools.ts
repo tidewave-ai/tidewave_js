@@ -5,11 +5,15 @@ import { TidewaveExtractor } from '.';
 export type DocsInputSchema = z.infer<typeof docsInputSchema>;
 export type SourceInputSchema = z.infer<typeof sourceInputSchema>;
 
-export interface Tool<Schema> {
+export type DocsOutputSchema = z.infer<typeof docsOutputSchema>;
+export type SourceOutputSchema = z.infer<typeof sourceOutputSchema>;
+
+export interface Tool<InputSchema, OutputSchema> {
   mcp: {
     name: string;
     description: string;
-    inputSchema: Schema;
+    inputSchema: InputSchema;
+    outputSchema: OutputSchema;
   };
   cli: {
     command: string;
@@ -21,11 +25,11 @@ export interface Tool<Schema> {
 }
 
 export interface Tools {
-  docs: Tool<typeof docsInputSchema>;
-  source: Tool<typeof sourceInputSchema>;
+  docs: Tool<typeof docsInputSchema, typeof docsOutputSchema>;
+  source: Tool<typeof sourceInputSchema, typeof sourceOutputSchema>;
 }
 
-const docsInputSchema = z.object({
+export const docsInputSchema = z.object({
   module_path: z.string()
     .describe(`Module path in format 'module:symbol[#method|.method]'. Supports local files, dependencies, and Node.js builtins.
 
@@ -36,6 +40,72 @@ const docsInputSchema = z.object({
           - node:Math.max (builtin static method)`),
   config: z.string().optional().describe('Path to tsconfig.json file for TypeScript configuration'),
 });
+
+const docsOutputSchema = z
+  .union([
+    z
+      .object({
+        name: z
+          .string()
+          .describe(
+            'The fully qualified name of the symbol, including member access (e.g., "Math.max", "Component#render")',
+          ),
+        kind: z
+          .string()
+          .describe(
+            'The TypeScript symbol kind (e.g., "function", "class", "interface", "method", "property", "variable")',
+          ),
+        type: z
+          .string()
+          .describe('The TypeScript type signature of the symbol as a string representation'),
+        documentation: z
+          .string()
+          .optional()
+          .describe('TypeScript compiler-extracted documentation and comments for the symbol'),
+        signature: z
+          .string()
+          .optional()
+          .describe(
+            'The full signature for functions/methods including parameters and return type',
+          ),
+        location: z
+          .string()
+          .describe(
+            'The file path and line number where the symbol is defined (e.g., "src/utils.ts:42")',
+          ),
+        jsDoc: z
+          .string()
+          .optional()
+          .describe(
+            'JSDoc comments associated with the symbol, including tags like @param, @returns, @example',
+          ),
+      })
+      .describe('Successfully extracted symbol information'),
+    z
+      .object({
+        error: z
+          .object({
+            code: z
+              .enum([
+                'SYMBOL_NOT_FOUND',
+                'PARSE_ERROR',
+                'INVALID_REQUEST',
+                'MODULE_NOT_FOUND',
+                'MEMBER_NOT_FOUND',
+                'TYPE_ERROR',
+              ])
+              .describe('Error code indicating the type of extraction failure'),
+            message: z.string().describe('Human-readable error message explaining what went wrong'),
+            details: z
+              .unknown()
+              .optional()
+              .describe('Additional error context or debugging information'),
+          })
+          .describe('Error details when symbol extraction fails'),
+      })
+      .describe('Error response when documentation extraction fails'),
+  ])
+  .describe('Result of documentation extraction - either symbol information or an error');
 
 const sourceInputSchema = z.object({
   module: z
@@ -49,6 +119,46 @@ const sourceInputSchema = z.object({
     .describe('Path to a custom tsconfig.json file for TypeScript configuration'),
 });
 
+const sourceOutputSchema = z
+  .union([
+    z
+      .object({
+        path: z
+          .string()
+          .describe('The resolved file system path to the module (absolute or relative to cwd)'),
+        format: z
+          .enum(['commonjs', 'module', 'typescript'])
+          .describe(
+            'The module format - "commonjs" for .js CJS files, "module" for .mjs ESM files, or "typescript" for .ts/.tsx files',
+          ),
+        content: z
+          .string()
+          .optional()
+          .describe('Optional file content if pre-loaded during resolution'),
+      })
+      .describe('Successfully resolved module information'),
+    z
+      .object({
+        success: z.literal(false).describe('Indicates resolution failure'),
+        error: z
+          .object({
+            code: z
+              .enum(['MODULE_NOT_FOUND', 'INVALID_SPECIFIER', 'RESOLUTION_FAILED'])
+              .describe('Error code indicating the type of resolution failure'),
+            message: z
+              .string()
+              .describe('Human-readable error message explaining why module resolution failed'),
+            details: z
+              .unknown()
+              .optional()
+              .describe('Additional error context or debugging information'),
+          })
+          .describe('Error details when module resolution fails'),
+      })
+      .describe('Error response when module resolution fails'),
+  ])
+  .describe('Result of module resolution - either resolved path information or an error');
+
 export const tools: Tools = {
   docs: {
     mcp: {
@@ -56,6 +166,7 @@ export const tools: Tools = {
       description:
         'Extract TypeScript/JavaScript documentation and type information for symbols, classes, functions, and methods',
       inputSchema: docsInputSchema,
+      outputSchema: docsOutputSchema,
     },
     cli: {
       command: 'docs',
@@ -91,6 +202,7 @@ export const tools: Tools = {
       name: 'get_source_path',
       description: 'Resolve and return the file system path for TypeScript/JavaScript modules',
       inputSchema: sourceInputSchema,
+      outputSchema: sourceOutputSchema,
     },
     cli: {
       command: 'source',
