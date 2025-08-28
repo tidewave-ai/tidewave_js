@@ -9,8 +9,6 @@ import { isExtractError, isResolveError } from '../core';
 
 import { name, version } from '../../package.json';
 
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-
 // CLI Interface
 program
   .name(name)
