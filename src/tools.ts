@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { SymbolInfo } from './core';
+import type { ExtractResult, ResolveResult } from './core';
 import { TidewaveExtractor } from '.';
 
 export type DocsInputSchema = z.infer<typeof docsInputSchema>;
@@ -113,14 +113,14 @@ export const tools: Tools = {
 export async function getDocs(
   module: string,
   options: { config?: string },
-): Promise<SymbolInfo | null> {
+): Promise<ExtractResult> {
   return await TidewaveExtractor.extractDocs(module, { tsConfigPath: options.config });
 }
 
 export async function getSourcePath(
   module: string,
   options: { config?: string },
-): Promise<string | null> {
+): Promise<ResolveResult> {
   return await TidewaveExtractor.getSourcePath(module, {
     tsConfigPath: options.config,
   });

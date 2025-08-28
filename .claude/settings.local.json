@@ -4,7 +4,11 @@
       "WebSearch",
       "Bash(bun run lint:*)",
       "Bash(bun test:*)",
-      "Bash(bun run:*)"
+      "Bash(bun run:*)",
+      "Bash(tsc --noEmit)",
+      "Bash(tsc:*)",
+      "Bash(bunx tidewave:*)",
+      "Bash(bunx tsc:*)"
     ],
     "deny": [],
     "ask": []

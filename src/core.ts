@@ -18,6 +18,12 @@ export interface ResolvedModule {
   readonly content?: string;
 }
 
+// Internal type for module resolution with TypeScript program
+export interface InternalResolvedModule {
+  readonly sourceFile: ts.SourceFile;
+  readonly program: ts.Program;
+}
+
 export interface ExtractionRequest {
   readonly module: string;
   readonly symbol: string;
@@ -65,13 +71,16 @@ export interface ExtractError {
 
 export type ResolveResult = ResolvedModule | ResolveError;
 export type ExtractResult = SymbolInfo | ExtractError;
+export type InternalResolveResult = InternalResolvedModule | ResolveError;
 
 export function isError(result: ResolveResult | ExtractResult): boolean {
   return result != null && 'success' in result && result.success === false;
 }
 
-export function isResolveError(result: ResolveResult): result is ResolveError {
-  return isError(result);
+export function isResolveError(
+  result: ResolveResult | InternalResolveResult,
+): result is ResolveError {
+  return result != null && 'success' in result && result.success === false;
 }
 
 export function isExtractError(result: ExtractResult): result is ExtractError {

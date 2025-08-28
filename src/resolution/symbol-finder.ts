@@ -1,5 +1,6 @@
 import ts from 'typescript';
-import type { SymbolInfo } from '../core';
+import type { ExtractResult } from '../core';
+import { createExtractError } from '../core';
 import { getLocation, getDocumentation, getJSDoc, getSymbolKind } from './utils';
 import { getSignature, getTypeString } from './formatters';
 
@@ -127,12 +128,14 @@ export function getSymbolInfo(
   symbol: ts.Symbol,
   member?: string,
   isStatic?: boolean,
-): SymbolInfo {
+): ExtractResult {
   // For symbols without valueDeclaration (like interfaces), use the first declaration
   const declaration = symbol.valueDeclaration || (symbol.declarations && symbol.declarations[0]);
-  const type = declaration
-    ? checker.getTypeOfSymbolAtLocation(symbol, declaration)
-    : checker.getTypeOfSymbolAtLocation(symbol, symbol.declarations![0]!);
+  if (!declaration && (!symbol.declarations || symbol.declarations.length === 0)) {
+    return createExtractError('TYPE_ERROR', `Symbol '${symbol.getName()}' has no declarations`);
+  }
+  const targetDeclaration = declaration || symbol.declarations![0]!;
+  const type = checker.getTypeOfSymbolAtLocation(symbol, targetDeclaration);
   const symbolName = symbol.getName();
 
   let targetSymbol = symbol;
@@ -153,7 +156,10 @@ export function getSymbolInfo(
         );
         name = `${symbolName}.${member}`;
       } else {
-        throw new Error(`Static member '${member}' not found on '${symbolName}'`);
+        return createExtractError(
+          'MEMBER_NOT_FOUND',
+          `Static member '${member}' not found on '${symbolName}'`,
+        );
       }
     } else {
       // Instance member: look in the instance type
@@ -182,7 +188,8 @@ export function getSymbolInfo(
               );
               name = `${symbolName}#${member}`;
             } else {
-              throw new Error(
+              return createExtractError(
+                'MEMBER_NOT_FOUND',
                 `Instance member '${member}' not found on '${symbolName}'. Available: ${instanceMembers
                   .map(m => m.getName())
                   .join(', ')}`,
@@ -203,7 +210,8 @@ export function getSymbolInfo(
             );
             name = `${symbolName}#${member}`;
           } else {
-            throw new Error(
+            return createExtractError(
+              'MEMBER_NOT_FOUND',
               `Instance member '${member}' not found on '${symbolName}'. Available: ${instanceMembers
                 .map(m => m.getName())
                 .join(', ')}`,
@@ -241,10 +249,13 @@ export function getSymbolInfo(
             );
             name = `${symbolName}#${member}`;
           } else {
-            throw new Error(`Instance member '${member}' not found on '${symbolName}'`);
+            return createExtractError(
+              'MEMBER_NOT_FOUND',
+              `Instance member '${member}' not found on '${symbolName}'`,
+            );
           }
         } else {
-          throw new Error(`'${symbolName}' is not a constructor or class`);
+          return createExtractError('TYPE_ERROR', `'${symbolName}' is not a constructor or class`);
         }
       }
     }

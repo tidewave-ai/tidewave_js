@@ -5,6 +5,7 @@ import { program } from 'commander';
 import chalk from 'chalk';
 import { tools, getDocs, getSourcePath } from '../tools';
 import { TidewaveExtractor } from '../index';
+import { isExtractError, isResolveError } from '../core';
 
 import { name, version } from '../../package.json';
 
@@ -20,19 +21,17 @@ async function handleGetDocs(
   modulePath: string,
   options: { config?: string; json?: boolean },
 ): Promise<void> {
-  try {
-    const docs = await getDocs(modulePath, { config: options.config });
+  const docsResult = await getDocs(modulePath, { config: options.config });
 
-    if (!docs) process.exit(1);
-
-    if (options.json) {
-      console.log(JSON.stringify(docs, null, 2));
-    } else {
-      console.log(TidewaveExtractor.formatOutput(docs));
-    }
-  } catch (error) {
-    console.error(chalk.red(`Error: ${error instanceof Error ? error.message : String(error)}`));
+  if (isExtractError(docsResult)) {
+    console.error(chalk.red(`Error: ${docsResult.error.message}`));
     process.exit(1);
+  }
+
+  if (options.json) {
+    console.log(JSON.stringify(docsResult, null, 2));
+  } else {
+    console.log(TidewaveExtractor.formatOutput(docsResult));
   }
 }
 
@@ -40,18 +39,14 @@ async function handleGetSourcePath(
   moduleName: string,
   options: { config?: string },
 ): Promise<void> {
-  try {
-    const sourcePath = await getSourcePath(moduleName, { config: options.config });
+  const sourceResult = await getSourcePath(moduleName, { config: options.config });
 
-    if (sourcePath) {
-      console.log(sourcePath);
-    } else {
-      process.exit(1);
-    }
-  } catch (error) {
-    console.error(chalk.red(`Error: ${error instanceof Error ? error.message : String(error)}`));
+  if (isResolveError(sourceResult)) {
+    console.error(chalk.red(`Error: ${sourceResult.error.message}`));
     process.exit(1);
   }
+
+  console.log(sourceResult.path);
 }
 const {
   docs: { cli: docsCli },
