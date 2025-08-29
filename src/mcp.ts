@@ -1,5 +1,5 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { tools, getDocs, getSourcePath } from './tools';
+import { tools } from './tools';
 import { name, version } from '../package.json';
 
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
@@ -11,6 +11,7 @@ import type {
 } from '@modelcontextprotocol/sdk/types.js';
 import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
 import { isExtractError } from './core';
+import { TidewaveExtractor } from '.';
 
 const {
   docs: { mcp: docsMcp },
@@ -18,29 +19,26 @@ const {
 } = tools;
 
 async function handleGetDocs(
-  { module_path, config }: DocsInputSchema,
+  { module_path, prefix }: DocsInputSchema,
   _extra: RequestHandlerExtra<ServerRequest, ServerNotification>,
 ): Promise<CallToolResult> {
-  const docs = await getDocs(module_path, { config: config });
-  const fallback = JSON.stringify(docs);
+  const docs = await TidewaveExtractor.extractDocs(module_path, { prefix: prefix });
+  const response = JSON.stringify(docs);
 
   if (isExtractError(docs)) {
     return {
-      content: [{ type: 'text', text: fallback }],
-      // yeah, i know...
-      structuredContent: docs as unknown as { [k: string]: unknown },
+      content: [{ type: 'text', text: response }],
       isError: true,
     };
   }
 
   return {
-    content: [{ type: 'text', text: fallback }],
-    structuredContent: docs as unknown as { [k: string]: unknown },
+    content: [{ type: 'text', text: response }],
     isError: false,
   };
 }
 
-async function handleGetSourcePath({module, config}: SourceInputSchema): Promise<CallToolResult> {
+// async function handleGetSourcePath({module, prefix}: SourceInputSchema): Promise<CallToolResult> {
 // }
 
 export async function serveMcp(transport: Transport): Promise<void> {
@@ -51,19 +49,14 @@ export async function serveMcp(transport: Transport): Promise<void> {
     {
       description: docsMcp.description,
       inputSchema: docsMcp.inputSchema.shape,
-      // mcp sdk doesnt accept ZodObject, only ZodRawShape
-      // so no support for zod.unions
-      // https://github.com/modelcontextprotocol/typescript-sdk/issues/588
-      outputSchema: docsMcp.outputSchema as any,
     },
     handleGetDocs,
   );
 
-  server.registerTool(sourceMcp.name, {
-    description: sourceMcp.description,
-    inputSchema: sourceMcp.inputSchema.shape,
-    outputSchema: sourceMcp.outputSchema as any,
-  }, handleGetSourcePath);
+  // server.registerTool(sourceMcp.name, {
+  //   description: sourceMcp.description,
+  //   inputSchema: sourceMcp.inputSchema.shape,
+  // }, handleGetSourcePath);
 
   server.connect(transport);
 }

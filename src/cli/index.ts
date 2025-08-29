@@ -57,12 +57,12 @@ const mcpTransport = {
 
 async function handleMcp({ transport }: { transport?: string }): Promise<void> {
   if (!transport || !(transport in mcpTransport)) {
-    console.error(chalk.red(`Error: expected to receive a transport layer, one of: 'stdio'`));
+    console.error(chalk.red('Error: expected to receive a transport layer, one of: \'stdio\''));
     process.exit(1);
   }
 
   const layer = mcpTransport[transport as keyof typeof mcpTransport];
-  console.error(`Starting tidewave MCP server using ${transport}`)
+  console.error(`Starting tidewave MCP server using ${transport}`);
   serveMcp(new layer());
 }
 
@@ -71,10 +71,7 @@ const {
   source: { cli: sourceCli },
 } = tools;
 
-program
-  .command('mcp')
-  .description('Starts a MCP server for tidewave (stdio)')
-  .action(handleMcp);
+program.command('mcp').description('Starts a MCP server for tidewave (stdio)').action(handleMcp);
 
 program
   .command(docsCli.command)
