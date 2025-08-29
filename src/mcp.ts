@@ -69,5 +69,5 @@ export async function serveMcp(transport: Transport): Promise<void> {
     handleGetSourcePath,
   );
 
-  server.connect(transport);
+  await server.connect(transport);
 }

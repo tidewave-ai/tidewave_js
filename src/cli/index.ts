@@ -51,19 +51,10 @@ async function handleGetSourcePath(
   console.log(sourceResult.path);
 }
 
-const mcpTransport = {
-  stdio: StdioServerTransport,
-};
-
-async function handleMcp({ transport }: { transport?: string }): Promise<void> {
-  if (!transport || !(transport in mcpTransport)) {
-    console.error(chalk.red("Error: expected to receive a transport layer, one of: 'stdio'"));
-    process.exit(1);
-  }
-
-  const layer = mcpTransport[transport as keyof typeof mcpTransport];
-  console.error(`Starting tidewave MCP server using ${transport}`);
-  serveMcp(new layer());
+async function handleMcp(): Promise<void> {
+  console.error('Starting tidewave MCP server using stdio');
+  const transport = new StdioServerTransport(process.stdin, process.stdout);
+  await serveMcp(transport);
 }
 
 const {
