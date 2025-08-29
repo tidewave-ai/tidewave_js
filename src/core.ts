@@ -42,7 +42,7 @@ export interface SymbolInfo {
 }
 
 export interface ExtractorOptions {
-  readonly tsConfigPath?: string;
+  readonly prefix?: string;
   readonly runtime?: Runtime;
 }
 

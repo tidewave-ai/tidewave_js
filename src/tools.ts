@@ -186,9 +186,9 @@ export const tools: Tools = {
         - react:Component#render
         - node:Math.max`,
       options: {
-        config: {
-          flag: '-c, --config <path>',
-          desc: 'Path to a custom tsconfig.json',
+        prefix: {
+          flag: '-p, --prefix <path>',
+          desc: 'Path to a custom project path (which contains tsconfig.json/package.json)',
         },
         json: {
           flag: '-j, --json',
@@ -198,12 +198,6 @@ export const tools: Tools = {
     },
   },
   source: {
-    mcp: {
-      name: 'get_source_path',
-      description: 'Resolve and return the file system path for TypeScript/JavaScript modules',
-      inputSchema: sourceInputSchema,
-      outputSchema: sourceOutputSchema,
-    },
     cli: {
       command: 'source',
       description: 'Get the source file path for a module',
@@ -213,27 +207,11 @@ export const tools: Tools = {
       - Dependencies: lodash, react, @types/node
       - Relative paths: ./src/components/Button`,
       options: {
-        config: {
-          flag: '-c, --config <path>',
-          desc: 'Path to a custom tsconfig.json file for TypeScript',
+        prefix: {
+          flag: '-p, --prefix <path>',
+          desc: 'Path to a custom project path (which contains tsconfig.json/package.json)',
         },
       },
     },
   },
 } as const;
-
-export async function getDocs(
-  module: string,
-  options: { config?: string },
-): Promise<ExtractResult> {
-  return await TidewaveExtractor.extractDocs(module, { tsConfigPath: options.config });
-}
-
-export async function getSourcePath(
-  module: string,
-  options: { config?: string },
-): Promise<ResolveResult> {
-  return await TidewaveExtractor.getSourcePath(module, {
-    tsConfigPath: options.config,
-  });
-}
