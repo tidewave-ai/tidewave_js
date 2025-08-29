@@ -35,7 +35,7 @@ export const tools: Tools = {
       options: {
         prefix: {
           flag: '-p, --prefix <path>',
-          desc: 'Path to a custom node project path',
+          desc: 'Path to a custom project path (which contains tsconfig.json/package.json)',
         },
         json: {
           flag: '-j, --json',
@@ -56,7 +56,7 @@ export const tools: Tools = {
       options: {
         prefix: {
           flag: '-p, --prefix <path>',
-          desc: 'Path to a custom node project path',
+          desc: 'Path to a custom project path (which contains tsconfig.json/package.json)',
         },
       },
     },
