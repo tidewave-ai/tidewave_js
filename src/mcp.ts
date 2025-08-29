@@ -4,13 +4,8 @@ import { name, version } from '../package.json';
 
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import type { DocsInputSchema, SourceInputSchema } from './tools';
-import type {
-  CallToolResult,
-  ServerNotification,
-  ServerRequest,
-} from '@modelcontextprotocol/sdk/types.js';
-import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
-import { isExtractError } from './core';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import { isExtractError, isResolveError } from './core';
 import { TidewaveExtractor } from '.';
 
 const {
@@ -18,10 +13,7 @@ const {
   source: { mcp: sourceMcp },
 } = tools;
 
-async function handleGetDocs(
-  { module_path, prefix }: DocsInputSchema,
-  _extra: RequestHandlerExtra<ServerRequest, ServerNotification>,
-): Promise<CallToolResult> {
+async function handleGetDocs({ module_path, prefix }: DocsInputSchema): Promise<CallToolResult> {
   const docs = await TidewaveExtractor.extractDocs(module_path, { prefix: prefix });
   const response = JSON.stringify(docs);
 
@@ -38,8 +30,23 @@ async function handleGetDocs(
   };
 }
 
-// async function handleGetSourcePath({module, prefix}: SourceInputSchema): Promise<CallToolResult> {
-// }
+async function handleGetSourcePath({ module, prefix }: SourceInputSchema): Promise<CallToolResult> {
+  const sourceResult = await TidewaveExtractor.getSourcePath(module, { prefix });
+
+  const response = JSON.stringify(sourceResult);
+
+  if (isResolveError(sourceResult)) {
+    return {
+      content: [{ type: 'text', text: response }],
+      isError: true,
+    };
+  }
+
+  return {
+    content: [{ type: 'text', text: response }],
+    isError: false,
+  };
+}
 
 export async function serveMcp(transport: Transport): Promise<void> {
   const server = new McpServer({ name, version });
@@ -53,10 +60,14 @@ export async function serveMcp(transport: Transport): Promise<void> {
     handleGetDocs,
   );
 
-  // server.registerTool(sourceMcp.name, {
-  //   description: sourceMcp.description,
-  //   inputSchema: sourceMcp.inputSchema.shape,
-  // }, handleGetSourcePath);
+  server.registerTool(
+    sourceMcp.name,
+    {
+      description: sourceMcp.description,
+      inputSchema: sourceMcp.inputSchema.shape,
+    },
+    handleGetSourcePath,
+  );
 
   server.connect(transport);
 }

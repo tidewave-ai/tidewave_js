@@ -57,7 +57,7 @@ const mcpTransport = {
 
 async function handleMcp({ transport }: { transport?: string }): Promise<void> {
   if (!transport || !(transport in mcpTransport)) {
-    console.error(chalk.red('Error: expected to receive a transport layer, one of: \'stdio\''));
+    console.error(chalk.red("Error: expected to receive a transport layer, one of: 'stdio'"));
     process.exit(1);
   }
 
