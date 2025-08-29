@@ -1,5 +1,7 @@
 import ts from 'typescript';
 import path from 'node:path';
+import type { InternalResolveResult } from '../core';
+import { resolveError } from '../core';
 
 // Load TypeScript configuration
 export function loadTsConfig(tsConfigPath?: string): {
@@ -46,7 +48,7 @@ export function loadTsConfig(tsConfigPath?: string): {
 export function resolveModule(
   moduleName: string,
   compilerOptions: ts.CompilerOptions,
-): { sourceFile: ts.SourceFile; program: ts.Program } | null {
+): InternalResolveResult {
   // For local files, check if the exact path exists first (to prefer .js over .ts)
   if (
     moduleName.startsWith('./') ||
@@ -84,17 +86,17 @@ export function resolveModule(
     }
   }
 
-  return null;
+  return resolveError(moduleName, process.cwd());
 }
 
 // Resolve node builtin symbols like node:Math
 export function resolveNodeBuiltin(
   moduleName: string,
   compilerOptions: ts.CompilerOptions,
-): { sourceFile: ts.SourceFile; program: ts.Program } | null {
+): InternalResolveResult {
   // Check if it's a node: builtin module
   if (!moduleName.startsWith('node:')) {
-    return null;
+    return resolveError(moduleName, process.cwd());
   }
 
   const symbolName = moduleName.slice(5); // Remove 'node:' prefix
@@ -154,5 +156,5 @@ export function resolveNodeBuiltin(
     }
   }
 
-  return null;
+  return resolveError(moduleName, process.cwd());
 }

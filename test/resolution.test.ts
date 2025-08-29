@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as ts from 'typescript';
 import { extractSymbol, extractDocs, getSourcePath, formatOutput } from '../src/resolution';
-import { isExtractError } from '../src/core';
+import { isExtractError, isResolveError } from '../src/core';
 import type { SymbolInfo } from '../src/core';
 import path from 'node:path';
 
@@ -94,9 +94,12 @@ describe('TypeScript Extraction', () => {
       });
 
       if (isExtractError(result)) {
-        expect(['MODULE_NOT_FOUND', 'SYMBOL_NOT_FOUND', 'MEMBER_NOT_FOUND']).toContain(
-          result.error.code,
-        );
+        expect([
+          'MODULE_NOT_FOUND',
+          'SYMBOL_NOT_FOUND',
+          'MEMBER_NOT_FOUND',
+          'TYPE_ERROR',
+        ]).toContain(result.error.code);
       } else {
         expect(result.name).toBe('Program#getTypeChecker');
         expect(result.kind).toBe('method');
@@ -239,7 +242,7 @@ describe('TypeScript Extraction', () => {
     it('should parse module:symbol format correctly', async () => {
       const docs = await extractDocs('typescript:createProgram');
 
-      if (docs) {
+      if (!isExtractError(docs)) {
         expect(docs.name).toBe('createProgram');
         expect(docs.kind).toBeDefined();
       }
@@ -248,7 +251,7 @@ describe('TypeScript Extraction', () => {
     it('should parse static member format', async () => {
       const docs = await extractDocs('typescript:ScriptTarget.ES2020');
 
-      if (docs) {
+      if (!isExtractError(docs)) {
         expect(docs.name).toBe('ScriptTarget.ES2020');
       }
     });
@@ -256,31 +259,27 @@ describe('TypeScript Extraction', () => {
     it('should parse instance member format', async () => {
       const docs = await extractDocs('typescript:Program#getTypeChecker');
 
-      if (docs) {
+      if (!isExtractError(docs)) {
         expect(docs.name).toBe('Program#getTypeChecker');
       }
     });
 
-    it('should return null and log error for invalid format', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
+    it('should return error for invalid format', async () => {
       const docs = await extractDocs('invalid-format-without-colon');
 
-      expect(docs).toBeNull();
-      expect(consoleSpy).toHaveBeenCalled();
-
-      consoleSpy.mockRestore();
+      expect(isExtractError(docs)).toBe(true);
+      if (isExtractError(docs)) {
+        expect(docs.error.code).toBe('INVALID_REQUEST');
+      }
     });
 
-    it('should return null and log error for module not found', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
+    it('should return error for module not found', async () => {
       const docs = await extractDocs('non-existent-module:someSymbol');
 
-      expect(docs).toBeNull();
-      expect(consoleSpy).toHaveBeenCalled();
-
-      consoleSpy.mockRestore();
+      expect(isExtractError(docs)).toBe(true);
+      if (isExtractError(docs)) {
+        expect(docs.error.code).toBe('MODULE_NOT_FOUND');
+      }
     });
 
     it('should accept extractor options', async () => {
@@ -297,45 +296,45 @@ describe('TypeScript Extraction', () => {
     it('should resolve built-in module paths', async () => {
       const sourcePath = await getSourcePath('typescript');
 
-      if (sourcePath) {
-        expect(sourcePath).toMatch(/typescript/);
-        expect(sourcePath).toMatch(/\.d\.ts$/);
+      if (!isResolveError(sourcePath)) {
+        expect(sourcePath.path).toMatch(/typescript/);
+        expect(sourcePath.path).toMatch(/\.d\.ts$/);
       }
     });
 
     it('should resolve relative paths', async () => {
       const sourcePath = await getSourcePath('./src/core/types');
 
-      if (sourcePath) {
-        expect(sourcePath).toContain('src/core/types');
+      if (!isResolveError(sourcePath)) {
+        expect(sourcePath.path).toContain('src/core/types');
       }
     });
 
     it('should return relative paths when inside project', async () => {
       const sourcePath = await getSourcePath('./src/index');
 
-      if (sourcePath && !sourcePath.startsWith('/')) {
-        expect(sourcePath).toMatch(/^src/);
+      if (!isResolveError(sourcePath) && !sourcePath.path.startsWith('/')) {
+        expect(sourcePath.path).toMatch(/^src/);
       }
     });
 
     it('should return absolute paths for node_modules', async () => {
       const sourcePath = await getSourcePath('typescript');
 
-      if (sourcePath) {
-        expect(path.isAbsolute(sourcePath) || sourcePath.includes('node_modules')).toBe(true);
+      if (!isResolveError(sourcePath)) {
+        expect(path.isAbsolute(sourcePath.path) || sourcePath.path.includes('node_modules')).toBe(
+          true,
+        );
       }
     });
 
-    it('should return null and log error for non-existent modules', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
+    it('should return error for non-existent modules', async () => {
       const sourcePath = await getSourcePath('non-existent-module-name-12345');
 
-      expect(sourcePath).toBeNull();
-      expect(consoleSpy).toHaveBeenCalled();
-
-      consoleSpy.mockRestore();
+      expect(isResolveError(sourcePath)).toBe(true);
+      if (isResolveError(sourcePath)) {
+        expect(sourcePath.error.code).toBe('MODULE_NOT_FOUND');
+      }
     });
 
     it('should accept TypeScript config options', async () => {
@@ -343,7 +342,7 @@ describe('TypeScript Extraction', () => {
         tsConfigPath: './tsconfig.json',
       });
 
-      expect(sourcePath === null || typeof sourcePath === 'string').toBe(true);
+      expect(isResolveError(sourcePath) || typeof sourcePath.path === 'string').toBe(true);
     });
   });
 
