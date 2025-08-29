@@ -76,7 +76,7 @@ export async function extractDocs(
     return parseResult;
   }
   const { module, symbol, member, isStatic } = parseResult;
-  const config = loadTsConfig(options.tsConfigPath);
+  const config = loadTsConfig(options.prefix);
 
   // Try to resolve as a regular module first
   let resolvedModule: InternalResolveResult = resolveModule(module, config.options);
@@ -196,7 +196,7 @@ export async function getSourcePath(
     }
   }
 
-  const config = loadTsConfig(options.tsConfigPath);
+  const config = loadTsConfig(options.prefix);
 
   const moduleResolver = ts.resolveModuleName(
     moduleName,
@@ -238,7 +238,7 @@ export async function extractSymbol(
       };
     }
 
-    const config = loadTsConfig(options.tsConfigPath);
+    const config = loadTsConfig(options.prefix);
 
     // Resolve module with dedicated program
     const resolvedModule = resolveModule(request.module, config.options);

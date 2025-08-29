@@ -4,12 +4,12 @@ import type { InternalResolveResult } from '../core';
 import { resolveError } from '../core';
 
 // Load TypeScript configuration
-export function loadTsConfig(tsConfigPath?: string): {
+export function loadTsConfig(prefix?: string): {
   fileNames: string[];
   options: ts.CompilerOptions;
 } {
-  const configPath =
-    tsConfigPath || ts.findConfigFile(process.cwd(), ts.sys.fileExists, 'tsconfig.json');
+  const projectPath = prefix || process.cwd();
+  const configPath = ts.findConfigFile(projectPath, ts.sys.fileExists, 'tsconfig.json');
 
   let compilerOptions: ts.CompilerOptions = {
     target: ts.ScriptTarget.ES2020,

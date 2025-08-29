@@ -1,6 +1,3 @@
-import type { ExtractResult, ResolveResult } from './core';
-import { TidewaveExtractor } from '.';
-
 export interface Tool {
   cli: {
     command: string;
@@ -36,9 +33,9 @@ export const tools: Tools = {
         - react:Component#render
         - node:Math.max`,
       options: {
-        config: {
-          flag: '-c, --config <path>',
-          desc: 'Path to a custom tsconfig.json',
+        prefix: {
+          flag: '-p, --prefix <path>',
+          desc: 'Path to a custom node project path',
         },
         json: {
           flag: '-j, --json',
@@ -57,27 +54,11 @@ export const tools: Tools = {
       - Dependencies: lodash, react, @types/node
       - Relative paths: ./src/components/Button`,
       options: {
-        config: {
-          flag: '-c, --config <path>',
-          desc: 'Path to a custom tsconfig.json file for TypeScript',
+        prefix: {
+          flag: '-p, --prefix <path>',
+          desc: 'Path to a custom node project path',
         },
       },
     },
   },
 } as const;
-
-export async function getDocs(
-  module: string,
-  options: { config?: string },
-): Promise<ExtractResult> {
-  return await TidewaveExtractor.extractDocs(module, { tsConfigPath: options.config });
-}
-
-export async function getSourcePath(
-  module: string,
-  options: { config?: string },
-): Promise<ResolveResult> {
-  return await TidewaveExtractor.getSourcePath(module, {
-    tsConfigPath: options.config,
-  });
-}
