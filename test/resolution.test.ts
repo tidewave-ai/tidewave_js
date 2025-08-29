@@ -167,7 +167,7 @@ describe('TypeScript Extraction', () => {
         },
         {
           runtime: 'node',
-          tsConfigPath: './tsconfig.json',
+          prefix: '.',
         },
       );
 
@@ -284,7 +284,7 @@ describe('TypeScript Extraction', () => {
 
     it('should accept extractor options', async () => {
       const docs = await extractDocs('typescript:createProgram', {
-        tsConfigPath: './tsconfig.json',
+        prefix: '.',
         runtime: 'node',
       });
 
@@ -339,7 +339,7 @@ describe('TypeScript Extraction', () => {
 
     it('should accept TypeScript config options', async () => {
       const sourcePath = await getSourcePath('typescript', {
-        tsConfigPath: './tsconfig.json',
+        prefix: '.',
       });
 
       expect(isResolveError(sourcePath) || typeof sourcePath.path === 'string').toBe(true);

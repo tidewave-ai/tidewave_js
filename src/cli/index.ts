@@ -3,7 +3,7 @@
 
 import { program } from 'commander';
 import chalk from 'chalk';
-import { tools, getDocs, getSourcePath } from '../tools';
+import { tools } from '../tools';
 import { TidewaveExtractor } from '../index';
 import { isExtractError, isResolveError } from '../core';
 
@@ -17,9 +17,9 @@ program
 
 async function handleGetDocs(
   modulePath: string,
-  options: { config?: string; json?: boolean },
+  options: { prefix?: string; json?: boolean },
 ): Promise<void> {
-  const docsResult = await getDocs(modulePath, { config: options.config });
+  const docsResult = await TidewaveExtractor.extractDocs(modulePath, { prefix: options.prefix });
 
   if (isExtractError(docsResult)) {
     console.error(chalk.red(`Error: ${docsResult.error.message}`));
@@ -35,9 +35,11 @@ async function handleGetDocs(
 
 async function handleGetSourcePath(
   moduleName: string,
-  options: { config?: string },
+  options: { prefix?: string },
 ): Promise<void> {
-  const sourceResult = await getSourcePath(moduleName, { config: options.config });
+  const sourceResult = await TidewaveExtractor.getSourcePath(moduleName, {
+    prefix: options.prefix,
+  });
 
   if (isResolveError(sourceResult)) {
     console.error(chalk.red(`Error: ${sourceResult.error.message}`));
@@ -55,7 +57,7 @@ program
   .command(docsCli.command)
   .description(docsCli.description)
   .argument(docsCli.argument, docsCli.argumentDescription)
-  .option(docsCli.options.config!.flag, docsCli.options.config!.desc)
+  .option(docsCli.options.prefix!.flag, docsCli.options.prefix!.desc)
   .option(docsCli.options.json!.flag, docsCli.options.json!.desc)
   .action(handleGetDocs);
 
@@ -63,7 +65,7 @@ program
   .command(sourceCli.command)
   .description(sourceCli.description)
   .argument(sourceCli.argument, sourceCli.argumentDescription)
-  .option(sourceCli.options.config!.flag, sourceCli.options.config!.desc)
+  .option(sourceCli.options.prefix!.flag, sourceCli.options.prefix!.desc)
 
   .action(handleGetSourcePath);
 

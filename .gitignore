@@ -71,3 +71,4 @@ vite.config.ts.timestamp-*
 # Coding agents
 CLAUDE.md
 .claude/
+.mcp.json
