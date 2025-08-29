@@ -13,37 +13,63 @@ const {
   source: { mcp: sourceMcp },
 } = tools;
 
-async function handleGetDocs({ module_path, prefix }: DocsInputSchema): Promise<CallToolResult> {
-  const docs = await TidewaveExtractor.extractDocs(module_path, { prefix: prefix });
-  const response = JSON.stringify(docs);
+async function handleGetDocs({ reference, prefix }: DocsInputSchema): Promise<CallToolResult> {
+  const docs = await TidewaveExtractor.extractDocs(reference, { prefix: prefix });
 
   if (isExtractError(docs)) {
     return {
-      content: [{ type: 'text', text: response }],
+      content: [
+        {
+          type: 'text',
+          text: `Documentation not found for ${reference}, got an error: ${JSON.stringify(docs)}`,
+        },
+      ],
+      isError: true,
+    };
+  }
+
+  if (!docs.documentation) {
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Documentation not avaialble for ${reference}, reference did not include it`,
+        },
+      ],
       isError: true,
     };
   }
 
   return {
-    content: [{ type: 'text', text: response }],
+    content: [{ type: 'text', text: TidewaveExtractor.formatOutput(docs) }],
     isError: false,
   };
 }
 
-async function handleGetSourcePath({ module, prefix }: SourceInputSchema): Promise<CallToolResult> {
-  const sourceResult = await TidewaveExtractor.getSourcePath(module, { prefix });
-
-  const response = JSON.stringify(sourceResult);
+async function handleGetSourcePath({
+  reference,
+  prefix,
+}: SourceInputSchema): Promise<CallToolResult> {
+  const sourceResult = await TidewaveExtractor.getSourceLocation(reference, { prefix });
 
   if (isResolveError(sourceResult)) {
     return {
-      content: [{ type: 'text', text: response }],
+      content: [
+        {
+          type: 'text',
+          text: `Failed to get source location for ${reference}: ${JSON.stringify(sourceResult)}`,
+        },
+      ],
       isError: true,
     };
   }
 
+  // TODO maybe we could include `content`
+  // in the future for avoiding LLM roundtrip
+  const { path, format } = sourceResult;
+
   return {
-    content: [{ type: 'text', text: response }],
+    content: [{ type: 'text', text: `${path}(${format})` }],
     isError: false,
   };
 }

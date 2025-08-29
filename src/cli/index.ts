@@ -39,7 +39,7 @@ async function handleGetSourcePath(
   moduleName: string,
   options: { prefix?: string },
 ): Promise<void> {
-  const sourceResult = await TidewaveExtractor.getSourcePath(moduleName, {
+  const sourceResult = await TidewaveExtractor.getSourceLocation(moduleName, {
     prefix: options.prefix,
   });
 

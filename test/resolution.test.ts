@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as ts from 'typescript';
-import { extractSymbol, extractDocs, getSourcePath, formatOutput } from '../src/resolution';
+import { extractSymbol, extractDocs, getSourceLocation, formatOutput } from '../src/resolution';
 import { isExtractError, isResolveError } from '../src/core';
 import type { SymbolInfo } from '../src/core';
 import path from 'node:path';
@@ -292,9 +292,9 @@ describe('TypeScript Extraction', () => {
     });
   });
 
-  describe('getSourcePath', () => {
+  describe('getSourceLocation', () => {
     it('should resolve built-in module paths', async () => {
-      const sourcePath = await getSourcePath('typescript');
+      const sourcePath = await getSourceLocation('typescript');
 
       if (!isResolveError(sourcePath)) {
         expect(sourcePath.path).toMatch(/typescript/);
@@ -303,7 +303,7 @@ describe('TypeScript Extraction', () => {
     });
 
     it('should resolve relative paths', async () => {
-      const sourcePath = await getSourcePath('./src/core/types');
+      const sourcePath = await getSourceLocation('./src/core/types');
 
       if (!isResolveError(sourcePath)) {
         expect(sourcePath.path).toContain('src/core/types');
@@ -311,7 +311,7 @@ describe('TypeScript Extraction', () => {
     });
 
     it('should return relative paths when inside project', async () => {
-      const sourcePath = await getSourcePath('./src/index');
+      const sourcePath = await getSourceLocation('./src/index');
 
       if (!isResolveError(sourcePath) && !sourcePath.path.startsWith('/')) {
         expect(sourcePath.path).toMatch(/^src/);
@@ -319,7 +319,7 @@ describe('TypeScript Extraction', () => {
     });
 
     it('should return absolute paths for node_modules', async () => {
-      const sourcePath = await getSourcePath('typescript');
+      const sourcePath = await getSourceLocation('typescript');
 
       if (!isResolveError(sourcePath)) {
         expect(path.isAbsolute(sourcePath.path) || sourcePath.path.includes('node_modules')).toBe(
@@ -329,7 +329,7 @@ describe('TypeScript Extraction', () => {
     });
 
     it('should return error for non-existent modules', async () => {
-      const sourcePath = await getSourcePath('non-existent-module-name-12345');
+      const sourcePath = await getSourceLocation('non-existent-module-name-12345');
 
       expect(isResolveError(sourcePath)).toBe(true);
       if (isResolveError(sourcePath)) {
@@ -338,7 +338,7 @@ describe('TypeScript Extraction', () => {
     });
 
     it('should accept TypeScript config options', async () => {
-      const sourcePath = await getSourcePath('typescript', {
+      const sourcePath = await getSourceLocation('typescript', {
         prefix: '.',
       });
 

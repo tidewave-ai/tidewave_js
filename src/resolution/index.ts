@@ -176,7 +176,7 @@ export async function extractDocs(
 }
 
 // Get source path for a module
-export async function getSourcePath(
+export async function getSourceLocation(
   moduleName: string,
   options: ExtractorOptions = {},
 ): Promise<ResolveResult> {

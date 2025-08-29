@@ -1,11 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { TidewaveExtractor } from '../src/index';
 import { isExtractError, isResolveError } from '../src/core';
-import path from 'node:path';
 
 describe('Integration Tests', () => {
-  const fixturesPath = path.join(__dirname, 'fixtures');
-
   describe('JavaScript Files', () => {
     it('should extract function from CommonJS export', async () => {
       const result = await TidewaveExtractor.extractDocs('./test/fixtures/sample.js:greetUser');
@@ -127,7 +124,7 @@ describe('Integration Tests', () => {
 
   describe('Source Path Resolution', () => {
     it('should resolve JavaScript file path', async () => {
-      const sourcePath = await TidewaveExtractor.getSourcePath('./test/fixtures/sample.js');
+      const sourcePath = await TidewaveExtractor.getSourceLocation('./test/fixtures/sample.js');
 
       expect(isResolveError(sourcePath)).toBe(false);
       if (!isResolveError(sourcePath)) {
@@ -136,7 +133,7 @@ describe('Integration Tests', () => {
     });
 
     it('should resolve TypeScript file path', async () => {
-      const sourcePath = await TidewaveExtractor.getSourcePath('./test/fixtures/sample.ts');
+      const sourcePath = await TidewaveExtractor.getSourceLocation('./test/fixtures/sample.ts');
 
       expect(isResolveError(sourcePath)).toBe(false);
       if (!isResolveError(sourcePath)) {
@@ -145,7 +142,7 @@ describe('Integration Tests', () => {
     });
 
     it('should resolve node_modules dependency', async () => {
-      const sourcePath = await TidewaveExtractor.getSourcePath('typescript');
+      const sourcePath = await TidewaveExtractor.getSourceLocation('typescript');
 
       expect(isResolveError(sourcePath)).toBe(false);
       if (!isResolveError(sourcePath)) {

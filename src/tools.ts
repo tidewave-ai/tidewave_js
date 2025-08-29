@@ -23,15 +23,23 @@ export interface Tools {
   source: Tool<typeof sourceInputSchema>;
 }
 
-export const docsInputSchema = z.object({
-  module_path: z.string()
-    .describe(`Module path in format 'module:symbol[#method|.method]'. Supports local files, dependencies, and Node.js builtins.
+const referenceDescription = `Module path in format 'module:symbol[#method|.method]'. Supports local files, dependencies, and Node.js builtins.
 
-          Examples:
-          - src/types.ts:SymbolInfo (local file symbol)
-          - lodash:isEmpty (dependency function)  
-          - react:Component#render (instance method)
-          - node:Math.max (builtin static method)`),
+        Module reference format:
+        - module:symbol         - Extract a top-level symbol
+        - module:Class#method   - Extract an instance method
+        - module:Class.method   - Extract a static method
+        - node:Class#method     - Extract a global/builtin instance method
+        - node:Class.method     - Extract a global/builtin static method
+
+        Examples:
+        - src/types.ts:SymbolInfo (local file symbol)
+        - lodash:isEmpty (dependency function)  
+        - react:Component#render (instance method)
+        - node:Math.max (builtin static method)`;
+
+export const docsInputSchema = z.object({
+  reference: z.string().describe(referenceDescription),
   prefix: z
     .string()
     .optional()
@@ -39,11 +47,7 @@ export const docsInputSchema = z.object({
 });
 
 const sourceInputSchema = z.object({
-  module: z
-    .string()
-    .describe(
-      'Module name to resolve. Can be local files (src/utils, ./types.ts), dependencies (lodash, react), or relative paths (./src/components/Button).',
-    ),
+  reference: z.string().describe(referenceDescription),
   prefix: z
     .string()
     .optional()
@@ -55,26 +59,14 @@ export const tools: Tools = {
     mcp: {
       name: 'get_docs',
       description:
-        'Extract TypeScript/JavaScript documentation and type information for symbols, classes, functions, and methods',
+        'Extract TypeScript/JavaScript documentation and type information for symbols, classes, functions, and methods. This works for modules in the current project, as well as dependencies, and builtin node modules',
       inputSchema: docsInputSchema,
     },
     cli: {
       command: 'docs',
       description: 'Extract documentation for a symbol',
       argument: '<module-path>',
-      argumentDescription: `Module path formats:
-        - module:symbol         - Extract a top-level symbol
-        - module:Class#method   - Extract an instance method
-        - module:Class.method   - Extract a static method
-        - node:Class#method     - Extract a global/builtin instance method
-        - node:Class.method     - Extract a global/builtin static method
-
-      Examples:
-        - src/types.ts:SymbolInfo
-        - ./utils:parseConfig
-        - lodash:isEmpty
-        - react:Component#render
-        - node:Math.max`,
+      argumentDescription: referenceDescription,
       options: {
         prefix: {
           flag: '-p, --prefix <path>',
@@ -89,19 +81,16 @@ export const tools: Tools = {
   },
   source: {
     mcp: {
-      name: 'get_source_path',
+      name: 'get_source_location',
       description:
-        'Extract TypeScript/JavaScript documentation and type information for symbols, classes, functions, and methods',
+        'Extract TypeScript/JavaScript source location for the given reference. This works for modules in the current project, as well as dependencies, and builtin node modules',
       inputSchema: sourceInputSchema,
     },
     cli: {
       command: 'source',
       description: 'Get the source file path for a module',
       argument: '<module>',
-      argumentDescription: `Module name to resolve:
-      - Local files: src/utils, ./types.ts, ../config
-      - Dependencies: lodash, react, @types/node
-      - Relative paths: ./src/components/Button`,
+      argumentDescription: referenceDescription,
       options: {
         prefix: {
           flag: '-p, --prefix <path>',
