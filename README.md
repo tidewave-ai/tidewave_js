@@ -10,7 +10,7 @@ will come in future releases.
 
 ## Usage
 
-### Standalone MCP (coming soon)
+### Standalone MCP
 
 Tidewave's MCP server gives your editor and coding agents access to the
 documentation, type annotations, and source location of the packages being
@@ -67,27 +67,6 @@ Tidewave JavaScript supports multiple JavaScript runtimes:
 - **Node.js** - Full support with npm/npx
 - **Bun** - Native support with bunx
 - **Deno** - Support via npm: protocol
-
-## Troubleshooting
-
-For HTTP MCP server, Tidewave expects to run on `localhost` by default. If you
-need to access it from a different machine:
-
-```bash
-npx tidewave mcp --allow-remote-access --allowed-origins "http://company.local"
-```
-
-For STDIO transport (recommended for editor integrations):
-
-```bash
-npx tidewave mcp --stdio
-```
-
-If you want to use Docker for development, you either need to enable remote
-access or automatically redirect the relevant ports, as done by
-[devcontainers](https://code.visualstudio.com/docs/devcontainers/containers).
-See our [containers](https://hexdocs.pm/tidewave/containers.html) guide for more
-information.
 
 ## Contributing
 
