@@ -1,7 +1,6 @@
 # Tidewave
 
-Tidewave is a coding agent that runs in the browser alongside your web
-application, deeply integrated with Phoenix.
+Tidewave is the coding agent for full-stack web app development.
 [See our website](https://tidewave.ai) for more information.
 
 Our current release connects your editor's assistant to your web framework
