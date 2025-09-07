@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as ts from 'typescript';
 import { extractSymbol, extractDocs, getSourceLocation, formatOutput } from '../src/resolution';
 import { isExtractError, isResolveError } from '../src/core';
 import type { SymbolInfo } from '../src/core';
@@ -160,16 +159,10 @@ describe('TypeScript Extraction', () => {
     });
 
     it('should handle TypeScript configuration options', async () => {
-      const result = await extractSymbol(
-        {
-          module: 'typescript',
-          symbol: 'createProgram',
-        },
-        {
-          runtime: 'node',
-          prefix: '.',
-        },
-      );
+      const result = await extractSymbol({
+        module: 'typescript',
+        symbol: 'createProgram',
+      });
 
       expect(result).toBeDefined();
     });
@@ -283,10 +276,7 @@ describe('TypeScript Extraction', () => {
     });
 
     it('should accept extractor options', async () => {
-      const docs = await extractDocs('typescript:createProgram', {
-        prefix: '.',
-        runtime: 'node',
-      });
+      const docs = await extractDocs('typescript:createProgram');
 
       expect(docs === null || typeof docs === 'object').toBe(true);
     });
@@ -338,9 +328,7 @@ describe('TypeScript Extraction', () => {
     });
 
     it('should accept TypeScript config options', async () => {
-      const sourcePath = await getSourceLocation('typescript', {
-        prefix: '.',
-      });
+      const sourcePath = await getSourceLocation('typescript');
 
       expect(isResolveError(sourcePath) || typeof sourcePath.path === 'string').toBe(true);
     });

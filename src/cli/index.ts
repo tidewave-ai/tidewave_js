@@ -11,6 +11,14 @@ import { name, version } from '../../package.json';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { serveMcp } from '../mcp';
 
+function chdir(path: string): void {
+  try {
+    process.chdir(path);
+  } catch (e) {
+    console.error(chalk.red(`Failed to apply given prefix: ${e}`));
+  }
+}
+
 // CLI Interface
 program
   .name(name)
@@ -21,7 +29,8 @@ async function handleGetDocs(
   modulePath: string,
   options: { prefix?: string; json?: boolean },
 ): Promise<void> {
-  const docsResult = await TidewaveExtractor.extractDocs(modulePath, { prefix: options.prefix });
+  if (options.prefix) chdir(options.prefix);
+  const docsResult = await TidewaveExtractor.extractDocs(modulePath);
 
   if (isExtractError(docsResult)) {
     console.error(chalk.red(`Error: ${docsResult.error.message}`));
@@ -39,9 +48,9 @@ async function handleGetSourcePath(
   moduleName: string,
   options: { prefix?: string },
 ): Promise<void> {
-  const sourceResult = await TidewaveExtractor.getSourceLocation(moduleName, {
-    prefix: options.prefix,
-  });
+  if (options.prefix) chdir(options.prefix);
+
+  const sourceResult = await TidewaveExtractor.getSourceLocation(moduleName);
 
   if (isResolveError(sourceResult)) {
     console.error(chalk.red(`Error: ${sourceResult.error.message}`));
@@ -51,7 +60,8 @@ async function handleGetSourcePath(
   console.log(sourceResult.path);
 }
 
-async function handleMcp(): Promise<void> {
+async function handleMcp(options: { prefix?: string }): Promise<void> {
+  if (options.prefix) chdir(options.prefix);
   console.error('Starting tidewave MCP server using stdio');
   const transport = new StdioServerTransport(process.stdin, process.stdout);
   await serveMcp(transport);
@@ -62,7 +72,11 @@ const {
   source: { cli: sourceCli },
 } = tools;
 
-program.command('mcp').description('Starts a MCP server for tidewave (stdio)').action(handleMcp);
+program
+  .command('mcp')
+  .description('Starts a MCP server for tidewave (stdio)')
+  .option(docsCli.options.prefix!.flag, docsCli.options.prefix!.desc)
+  .action(handleMcp);
 
 program
   .command(docsCli.command)

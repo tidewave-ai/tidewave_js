@@ -40,18 +40,10 @@ const referenceDescription = `Module path in format 'module:symbol[#method|.meth
 
 export const docsInputSchema = z.object({
   reference: z.string().describe(referenceDescription),
-  prefix: z
-    .string()
-    .optional()
-    .describe('Path to a custom project path (which contains tsconfig.json/package.json)'),
 });
 
 const sourceInputSchema = z.object({
   reference: z.string().describe(referenceDescription),
-  prefix: z
-    .string()
-    .optional()
-    .describe('Path to a custom project path (which contains tsconfig.json/package.json)'),
 });
 
 export const tools: Tools = {
