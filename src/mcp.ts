@@ -1,0 +1,99 @@
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { tools } from './tools';
+import { name, version } from '../package.json';
+
+import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
+import type { DocsInputSchema, SourceInputSchema } from './tools';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import { isExtractError, isResolveError } from './core';
+import { TidewaveExtractor } from '.';
+
+const {
+  docs: { mcp: docsMcp },
+  source: { mcp: sourceMcp },
+} = tools;
+
+async function handleGetDocs({ reference, prefix }: DocsInputSchema): Promise<CallToolResult> {
+  const docs = await TidewaveExtractor.extractDocs(reference, { prefix: prefix });
+
+  if (isExtractError(docs)) {
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Documentation not found for ${reference}, got an error: ${JSON.stringify(docs)}`,
+        },
+      ],
+      isError: true,
+    };
+  }
+
+  if (!docs.documentation) {
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Documentation not avaialble for ${reference}, reference did not include it`,
+        },
+      ],
+      isError: true,
+    };
+  }
+
+  return {
+    content: [{ type: 'text', text: TidewaveExtractor.formatOutput(docs) }],
+    isError: false,
+  };
+}
+
+async function handleGetSourcePath({
+  reference,
+  prefix,
+}: SourceInputSchema): Promise<CallToolResult> {
+  const sourceResult = await TidewaveExtractor.getSourceLocation(reference, { prefix });
+
+  if (isResolveError(sourceResult)) {
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Failed to get source location for ${reference}: ${JSON.stringify(sourceResult)}`,
+        },
+      ],
+      isError: true,
+    };
+  }
+
+  // TODO maybe we could include `content`
+  // in the future for avoiding LLM roundtrip
+  const { path, format } = sourceResult;
+
+  return {
+    content: [{ type: 'text', text: `${path}(${format})` }],
+    isError: false,
+  };
+}
+
+export async function serveMcp(transport: Transport): Promise<void> {
+  const server = new McpServer({ name, version });
+
+  server.registerTool(
+    docsMcp.name,
+    {
+      description: docsMcp.description,
+      inputSchema: docsMcp.inputSchema.shape,
+    },
+    handleGetDocs,
+  );
+
+  server.registerTool(
+    sourceMcp.name,
+    {
+      description: sourceMcp.description,
+      inputSchema: sourceMcp.inputSchema.shape,
+    },
+    handleGetSourcePath,
+  );
+
+  await server.connect(transport);
+}

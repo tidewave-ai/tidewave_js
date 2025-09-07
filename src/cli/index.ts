@@ -8,6 +8,8 @@ import { TidewaveExtractor } from '../index';
 import { isExtractError, isResolveError } from '../core';
 
 import { name, version } from '../../package.json';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { serveMcp } from '../mcp';
 
 // CLI Interface
 program
@@ -37,7 +39,7 @@ async function handleGetSourcePath(
   moduleName: string,
   options: { prefix?: string },
 ): Promise<void> {
-  const sourceResult = await TidewaveExtractor.getSourcePath(moduleName, {
+  const sourceResult = await TidewaveExtractor.getSourceLocation(moduleName, {
     prefix: options.prefix,
   });
 
@@ -48,10 +50,19 @@ async function handleGetSourcePath(
 
   console.log(sourceResult.path);
 }
+
+async function handleMcp(): Promise<void> {
+  console.error('Starting tidewave MCP server using stdio');
+  const transport = new StdioServerTransport(process.stdin, process.stdout);
+  await serveMcp(transport);
+}
+
 const {
   docs: { cli: docsCli },
   source: { cli: sourceCli },
 } = tools;
+
+program.command('mcp').description('Starts a MCP server for tidewave (stdio)').action(handleMcp);
 
 program
   .command(docsCli.command)
