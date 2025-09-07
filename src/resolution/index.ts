@@ -8,7 +8,7 @@ import type {
   ExtractError,
   InternalResolveResult,
 } from '../core';
-import { createExtractError, resolveError, isResolveError } from '../core';
+import { createExtractError, resolveError, isResolveError, isExtractError } from '../core';
 import { loadTsConfig, resolveModule, resolveNodeBuiltin } from './module-resolver';
 import { findSymbolInJavaScriptFile, getSymbolInfo } from './symbol-finder';
 import { formatOutput } from './formatters';
@@ -173,9 +173,135 @@ export async function extractDocs(modulePath: string): Promise<ExtractResult> {
   return result;
 }
 
-// Get source path for a module
-export async function getSourceLocation(moduleName: string): Promise<ResolveResult> {
+// Get source path for a module or symbol
+export async function getSourceLocation(reference: string): Promise<ResolveResult> {
   const options: ExtractorOptions = { prefix: process.cwd() };
+
+  // Check if this is a module:symbol reference
+  if (reference.includes(':')) {
+    // Parse the reference to get module and symbol parts
+    const parseResult = parseModulePath(reference);
+    if ('error' in parseResult) {
+      return {
+        success: false,
+        error: {
+          code: 'MODULE_NOT_FOUND',
+          message: parseResult.error.message,
+        },
+      };
+    }
+
+    const { module, symbol, member, isStatic } = parseResult;
+    const config = loadTsConfig(options.prefix);
+
+    // Try to resolve as a regular module first
+    let resolvedModule: InternalResolveResult = resolveModule(module, config.options);
+    let isGlobalModule = false;
+
+    // If regular module resolution fails, try as a node builtin
+    if (isResolveError(resolvedModule)) {
+      const nodeBuiltinResolution = resolveNodeBuiltin(module, config.options);
+      if (!isResolveError(nodeBuiltinResolution)) {
+        resolvedModule = nodeBuiltinResolution;
+        isGlobalModule = true;
+      }
+    }
+
+    if (isResolveError(resolvedModule)) {
+      return {
+        success: false,
+        error: {
+          code: 'MODULE_NOT_FOUND',
+          message: `Module '${module}' not found`,
+        },
+      };
+    }
+
+    const { sourceFile, program } = resolvedModule;
+    const checker = program.getTypeChecker();
+    let targetSymbol: ts.Symbol | undefined;
+
+    if (isGlobalModule) {
+      // For node builtin modules, extract the actual symbol name
+      const actualSymbolName = module.startsWith('node:') ? module.slice(5) : module;
+
+      // For builtin modules, get the symbol from the global scope
+      const globalSymbols = checker.getSymbolsInScope(sourceFile, ts.SymbolFlags.Value);
+      targetSymbol = globalSymbols.find((s: ts.Symbol) => s.getName() === actualSymbolName);
+
+      if (!targetSymbol) {
+        // Try getting it from the AST node directly
+        const [identifierNode] = sourceFile.statements;
+        if (identifierNode && ts.isVariableStatement(identifierNode)) {
+          const [declaration] = identifierNode.declarationList.declarations;
+          if (declaration && ts.isVariableDeclaration(declaration) && declaration.initializer) {
+            targetSymbol = checker.getSymbolAtLocation(declaration.initializer);
+          }
+        }
+      }
+    } else {
+      // Regular module handling
+      const moduleSymbol = checker.getSymbolAtLocation(sourceFile);
+
+      if (moduleSymbol) {
+        const exports = checker.getExportsOfModule(moduleSymbol);
+        const exportSymbol = exports.find((exp: ts.Symbol) => exp.getName() === symbol);
+
+        if (exportSymbol) {
+          targetSymbol = exportSymbol;
+        } else {
+          return {
+            success: false,
+            error: {
+              code: 'MODULE_NOT_FOUND',
+              message: `Symbol '${symbol}' not found in module '${module}'`,
+            },
+          };
+        }
+      } else {
+        // JavaScript file - look for symbols in statements
+        targetSymbol = findSymbolInJavaScriptFile(sourceFile, checker, symbol);
+
+        if (!targetSymbol) {
+          return {
+            success: false,
+            error: {
+              code: 'MODULE_NOT_FOUND',
+              message: `Symbol '${symbol}' not found in JavaScript module '${module}'`,
+            },
+          };
+        }
+      }
+    }
+
+    if (!targetSymbol) {
+      return {
+        success: false,
+        error: {
+          code: 'MODULE_NOT_FOUND',
+          message: `Symbol '${symbol}' not found`,
+        },
+      };
+    }
+
+    // Get the symbol info to extract the location
+    const symbolInfo = getSymbolInfo(checker, targetSymbol, member, isStatic);
+    if (isExtractError(symbolInfo)) {
+      return {
+        success: false,
+        error: {
+          code: 'MODULE_NOT_FOUND',
+          message: symbolInfo.error.message,
+        },
+      };
+    }
+
+    // Return the location from the symbol info
+    return { path: symbolInfo.location, format: 'typescript' };
+  }
+
+  // Original module-only logic
+  const moduleName = reference;
 
   // For local files, check if the exact path exists first
   if (moduleName.startsWith('./') || moduleName.startsWith('../')) {
