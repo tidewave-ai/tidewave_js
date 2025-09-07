@@ -67,10 +67,8 @@ function parseModulePath(modulePath: string): ExtractionRequest | ExtractError {
 }
 
 // Extract documentation for a module:symbol path
-export async function extractDocs(
-  modulePath: string,
-  options: ExtractorOptions = {},
-): Promise<ExtractResult> {
+export async function extractDocs(modulePath: string): Promise<ExtractResult> {
+  const options: ExtractorOptions = { prefix: process.cwd() };
   const parseResult = parseModulePath(modulePath);
   if ('error' in parseResult) {
     return parseResult;
@@ -176,10 +174,9 @@ export async function extractDocs(
 }
 
 // Get source path for a module
-export async function getSourceLocation(
-  moduleName: string,
-  options: ExtractorOptions = {},
-): Promise<ResolveResult> {
+export async function getSourceLocation(moduleName: string): Promise<ResolveResult> {
+  const options: ExtractorOptions = { prefix: process.cwd() };
+
   // For local files, check if the exact path exists first
   if (moduleName.startsWith('./') || moduleName.startsWith('../')) {
     const absolutePath = path.resolve(moduleName);

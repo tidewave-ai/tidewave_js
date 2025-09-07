@@ -13,8 +13,8 @@ const {
   source: { mcp: sourceMcp },
 } = tools;
 
-async function handleGetDocs({ reference, prefix }: DocsInputSchema): Promise<CallToolResult> {
-  const docs = await TidewaveExtractor.extractDocs(reference, { prefix: prefix });
+async function handleGetDocs({ reference }: DocsInputSchema): Promise<CallToolResult> {
+  const docs = await TidewaveExtractor.extractDocs(reference);
 
   if (isExtractError(docs)) {
     return {
@@ -46,11 +46,8 @@ async function handleGetDocs({ reference, prefix }: DocsInputSchema): Promise<Ca
   };
 }
 
-async function handleGetSourcePath({
-  reference,
-  prefix,
-}: SourceInputSchema): Promise<CallToolResult> {
-  const sourceResult = await TidewaveExtractor.getSourceLocation(reference, { prefix });
+async function handleGetSourcePath({ reference }: SourceInputSchema): Promise<CallToolResult> {
+  const sourceResult = await TidewaveExtractor.getSourceLocation(reference);
 
   if (isResolveError(sourceResult)) {
     return {
