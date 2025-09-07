@@ -43,7 +43,6 @@ export interface SymbolInfo {
 
 export interface ExtractorOptions {
   readonly prefix?: string;
-  readonly runtime?: Runtime;
 }
 
 export interface ResolveError {

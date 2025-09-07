@@ -159,16 +159,10 @@ describe('TypeScript Extraction', () => {
     });
 
     it('should handle TypeScript configuration options', async () => {
-      const result = await extractSymbol(
-        {
-          module: 'typescript',
-          symbol: 'createProgram',
-        },
-        {
-          runtime: 'node',
-          prefix: '.',
-        },
-      );
+      const result = await extractSymbol({
+        module: 'typescript',
+        symbol: 'createProgram',
+      });
 
       expect(result).toBeDefined();
     });
