@@ -20,7 +20,7 @@ Simply configure your editor to run `tidewave` in the same directory as your
 
 ```bash
 npx tidewave mcp
-# or
+# or with Bun
 bunx tidewave mcp
 # or with Deno
 deno run npm:tidewave mcp
