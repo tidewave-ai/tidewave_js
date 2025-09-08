@@ -12,7 +12,7 @@ will come in future releases.
 ### Standalone MCP
 
 Tidewave's MCP server gives your editor and coding agents access to the
-documentation, type annotations, and source location of the packages being
+documentation, type annotations, and source file locations of the packages being
 currently used by your project, without relying on external systems.
 
 Simply configure your editor to run `tidewave` in the same directory as your
@@ -39,8 +39,8 @@ npx/bunx/deno:
 # Extract documentation for a symbol
 npx tidewave docs <module-path>
 
-# Get source file path for a module
-npx tidewave source <module>
+# Get source file location for a module
+npx tidewave source <module-path>
 ```
 
 Here are some examples:
@@ -54,9 +54,9 @@ npx tidewave docs ./components:Button#onClick
 npx tidewave docs typescript:createProgram
 npx tidewave docs react:Component#render
 
-# Get source file paths
-npx tidewave source ./src/utils
-npx tidewave source typescript
+# Get source file locations
+npx tidewave source ./src/utils:formatDate
+npx tidewave source typescript:createProgram
 ```
 
 ### Runtime Support

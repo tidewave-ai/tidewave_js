@@ -25,7 +25,8 @@
   "files": [
     "dist/",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "dist": "bun build --outdir dist --root src --external commander --external chalk --external typescript src/**/*.ts",
