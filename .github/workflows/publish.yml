@@ -24,9 +24,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run tests
-        run: npm test
-
       - name: Check code formatting
         run: npm run format:check
 
@@ -38,6 +35,9 @@ jobs:
 
       - name: Build project
         run: npm run build
+
+      - name: Run tests
+        run: npx vitest run -c vitest.config.js
 
       - name: Publish to npm
         env:

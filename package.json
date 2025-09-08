@@ -12,7 +12,7 @@
   "homepage": "https://tidewave.ai",
   "repository": {
     "type": "git",
-    "url": "https://github.com/dashbit/tidewave_javascript.git"
+    "url": "git+https://github.com/dashbit/tidewave_javascript.git"
   },
   "license": "Apache-2.0",
   "author": "Dashbit",
