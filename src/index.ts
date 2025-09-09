@@ -4,7 +4,7 @@ export * from './core';
 
 import { extractDocs, getSourceLocation, formatOutput } from './resolution';
 
-export const TidewaveExtractor = {
+export const Tidewave = {
   extractDocs,
   getSourceLocation,
   formatOutput,

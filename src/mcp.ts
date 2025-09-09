@@ -6,7 +6,7 @@ import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import type { DocsInputSchema, SourceInputSchema } from './tools';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { isExtractError, isResolveError } from './core';
-import { TidewaveExtractor } from '.';
+import { Tidewave } from '.';
 
 const {
   docs: { mcp: docsMcp },
@@ -14,7 +14,7 @@ const {
 } = tools;
 
 async function handleGetDocs({ reference }: DocsInputSchema): Promise<CallToolResult> {
-  const docs = await TidewaveExtractor.extractDocs(reference);
+  const docs = await Tidewave.extractDocs(reference);
 
   if (isExtractError(docs)) {
     return {
@@ -41,13 +41,13 @@ async function handleGetDocs({ reference }: DocsInputSchema): Promise<CallToolRe
   }
 
   return {
-    content: [{ type: 'text', text: TidewaveExtractor.formatOutput(docs) }],
+    content: [{ type: 'text', text: Tidewave.formatOutput(docs) }],
     isError: false,
   };
 }
 
 async function handleGetSourcePath({ reference }: SourceInputSchema): Promise<CallToolResult> {
-  const sourceResult = await TidewaveExtractor.getSourceLocation(reference);
+  const sourceResult = await Tidewave.getSourceLocation(reference);
 
   if (isResolveError(sourceResult)) {
     return {
