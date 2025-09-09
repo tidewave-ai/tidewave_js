@@ -3,7 +3,7 @@ import { tools } from './tools';
 import { name, version } from '../package.json';
 
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
-import type { DocsInputSchema, SourceInputSchema } from './tools';
+import type { DocsInputSchema, ProjectEvalInputSchema, SourceInputSchema } from './tools';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { isExtractError, isResolveError } from './core';
 import { Tidewave } from '.';
@@ -11,7 +11,35 @@ import { Tidewave } from '.';
 const {
   docs: { mcp: docsMcp },
   source: { mcp: sourceMcp },
+  eval: { mcp: evalMcp },
 } = tools;
+
+async function handleProjectEvaluation({
+  code,
+  timeout,
+  args,
+}: ProjectEvalInputSchema): Promise<CallToolResult> {
+  const result = await Tidewave.executeIsolated({ code, timeout, args });
+
+  if (!result.success) {
+    return {
+      content: [
+        {
+          type: 'text',
+          // TODO: correctly format the exit
+          text: `Failed to evaluate code. Process exited with reason: ${JSON.stringify(result)}`,
+        },
+      ],
+      isError: true,
+    };
+  }
+
+  return {
+    // TODO: correctly format success output
+    content: [{ type: 'text', text: JSON.stringify(result) }],
+    isError: false,
+  };
+}
 
 async function handleGetDocs({ reference }: DocsInputSchema): Promise<CallToolResult> {
   const docs = await Tidewave.extractDocs(reference);
@@ -90,6 +118,12 @@ export async function serveMcp(transport: Transport): Promise<void> {
       inputSchema: sourceMcp.inputSchema.shape,
     },
     handleGetSourcePath,
+  );
+
+  server.registerTool(
+    evalMcp.name,
+    { description: evalMcp.description, inputSchema: evalMcp.inputSchema.shape },
+    handleProjectEvaluation,
   );
 
   await server.connect(transport);

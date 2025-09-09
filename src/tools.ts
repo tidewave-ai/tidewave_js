@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export type DocsInputSchema = z.infer<typeof docsInputSchema>;
 export type SourceInputSchema = z.infer<typeof sourceInputSchema>;
+export type ProjectEvalInputSchema = z.infer<typeof projectEvalInputSchema>;
 
 export interface Tool<InputSchema> {
   mcp: {
@@ -21,7 +22,40 @@ export interface Tool<InputSchema> {
 export interface Tools {
   docs: Tool<typeof docsInputSchema>;
   source: Tool<typeof sourceInputSchema>;
+  eval: Omit<Tool<typeof projectEvalInputSchema>, 'cli'>;
 }
+
+const projectEvalDescription = `  
+        Evaluates JavaScript/TypeScript code in the context of the project.
+
+        The current NodeJS version is: ${process.version}
+
+        Use this tool every time you need to evaluate Elixir code,
+        including to test the behaviour of a function or to debug
+        something. The tool also returns anything written to standard
+        output. DO NOT use shell tools to evaluate Elixir code.
+
+        It also includes IEx helpers in the evaluation context.
+        For example, to get all functions in a module, call.
+`;
+
+export const projectEvalInputSchema = z.object({
+  code: z.string().describe('The JavaScript/TypeScript code to evaluate.'),
+  args: z
+    .array(z.string())
+    .optional()
+    .default([])
+    .describe(
+      'The arguments to pass to evaluation. They are available inside the evaluated code as `arguments`.',
+    ),
+  timeout: z
+    .number()
+    .optional()
+    .default(30_000)
+    .describe(
+      'Optional. A timeout in milliseconds after which the execution stops if it did not finish yet.\nDefaults to 30000 (30 seconds).',
+    ),
+});
 
 const referenceDescription = `Module path in format 'module:symbol[#method|.method]'. Supports local files, dependencies, and Node.js builtins.
 
@@ -89,6 +123,13 @@ export const tools: Tools = {
           desc: 'Path to a custom project path (which contains tsconfig.json/package.json)',
         },
       },
+    },
+  },
+  eval: {
+    mcp: {
+      inputSchema: projectEvalInputSchema,
+      description: projectEvalDescription,
+      name: 'project_eval',
     },
   },
 } as const;

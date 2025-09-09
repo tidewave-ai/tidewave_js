@@ -68,6 +68,19 @@ export interface ExtractError {
   };
 }
 
+export interface EvaluationRequest {
+  code: string;
+  args: string[];
+  timeout: number;
+}
+
+export interface EvaluatedModuleResult {
+  success: boolean;
+  result: string;
+  stdout: string;
+  stderr: string;
+}
+
 export type ResolveResult = ResolvedModule | ResolveError;
 export type ExtractResult = SymbolInfo | ExtractError;
 export type InternalResolveResult = InternalResolvedModule | ResolveError;
