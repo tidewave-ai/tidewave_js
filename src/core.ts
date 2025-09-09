@@ -68,9 +68,13 @@ export interface ExtractError {
   };
 }
 
+export type EvalArguments = {
+  [key: string]: unknown;
+};
+
 export interface EvaluationRequest {
   code: string;
-  args: string[];
+  args: EvalArguments;
   timeout: number;
 }
 

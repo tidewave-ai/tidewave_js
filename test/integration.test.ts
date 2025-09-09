@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Tidewave } from '../src/index';
-import { isExtractError, isResolveError } from '../src/core';
+import { isExtractError, isResolveError, type EvaluationRequest } from '../src/core';
 
 describe('Integration Tests', () => {
   describe('JavaScript Files', () => {
@@ -224,5 +224,89 @@ describe('Integration Tests', () => {
         expect(formatted).toContain('processItems');
       }
     });
+  });
+});
+
+describe('Project scoped evaluation', () => {
+  it('should fork the process correcly and finish execution', async () => {
+    const request: EvaluationRequest = {
+      args: {},
+      timeout: 1_000,
+      code: "console.log('hello, world!');",
+    };
+
+    const result = await Tidewave.executeIsolated(request);
+    expect(result.success).toBe(true);
+    expect(result.stderr).toBeFalsy();
+    expect(result.result).toBe('Process exited with code 0');
+    expect(result.stdout).toBe('hello, world!');
+  });
+
+  it('should fork the process and return a custom result', async () => {
+    const request: EvaluationRequest = {
+      args: {},
+      timeout: 1_000,
+      code: `
+        console.log('hello, world!');
+        return 42;
+      `,
+    };
+
+    const result = await Tidewave.executeIsolated(request);
+    expect(result.success).toBe(true);
+    expect(result.stderr).toBeFalsy();
+    expect(result.stdout).toBe('hello, world!');
+    expect(result.result).toBe(42);
+  });
+
+  it('should fork the process and respect the timeout', async () => {
+    const request: EvaluationRequest = {
+      args: {},
+      timeout: 1,
+      code: "console.log('hello, world!');",
+    };
+
+    const result = await Tidewave.executeIsolated(request);
+    expect(result.success).toBe(false);
+    expect(result.stderr).toBeFalsy();
+    expect(result.stdout).toBeFalsy();
+    expect(result.result).toBe('Evaluation timed out after 1 milliseconds');
+  });
+
+  it('should fork the process and finish the program with args', async () => {
+    const request: EvaluationRequest = {
+      args: { code: 42 },
+      timeout: 10_000,
+      code: `
+      console.log(\`Code is: $\{code}\`);
+      return (code + 1);
+      `,
+    };
+
+    const result = await Tidewave.executeIsolated(request);
+    expect(result.success).toBe(true);
+    expect(result.stderr).toBeFalsy();
+    expect(result.stdout).toBe('Code is: 42');
+    expect(result.result).toBe(43);
+  });
+
+  it('should fork the process and finish the program with imports', async () => {
+    const request: EvaluationRequest = {
+      args: {},
+      timeout: 10_000,
+      code: `
+      const path = import('node:path').then((path) => {
+        return path.resolve(process.cwd());
+      });
+
+      return path;
+      `,
+    };
+
+    const result = await Tidewave.executeIsolated(request);
+    expect(result.success).toBe(true);
+    expect(result.stderr).toBeFalsy();
+    expect(result.stdout).toBeFalsy();
+    expect(result.result).toContain('tidewave_javascript');
   });
 });

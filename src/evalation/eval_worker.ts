@@ -8,9 +8,8 @@ process.on('message', async ({ code, args }: EvaluationRequest) => {
 
   try {
     const context = {
-      args,
+      ...args,
       console,
-      // safe globals
       setTimeout,
       clearTimeout,
       setInterval,
@@ -19,6 +18,8 @@ process.on('message', async ({ code, args }: EvaluationRequest) => {
       JSON,
       Math,
       Date,
+      // is it safe?
+      process,
     };
 
     const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor;

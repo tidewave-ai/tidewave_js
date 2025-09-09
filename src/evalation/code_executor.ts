@@ -1,4 +1,4 @@
-import { spawn } from 'child_process';
+import { fork } from 'child_process';
 import { join } from 'path';
 import type { EvaluatedModuleResult, EvaluationRequest } from '../core';
 
@@ -6,10 +6,7 @@ export async function executeIsolated(request: EvaluationRequest): Promise<Evalu
   return new Promise(resolve => {
     const workerPath = join(__dirname, 'eval_worker.ts');
 
-    const child = spawn('node', [workerPath], {
-      stdio: 'pipe',
-      env: { ...process.env, NODE_ENV: 'sandbox' },
-    });
+    const child = fork(workerPath, { silent: true });
 
     const evaluation: EvaluatedModuleResult = {
       success: false,
