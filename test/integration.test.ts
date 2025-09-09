@@ -307,6 +307,6 @@ describe('Project scoped evaluation', () => {
     expect(result.success).toBe(true);
     expect(result.stderr).toBeFalsy();
     expect(result.stdout).toBeFalsy();
-    expect(result.result).toContain('tidewave_javascript');
+    expect(result.result).toContain(process.cwd());
   });
 });
