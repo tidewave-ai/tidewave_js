@@ -18,25 +18,41 @@ async function handleProjectEvaluation({
   code,
   timeout,
   arguments: args,
+  json,
 }: ProjectEvalInputSchema): Promise<CallToolResult> {
   const result = await Tidewave.executeIsolated({ code, timeout, args });
 
   if (!result.success) {
+    if (json)
+      return {
+        content: [{ type: 'text', text: JSON.stringify(result) }],
+        isError: true,
+      };
+
     return {
       content: [
         {
           type: 'text',
-          // TODO: correctly format the exit
-          text: `Failed to evaluate code. Process exited with reason: ${JSON.stringify(result)}`,
+          text: `Failed to evaluate code. Process exited with reason: ${result.stderr}\n\n${result.result}`,
         },
       ],
       isError: true,
     };
   }
 
+  if (json)
+    return {
+      content: [{ type: 'text', text: JSON.stringify(result) }],
+      isError: false,
+    };
+
   return {
-    // TODO: correctly format success output
-    content: [{ type: 'text', text: JSON.stringify(result) }],
+    content: [
+      {
+        type: 'text',
+        text: `IO:\n\n${result.stdout}\n+${result.stderr}\n\nResult:${result.result}`,
+      },
+    ],
     isError: false,
   };
 }

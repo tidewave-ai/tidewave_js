@@ -30,13 +30,13 @@ const projectEvalDescription = `
 
         The current NodeJS version is: ${process.version}
 
-        Use this tool every time you need to evaluate Elixir code,
+        Use this tool every time you need to evaluate JavaScript/TypeScript code,
         including to test the behaviour of a function or to debug
         something. The tool also returns anything written to standard
-        output. DO NOT use shell tools to evaluate Elixir code.
+        output. DO NOT use shell tools to evaluate JavaScript/TypeScript code.
 
-        It also includes IEx helpers in the evaluation context.
-        For example, to get all functions in a module, call.
+        Imports are allowed only as the form of dynamic imports, e.g.:
+        import('node:path').then(path => {...});
 `;
 
 export const projectEvalInputSchema = z.object({
@@ -55,6 +55,11 @@ export const projectEvalInputSchema = z.object({
     .describe(
       'Optional. A timeout in milliseconds after which the execution stops if it did not finish yet.\nDefaults to 30000 (30 seconds).',
     ),
+  json: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe('Whether to return the result as JSON or not (string)'),
 });
 
 const referenceDescription = `Module path in format 'module:symbol[#method|.method]'. Supports local files, dependencies, and Node.js builtins.
