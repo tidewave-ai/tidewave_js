@@ -3,7 +3,7 @@ export { extractSymbol, extractDocs, getSourceLocation, formatOutput } from './r
 export * from './core';
 
 import { extractDocs, getSourceLocation, formatOutput } from './resolution';
-import { executeIsolated } from './evalation/code_executor';
+import { executeIsolated } from './evaluation/code_executor';
 
 export const Tidewave = {
   extractDocs,
