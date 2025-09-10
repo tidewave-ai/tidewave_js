@@ -26,17 +26,17 @@ export interface Tools {
 }
 
 const projectEvalDescription = `  
-        Evaluates JavaScript/TypeScript code in the context of the project.
+Evaluates JavaScript/TypeScript code in the context of the project.
 
-        The current NodeJS version is: ${process.version}
+The current NodeJS version is: ${process.version}
 
-        Use this tool every time you need to evaluate JavaScript/TypeScript code,
-        including to test the behaviour of a function or to debug
-        something. The tool also returns anything written to standard
-        output. DO NOT use shell tools to evaluate JavaScript/TypeScript code.
+Use this tool every time you need to evaluate JavaScript/TypeScript code,
+including to test the behaviour of a function or to debug
+something. The tool also returns anything written to standard
+output. DO NOT use shell tools to evaluate JavaScript/TypeScript code.
 
-        Imports are allowed only as the form of dynamic imports, e.g.:
-        import('node:path').then(path => {...});
+Imports are allowed only as the form of dynamic imports, e.g.:
+import('node:path').then(path => {...});
 `;
 
 export const projectEvalInputSchema = z.object({
@@ -64,18 +64,18 @@ export const projectEvalInputSchema = z.object({
 
 const referenceDescription = `Module path in format 'module:symbol[#method|.method]'. Supports local files, dependencies, and Node.js builtins.
 
-        Module reference format:
-        - module:symbol         - Extract a top-level symbol
-        - module:Class#method   - Extract an instance method
-        - module:Class.method   - Extract a static method
-        - node:Class#method     - Extract a global/builtin instance method
-        - node:Class.method     - Extract a global/builtin static method
+Module reference format:
+- module:symbol         - Extract a top-level symbol
+- module:Class#method   - Extract an instance method
+- module:Class.method   - Extract a static method
+- node:Class#method     - Extract a global/builtin instance method
+- node:Class.method     - Extract a global/builtin static method
 
-        Examples:
-        - src/types.ts:SymbolInfo (local file symbol)
-        - lodash:isEmpty (dependency function)  
-        - react:Component#render (instance method)
-        - node:Math.max (builtin static method)`;
+Examples:
+- src/types.ts:SymbolInfo (local file symbol)
+- lodash:isEmpty (dependency function)  
+- react:Component#render (instance method)
+- node:Math.max (builtin static method)`;
 
 export const docsInputSchema = z.object({
   reference: z.string().describe(referenceDescription),
