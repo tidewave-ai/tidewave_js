@@ -35,8 +35,8 @@ including to test the behaviour of a function or to debug
 something. The tool also returns anything written to standard
 output. DO NOT use shell tools to evaluate JavaScript/TypeScript code.
 
-Imports are allowed only as the form of dynamic imports, e.g.:
-import('node:path').then(path => {...});
+Imports are allowed only as the form of dynamic imports with async/await, e.g.:
+const path = await import('node:path');
 `;
 
 export const projectEvalInputSchema = z.object({

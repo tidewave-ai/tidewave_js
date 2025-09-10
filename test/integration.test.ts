@@ -296,9 +296,8 @@ describe('Project scoped evaluation', () => {
       args: [],
       timeout: 10_000,
       code: `
-      const path = import('node:path').then((path) => {
-        return path.resolve(process.cwd());
-      });
+      const {resolve} = await import('node:path');
+      const path = resolve(process.cwd());
 
       console.log(JSON.stringify({a: 1}));
       console.log(\`Global length: \${Object.keys(global).length > 0}\`);
