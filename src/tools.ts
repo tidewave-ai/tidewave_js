@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export type DocsInputSchema = z.infer<typeof docsInputSchema>;
 export type SourceInputSchema = z.infer<typeof sourceInputSchema>;
+export type ProjectEvalInputSchema = z.infer<typeof projectEvalInputSchema>;
 
 export interface Tool<InputSchema> {
   mcp: {
@@ -21,22 +22,60 @@ export interface Tool<InputSchema> {
 export interface Tools {
   docs: Tool<typeof docsInputSchema>;
   source: Tool<typeof sourceInputSchema>;
+  eval: Omit<Tool<typeof projectEvalInputSchema>, 'cli'>;
 }
+
+const projectEvalDescription = `  
+Evaluates JavaScript/TypeScript code in the context of the project.
+
+The current NodeJS version is: ${process.version}
+
+Use this tool every time you need to evaluate JavaScript/TypeScript code,
+including to test the behaviour of a function or to debug
+something. The tool also returns anything written to standard
+output. DO NOT use shell tools to evaluate JavaScript/TypeScript code.
+
+Imports are allowed only as the form of dynamic imports with async/await, e.g.:
+const path = await import('node:path');
+`;
+
+export const projectEvalInputSchema = z.object({
+  code: z.string().describe('The JavaScript/TypeScript code to evaluate.'),
+  arguments: z
+    .array(z.any())
+    .optional()
+    .default([])
+    .describe(
+      'The arguments to pass to evaluation. They are available inside the evaluated code as `arguments`.',
+    ),
+  timeout: z
+    .number()
+    .optional()
+    .default(30_000)
+    .describe(
+      'Optional. A timeout in milliseconds after which the execution stops if it did not finish yet.\nDefaults to 30000 (30 seconds).',
+    ),
+  json: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe('Whether to return the result as JSON or not (string)'),
+});
 
 const referenceDescription = `Module path in format 'module:symbol[#method|.method]'. Supports local files, dependencies, and Node.js builtins.
 
-        Module reference format:
-        - module:symbol         - Extract a top-level symbol
-        - module:Class#method   - Extract an instance method
-        - module:Class.method   - Extract a static method
-        - node:Class#method     - Extract a global/builtin instance method
-        - node:Class.method     - Extract a global/builtin static method
+Module reference format:
+- module:symbol         - Extract a top-level symbol
+- module:Class#method   - Extract an instance method
+- module:Class.method   - Extract a static method
+- node:Class#method     - Extract a global/builtin instance method
+- node:Class.method     - Extract a global/builtin static method
 
-        Examples:
-        - src/types.ts:SymbolInfo (local file symbol)
-        - lodash:isEmpty (dependency function)  
-        - react:Component#render (instance method)
-        - node:Math.max (builtin static method)`;
+Examples:
+- src/types.ts:SymbolInfo (local file symbol)
+- lodash:isEmpty (dependency function)  
+- react:Component#render (instance method)
+- node:Math.max (builtin static method)`;
 
 export const docsInputSchema = z.object({
   reference: z.string().describe(referenceDescription),
@@ -89,6 +128,13 @@ export const tools: Tools = {
           desc: 'Path to a custom project path (which contains tsconfig.json/package.json)',
         },
       },
+    },
+  },
+  eval: {
+    mcp: {
+      inputSchema: projectEvalInputSchema,
+      description: projectEvalDescription,
+      name: 'project_eval',
     },
   },
 } as const;

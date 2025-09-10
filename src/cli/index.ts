@@ -4,7 +4,7 @@
 import { program } from 'commander';
 import chalk from 'chalk';
 import { tools } from '../tools';
-import { TidewaveExtractor } from '../index';
+import { Tidewave } from '../index';
 import { isExtractError, isResolveError } from '../core';
 
 import { name, version } from '../../package.json';
@@ -30,7 +30,7 @@ async function handleGetDocs(
   options: { prefix?: string; json?: boolean },
 ): Promise<void> {
   if (options.prefix) chdir(options.prefix);
-  const docsResult = await TidewaveExtractor.extractDocs(modulePath);
+  const docsResult = await Tidewave.extractDocs(modulePath);
 
   if (isExtractError(docsResult)) {
     console.error(chalk.red(`Error: ${docsResult.error.message}`));
@@ -40,7 +40,7 @@ async function handleGetDocs(
   if (options.json) {
     console.log(JSON.stringify(docsResult, null, 2));
   } else {
-    console.log(TidewaveExtractor.formatOutput(docsResult));
+    console.log(Tidewave.formatOutput(docsResult));
   }
 }
 
@@ -50,7 +50,7 @@ async function handleGetSourcePath(
 ): Promise<void> {
   if (options.prefix) chdir(options.prefix);
 
-  const sourceResult = await TidewaveExtractor.getSourceLocation(moduleName);
+  const sourceResult = await Tidewave.getSourceLocation(moduleName);
 
   if (isResolveError(sourceResult)) {
     console.error(chalk.red(`Error: ${sourceResult.error.message}`));

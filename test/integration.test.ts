@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { TidewaveExtractor } from '../src/index';
-import { isExtractError, isResolveError } from '../src/core';
+import { Tidewave } from '../src/index';
+import { isExtractError, isResolveError, type EvaluationRequest } from '../src/core';
 
 describe('Integration Tests', () => {
   describe('JavaScript Files', () => {
     it('should extract function from CommonJS export', async () => {
-      const result = await TidewaveExtractor.extractDocs('./test/fixtures/sample.js:greetUser');
+      const result = await Tidewave.extractDocs('./test/fixtures/sample.js:greetUser');
 
       expect(isExtractError(result)).toBe(false);
       if (!isExtractError(result)) {
@@ -19,7 +19,7 @@ describe('Integration Tests', () => {
     });
 
     it('should extract class from CommonJS export', async () => {
-      const result = await TidewaveExtractor.extractDocs('./test/fixtures/sample.js:TestClass');
+      const result = await Tidewave.extractDocs('./test/fixtures/sample.js:TestClass');
 
       expect(isExtractError(result)).toBe(false);
       if (!isExtractError(result)) {
@@ -31,9 +31,7 @@ describe('Integration Tests', () => {
     });
 
     it('should extract instance method from JavaScript class', async () => {
-      const result = await TidewaveExtractor.extractDocs(
-        './test/fixtures/sample.js:TestClass#getValue',
-      );
+      const result = await Tidewave.extractDocs('./test/fixtures/sample.js:TestClass#getValue');
 
       expect(isExtractError(result)).toBe(false);
       if (!isExtractError(result)) {
@@ -45,9 +43,7 @@ describe('Integration Tests', () => {
     });
 
     it('should extract static method from JavaScript class', async () => {
-      const result = await TidewaveExtractor.extractDocs(
-        './test/fixtures/sample.js:TestClass.create',
-      );
+      const result = await Tidewave.extractDocs('./test/fixtures/sample.js:TestClass.create');
 
       expect(isExtractError(result)).toBe(false);
       if (!isExtractError(result)) {
@@ -61,7 +57,7 @@ describe('Integration Tests', () => {
 
   describe('TypeScript Files', () => {
     it('should extract interface from TypeScript export', async () => {
-      const result = await TidewaveExtractor.extractDocs('./test/fixtures/sample.ts:User');
+      const result = await Tidewave.extractDocs('./test/fixtures/sample.ts:User');
 
       expect(isExtractError(result)).toBe(false);
       if (!isExtractError(result)) {
@@ -73,7 +69,7 @@ describe('Integration Tests', () => {
     });
 
     it('should extract class from TypeScript export', async () => {
-      const result = await TidewaveExtractor.extractDocs('./test/fixtures/sample.ts:UserManager');
+      const result = await Tidewave.extractDocs('./test/fixtures/sample.ts:UserManager');
 
       expect(isExtractError(result)).toBe(false);
       if (!isExtractError(result)) {
@@ -84,9 +80,7 @@ describe('Integration Tests', () => {
     });
 
     it('should extract instance method from TypeScript class', async () => {
-      const result = await TidewaveExtractor.extractDocs(
-        './test/fixtures/sample.ts:UserManager#addUser',
-      );
+      const result = await Tidewave.extractDocs('./test/fixtures/sample.ts:UserManager#addUser');
 
       expect(isExtractError(result)).toBe(false);
       if (!isExtractError(result)) {
@@ -97,9 +91,7 @@ describe('Integration Tests', () => {
     });
 
     it('should extract static method from TypeScript class', async () => {
-      const result = await TidewaveExtractor.extractDocs(
-        './test/fixtures/sample.ts:UserManager.create',
-      );
+      const result = await Tidewave.extractDocs('./test/fixtures/sample.ts:UserManager.create');
 
       expect(isExtractError(result)).toBe(false);
       if (!isExtractError(result)) {
@@ -110,7 +102,7 @@ describe('Integration Tests', () => {
     });
 
     it('should extract generic function', async () => {
-      const result = await TidewaveExtractor.extractDocs('./test/fixtures/sample.ts:processItems');
+      const result = await Tidewave.extractDocs('./test/fixtures/sample.ts:processItems');
 
       expect(isExtractError(result)).toBe(false);
       if (!isExtractError(result)) {
@@ -124,7 +116,7 @@ describe('Integration Tests', () => {
 
   describe('Source Path Resolution', () => {
     it('should resolve JavaScript file path', async () => {
-      const sourcePath = await TidewaveExtractor.getSourceLocation('./test/fixtures/sample.js');
+      const sourcePath = await Tidewave.getSourceLocation('./test/fixtures/sample.js');
 
       expect(isResolveError(sourcePath)).toBe(false);
       if (!isResolveError(sourcePath)) {
@@ -133,7 +125,7 @@ describe('Integration Tests', () => {
     });
 
     it('should resolve TypeScript file path', async () => {
-      const sourcePath = await TidewaveExtractor.getSourceLocation('./test/fixtures/sample.ts');
+      const sourcePath = await Tidewave.getSourceLocation('./test/fixtures/sample.ts');
 
       expect(isResolveError(sourcePath)).toBe(false);
       if (!isResolveError(sourcePath)) {
@@ -142,7 +134,7 @@ describe('Integration Tests', () => {
     });
 
     it('should resolve node_modules dependency', async () => {
-      const sourcePath = await TidewaveExtractor.getSourceLocation('typescript');
+      const sourcePath = await Tidewave.getSourceLocation('typescript');
 
       expect(isResolveError(sourcePath)).toBe(false);
       if (!isResolveError(sourcePath)) {
@@ -153,7 +145,7 @@ describe('Integration Tests', () => {
 
   describe('Builtin Modules', () => {
     it('should extract Math global', async () => {
-      const result = await TidewaveExtractor.extractDocs('node:Math');
+      const result = await Tidewave.extractDocs('node:Math');
 
       expect(isExtractError(result)).toBe(false);
       if (!isExtractError(result)) {
@@ -164,7 +156,7 @@ describe('Integration Tests', () => {
     });
 
     it('should extract Math.max static method', async () => {
-      const result = await TidewaveExtractor.extractDocs('node:Math.max');
+      const result = await Tidewave.extractDocs('node:Math.max');
 
       expect(isExtractError(result)).toBe(false);
       if (!isExtractError(result)) {
@@ -178,27 +170,25 @@ describe('Integration Tests', () => {
 
   describe('Error Handling', () => {
     it('should handle invalid module path format', async () => {
-      const result = await TidewaveExtractor.extractDocs('invalid-format');
+      const result = await Tidewave.extractDocs('invalid-format');
 
       expect(isExtractError(result)).toBe(true);
     });
 
     it('should handle non-existent module', async () => {
-      const result = await TidewaveExtractor.extractDocs('non-existent-module:symbol');
+      const result = await Tidewave.extractDocs('non-existent-module:symbol');
 
       expect(isExtractError(result)).toBe(true);
     });
 
     it('should handle non-existent symbol', async () => {
-      const result = await TidewaveExtractor.extractDocs(
-        './test/fixtures/sample.ts:NonExistentSymbol',
-      );
+      const result = await Tidewave.extractDocs('./test/fixtures/sample.ts:NonExistentSymbol');
 
       expect(isExtractError(result)).toBe(true);
     });
 
     it('should handle non-existent member', async () => {
-      const result = await TidewaveExtractor.extractDocs(
+      const result = await Tidewave.extractDocs(
         './test/fixtures/sample.ts:UserManager#nonExistentMethod',
       );
 
@@ -208,11 +198,11 @@ describe('Integration Tests', () => {
 
   describe('Output Formatting', () => {
     it('should format symbol info correctly', async () => {
-      const result = await TidewaveExtractor.extractDocs('./test/fixtures/sample.ts:User');
+      const result = await Tidewave.extractDocs('./test/fixtures/sample.ts:User');
 
       expect(isExtractError(result)).toBe(false);
       if (!isExtractError(result)) {
-        const formatted = TidewaveExtractor.formatOutput(result);
+        const formatted = Tidewave.formatOutput(result);
 
         expect(formatted).toContain('User');
         expect(formatted).toContain('Kind: interface');
@@ -223,16 +213,104 @@ describe('Integration Tests', () => {
     });
 
     it('should format function with signature', async () => {
-      const result = await TidewaveExtractor.extractDocs('./test/fixtures/sample.ts:processItems');
+      const result = await Tidewave.extractDocs('./test/fixtures/sample.ts:processItems');
 
       expect(isExtractError(result)).toBe(false);
       if (!isExtractError(result)) {
-        const formatted = TidewaveExtractor.formatOutput(result);
+        const formatted = Tidewave.formatOutput(result);
 
         expect(formatted).toContain('processItems');
         expect(formatted).toContain('Signature:');
         expect(formatted).toContain('processItems');
       }
     });
+  });
+});
+
+describe('Project scoped evaluation', () => {
+  it('should fork the process correcly and finish execution', async () => {
+    const request: EvaluationRequest = {
+      args: [],
+      timeout: 1_000,
+      code: "console.log('hello, world!');",
+    };
+
+    const result = await Tidewave.executeIsolated(request);
+    expect(result.success).toBe(true);
+    expect(result.stderr).toBeFalsy();
+    expect(result.result).toBe(null);
+    expect(result.stdout).toBe('hello, world!');
+  });
+
+  it('should fork the process and return a custom result', async () => {
+    const request: EvaluationRequest = {
+      args: [],
+      timeout: 1_000,
+      code: `
+        console.log('hello, world!');
+        return 42;
+      `,
+    };
+
+    const result = await Tidewave.executeIsolated(request);
+    expect(result.success).toBe(true);
+    expect(result.stderr).toBeFalsy();
+    expect(result.stdout).toBe('hello, world!');
+    expect(result.result).toBe(42);
+  });
+
+  it('should fork the process and respect the timeout', async () => {
+    const request: EvaluationRequest = {
+      args: [],
+      timeout: 1,
+      code: "console.log('hello, world!');",
+    };
+
+    const result = await Tidewave.executeIsolated(request);
+    expect(result.success).toBe(false);
+    expect(result.stderr).toBeFalsy();
+    expect(result.stdout).toBeFalsy();
+    expect(result.result).toBe('Evaluation timed out after 1 milliseconds');
+  });
+
+  it('should fork the process and finish the program with args', async () => {
+    const request: EvaluationRequest = {
+      args: [42],
+      timeout: 10_000,
+      code: `
+      const digit = arguments[0]
+      console.log(\`Code is: $\{digit}\`);
+      return (new Number(digit) + 1);
+      `,
+    };
+
+    const result = await Tidewave.executeIsolated(request);
+    expect(result.success).toBe(true);
+    expect(result.stderr).toBeFalsy();
+    expect(result.stdout).toBe('Code is: 42');
+    expect(result.result).toBe(43);
+  });
+
+  it('should fork the process and finish the program with imports', async () => {
+    const request: EvaluationRequest = {
+      args: [],
+      timeout: 10_000,
+      code: `
+      const {resolve} = await import('node:path');
+      const path = resolve(process.cwd());
+
+      console.log(JSON.stringify({a: 1}));
+      console.log(\`Global length: \${Object.keys(global).length > 0}\`);
+
+      return path;
+      `,
+    };
+
+    const result = await Tidewave.executeIsolated(request);
+    expect(result.success).toBe(true);
+    expect(result.stderr).toBeFalsy();
+    expect(result.stdout).toContain('{"a":1}');
+    expect(result.stdout).toContain('Global length: true');
+    expect(result.result).toContain(process.cwd());
   });
 });
