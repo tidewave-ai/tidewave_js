@@ -41,12 +41,12 @@ const projectEvalDescription = `
 
 export const projectEvalInputSchema = z.object({
   code: z.string().describe('The JavaScript/TypeScript code to evaluate.'),
-  args: z
-    .record(z.string(), z.any())
+  arguments: z
+    .array(z.any())
     .optional()
-    .default({})
+    .default([])
     .describe(
-      'The arguments record/map to pass to evaluation. They can be accessed inside the evaluated code using the record <key> name.',
+      'The arguments to pass to evaluation. They are available inside the evaluated code as `arguments`.',
     ),
   timeout: z
     .number()

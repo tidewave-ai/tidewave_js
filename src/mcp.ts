@@ -17,7 +17,7 @@ const {
 async function handleProjectEvaluation({
   code,
   timeout,
-  args,
+  arguments: args,
 }: ProjectEvalInputSchema): Promise<CallToolResult> {
   const result = await Tidewave.executeIsolated({ code, timeout, args });
 

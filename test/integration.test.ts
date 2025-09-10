@@ -230,7 +230,7 @@ describe('Integration Tests', () => {
 describe('Project scoped evaluation', () => {
   it('should fork the process correcly and finish execution', async () => {
     const request: EvaluationRequest = {
-      args: {},
+      args: [],
       timeout: 1_000,
       code: "console.log('hello, world!');",
     };
@@ -244,7 +244,7 @@ describe('Project scoped evaluation', () => {
 
   it('should fork the process and return a custom result', async () => {
     const request: EvaluationRequest = {
-      args: {},
+      args: [],
       timeout: 1_000,
       code: `
         console.log('hello, world!');
@@ -261,7 +261,7 @@ describe('Project scoped evaluation', () => {
 
   it('should fork the process and respect the timeout', async () => {
     const request: EvaluationRequest = {
-      args: {},
+      args: [],
       timeout: 1,
       code: "console.log('hello, world!');",
     };
@@ -275,11 +275,12 @@ describe('Project scoped evaluation', () => {
 
   it('should fork the process and finish the program with args', async () => {
     const request: EvaluationRequest = {
-      args: { code: 42 },
+      args: [42],
       timeout: 10_000,
       code: `
-      console.log(\`Code is: $\{code}\`);
-      return (code + 1);
+      const digit = args[0]
+      console.log(\`Code is: $\{digit}\`);
+      return (digit + 1);
       `,
     };
 
@@ -292,7 +293,7 @@ describe('Project scoped evaluation', () => {
 
   it('should fork the process and finish the program with imports', async () => {
     const request: EvaluationRequest = {
-      args: {},
+      args: [],
       timeout: 10_000,
       code: `
       const path = import('node:path').then((path) => {

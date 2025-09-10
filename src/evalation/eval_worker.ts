@@ -8,7 +8,7 @@ process.on('message', async ({ code, args }: EvaluationRequest) => {
 
   try {
     const context = {
-      ...args,
+      args,
       console,
       setTimeout,
       clearTimeout,
