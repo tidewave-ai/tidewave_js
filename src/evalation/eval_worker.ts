@@ -7,38 +7,14 @@ process.on('message', async ({ code, args }: EvaluationRequest) => {
   }
 
   try {
-    const context = {
-      args,
-      console,
-      setTimeout,
-      clearTimeout,
-      setInterval,
-      clearInterval,
-      Buffer,
-      JSON,
-      Math,
-      Date,
-      // is it safe?
-      process,
-    };
-
     const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor;
-    const fn = new AsyncFunction(
-      ...Object.keys(context),
-      `
-        "use strict";
-        return (async () => {
-          ${code}
-        })();
-      `,
-    );
-
-    const result = await fn(...Object.values(context));
+    const fn = new AsyncFunction(code);
+    const result = await fn(...args);
 
     process.send({
       type: 'result',
       success: true,
-      data: result,
+      data: (result || null) && result,
     });
   } catch (error) {
     process.send({

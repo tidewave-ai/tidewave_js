@@ -10,7 +10,7 @@ export async function executeIsolated(request: EvaluationRequest): Promise<Evalu
 
     const evaluation: EvaluatedModuleResult = {
       success: false,
-      result: '',
+      result: null,
       stdout: '',
       stderr: '',
     };
@@ -34,7 +34,7 @@ export async function executeIsolated(request: EvaluationRequest): Promise<Evalu
     child.on('exit', code => {
       resolve({
         success: evaluation.success && code === 0,
-        result: evaluation.result || `Process exited with code ${code}`,
+        result: evaluation.result,
         stdout: evaluation.stdout.trim(),
         stderr: evaluation.stderr.trim(),
       } as EvaluatedModuleResult);

@@ -238,7 +238,7 @@ describe('Project scoped evaluation', () => {
     const result = await Tidewave.executeIsolated(request);
     expect(result.success).toBe(true);
     expect(result.stderr).toBeFalsy();
-    expect(result.result).toBe('Process exited with code 0');
+    expect(result.result).toBe(null);
     expect(result.stdout).toBe('hello, world!');
   });
 
@@ -278,9 +278,9 @@ describe('Project scoped evaluation', () => {
       args: [42],
       timeout: 10_000,
       code: `
-      const digit = args[0]
+      const digit = arguments[0]
       console.log(\`Code is: $\{digit}\`);
-      return (digit + 1);
+      return (new Number(digit) + 1);
       `,
     };
 
@@ -300,6 +300,9 @@ describe('Project scoped evaluation', () => {
         return path.resolve(process.cwd());
       });
 
+      console.log(JSON.stringify({a: 1}));
+      console.log(\`Global length: \${Object.keys(global).length > 0}\`);
+
       return path;
       `,
     };
@@ -307,7 +310,8 @@ describe('Project scoped evaluation', () => {
     const result = await Tidewave.executeIsolated(request);
     expect(result.success).toBe(true);
     expect(result.stderr).toBeFalsy();
-    expect(result.stdout).toBeFalsy();
+    expect(result.stdout).toContain('{"a":1}');
+    expect(result.stdout).toContain('Global length: true');
     expect(result.result).toContain(process.cwd());
   });
 });

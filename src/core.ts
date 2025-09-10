@@ -76,7 +76,7 @@ export interface EvaluationRequest {
 
 export interface EvaluatedModuleResult {
   success: boolean;
-  result: string;
+  result: string | null;
   stdout: string;
   stderr: string;
 }
