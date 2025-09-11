@@ -11,5 +11,12 @@ initialize-mcp:
 list-tools-mcp:
     @just curl-mcp '{"jsonrpc":"2.0","method":"tools/list","params":{},"id":2}'
 
+curl-shell command:
+    curl -X POST http://localhost:5173/tidewave/shell \
+        -H 'content-type: application/json' \
+        -H 'accept: text/event-stream,application/json' \
+        -d '{"command": "{{command}}"}' \
+        --output -
+
 default:
     @just --choose
