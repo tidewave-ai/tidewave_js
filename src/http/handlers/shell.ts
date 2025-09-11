@@ -122,7 +122,7 @@ export async function handleShell(req: Request, res: Response, next: NextFn): Pr
   }
 }
 
-function getShellCommand(command: string): { cmd: string; args: string[] } {
+export function getShellCommand(command: string): { cmd: string; args: string[] } {
   const isWindows = platform() === 'win32';
 
   if (isWindows) {

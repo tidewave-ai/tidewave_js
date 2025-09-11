@@ -15,11 +15,11 @@ export function checkRemoteIp(req: Request, res: Response, config: TidewaveConfi
   return false;
 }
 
-function isLocalIp(ip?: string): boolean {
+export function isLocalIp(ip?: string): boolean {
   if (!ip) return false;
 
-  // IPv4 localhost
-  if (ip.startsWith('127.0.0.') || ip === '127.0.0.1') return true;
+  // IPv4 localhost (only 127.0.0.x range)
+  if (ip.startsWith('127.0.0.')) return true;
 
   // IPv6 localhost
   if (ip === '::1') return true;
@@ -65,18 +65,19 @@ export function checkOrigin(
   return true;
 }
 
-function getDefaultAllowedOrigins(server: ViteDevServer): string[] {
+export function getDefaultAllowedOrigins(server: ViteDevServer): string[] {
   const { config } = server;
   const host = config.server.host || 'localhost';
   const port = config.server.port || 5173;
   return [`http://${host}:${port}`, `https://${host}:${port}`];
 }
 
-function parseUrl(url: string): { scheme?: string; host: string; port?: number } | null {
+export function parseUrl(url: string): { scheme?: string; host: string; port?: number } | null {
   try {
-    const parsed = new URL(url.startsWith('//') ? 'http:' + url : url);
+    const isProtocolRelative = url.startsWith('//');
+    const parsed = new URL(isProtocolRelative ? 'http:' + url : url);
     return {
-      scheme: parsed.protocol?.slice(0, -1),
+      scheme: isProtocolRelative ? undefined : parsed.protocol?.slice(0, -1),
       host: parsed.hostname,
       port: parsed.port ? parseInt(parsed.port) : undefined,
     };
@@ -85,7 +86,7 @@ function parseUrl(url: string): { scheme?: string; host: string; port?: number }
   }
 }
 
-function isOriginAllowed(
+export function isOriginAllowed(
   origin: ReturnType<typeof parseUrl>,
   allowed: ReturnType<typeof parseUrl>,
 ): boolean {
