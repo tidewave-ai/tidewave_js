@@ -30,6 +30,32 @@ Available MCP options:
 
 - `--prefix path` - Specify the directory to find the `package.json` file
 
+### HTTP MCP via Vite Plugin
+
+Tidewave also provides HTTP-based MCP access through a Vite plugin for
+development environments. Add the plugin to your `vite.config.js`:
+
+```javascript
+import { defineConfig } from 'vite';
+import tidewave from 'tidewave/vite-plugin';
+
+export default defineConfig({
+  plugins: [tidewave()],
+});
+```
+
+This exposes MCP endpoints at `/tidewave/mcp` and `/tidewave/shell` during
+development.
+
+Configuration options:
+
+```javascript
+tidewave({
+  allowRemoteAccess: false, // Allow access from remote IPs
+  allowedOrigins: ['*'], // Allowed CORS origins
+});
+```
+
 ### CLI Usage
 
 Tidewave also provides the MCP features over a CLI tool. Use it directly via
