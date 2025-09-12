@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { ViteDevServer } from 'vite';
 import {
   checkRemoteIp,
   checkOrigin,
@@ -9,7 +8,7 @@ import {
   getDefaultAllowedOrigins,
 } from '../../src/http/security';
 import type { Request, Response } from '../../src/http';
-import type { TidewaveConfig } from '../../src/vite-plugin';
+import type { TidewaveConfig } from '../../src/http';
 
 // Mock request/response helpers
 const createMockRequest = (remoteAddress = '127.0.0.1', origin?: string): Partial<Request> => ({
@@ -33,12 +32,6 @@ const createMockResponse = () => {
     mockSetHeader,
   };
 };
-
-const createMockServer = (host = 'localhost', port = 5173): Partial<ViteDevServer> => ({
-  config: {
-    server: { host, port },
-  } as any,
-});
 
 describe('HTTP Security', () => {
   beforeEach(() => {
@@ -195,19 +188,11 @@ describe('HTTP Security', () => {
 
   describe('getDefaultAllowedOrigins', () => {
     it('should generate default origins from Vite config', () => {
-      const server = createMockServer('localhost', 3000);
+      const config: TidewaveConfig = { host: 'localhost', port: 3000 };
 
-      const origins = getDefaultAllowedOrigins(server as ViteDevServer);
+      const origins = getDefaultAllowedOrigins(config);
 
       expect(origins).toEqual(['http://localhost:3000', 'https://localhost:3000']);
-    });
-
-    it('should use default values when config is missing', () => {
-      const server = createMockServer(undefined, undefined);
-
-      const origins = getDefaultAllowedOrigins(server as ViteDevServer);
-
-      expect(origins).toEqual(['http://localhost:5173', 'https://localhost:5173']);
     });
   });
 
@@ -215,10 +200,9 @@ describe('HTTP Security', () => {
     it('should allow requests without origin header', () => {
       const req = createMockRequest('127.0.0.1'); // no origin
       const { res } = createMockResponse();
-      const server = createMockServer();
-      const config: TidewaveConfig = {};
+      const config: TidewaveConfig = { port: 5173, host: 'localhost' };
 
-      const result = checkOrigin(req as Request, res as Response, server as ViteDevServer, config);
+      const result = checkOrigin(req as Request, res as Response, config);
 
       expect(result).toBe(true);
       expect(res.statusCode).toBe(200);
@@ -227,10 +211,9 @@ describe('HTTP Security', () => {
     it('should allow default Vite dev server origin', () => {
       const req = createMockRequest('127.0.0.1', 'http://localhost:5173');
       const { res } = createMockResponse();
-      const server = createMockServer('localhost', 5173);
-      const config: TidewaveConfig = {};
+      const config: TidewaveConfig = { host: 'localhost', port: 5173 };
 
-      const result = checkOrigin(req as Request, res as Response, server as ViteDevServer, config);
+      const result = checkOrigin(req as Request, res as Response, config);
 
       expect(result).toBe(true);
       expect(res.statusCode).toBe(200);
@@ -239,10 +222,13 @@ describe('HTTP Security', () => {
     it('should allow custom allowed origins', () => {
       const req = createMockRequest('127.0.0.1', 'https://custom.example.com');
       const { res } = createMockResponse();
-      const server = createMockServer();
-      const config: TidewaveConfig = { allowedOrigins: ['https://custom.example.com'] };
+      const config: TidewaveConfig = {
+        allowedOrigins: ['https://custom.example.com'],
+        host: 'localhost',
+        port: 5173,
+      };
 
-      const result = checkOrigin(req as Request, res as Response, server as ViteDevServer, config);
+      const result = checkOrigin(req as Request, res as Response, config);
 
       expect(result).toBe(true);
       expect(res.statusCode).toBe(200);
@@ -251,10 +237,9 @@ describe('HTTP Security', () => {
     it('should block unauthorized origins', () => {
       const req = createMockRequest('127.0.0.1', 'https://evil.com');
       const { res, mockEnd } = createMockResponse();
-      const server = createMockServer();
-      const config: TidewaveConfig = {};
+      const config: TidewaveConfig = { host: 'localhost', port: 5173 };
 
-      const result = checkOrigin(req as Request, res as Response, server as ViteDevServer, config);
+      const result = checkOrigin(req as Request, res as Response, config);
 
       expect(result).toBe(false);
       expect(res.statusCode).toBe(403);
@@ -264,10 +249,9 @@ describe('HTTP Security', () => {
     it('should handle invalid origin header', () => {
       const req = createMockRequest('127.0.0.1', 'not-a-url');
       const { res, mockEnd } = createMockResponse();
-      const server = createMockServer();
-      const config: TidewaveConfig = {};
+      const config: TidewaveConfig = { host: 'localhost', port: 5173 };
 
-      const result = checkOrigin(req as Request, res as Response, server as ViteDevServer, config);
+      const result = checkOrigin(req as Request, res as Response, config);
 
       expect(result).toBe(false);
       expect(res.statusCode).toBe(403);

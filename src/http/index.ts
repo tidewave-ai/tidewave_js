@@ -1,9 +1,18 @@
 import type { ServerResponse } from 'http';
-import type { Connect } from 'vite';
+import type { IncomingMessage, NextFunction } from 'connect';
 
-export type Request = Connect.IncomingMessage;
-export type Response = ServerResponse<Connect.IncomingMessage>;
-export type NextFn = Connect.NextFunction;
+export type Request = IncomingMessage;
+export type Response = ServerResponse<IncomingMessage>;
+export type NextFn = NextFunction;
+
+export const endpoint = '/tidewave' as const;
+
+export interface TidewaveConfig {
+  allowRemoteAccess?: boolean;
+  allowedOrigins?: string[];
+  port?: number;
+  host?: string;
+}
 
 export function methodNotAllowed(res: Response): void {
   res.statusCode = 405;

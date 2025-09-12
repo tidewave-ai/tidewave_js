@@ -1,6 +1,4 @@
-import type { Request, Response } from './index';
-import type { TidewaveConfig } from '../vite-plugin';
-import type { ViteDevServer } from 'vite';
+import type { Request, Response, TidewaveConfig } from './index';
 
 export function checkRemoteIp(req: Request, res: Response, config: TidewaveConfig): boolean {
   const { remoteAddress } = req.socket;
@@ -30,18 +28,13 @@ export function isLocalIp(ip?: string): boolean {
   return false;
 }
 
-export function checkOrigin(
-  req: Request,
-  res: Response,
-  server: ViteDevServer,
-  config: TidewaveConfig,
-): boolean {
+export function checkOrigin(req: Request, res: Response, config: TidewaveConfig): boolean {
   const { origin } = req.headers;
 
   // No origin header means non-browser request (e.g. Claude Code, Cursor)
   if (!origin) return true;
 
-  const allowedOrigins = config.allowedOrigins || getDefaultAllowedOrigins(server);
+  const allowedOrigins = config.allowedOrigins || getDefaultAllowedOrigins(config);
   const originUrl = parseUrl(origin);
 
   if (!originUrl) {
@@ -65,10 +58,9 @@ export function checkOrigin(
   return true;
 }
 
-export function getDefaultAllowedOrigins(server: ViteDevServer): string[] {
-  const { config } = server;
-  const host = config.server.host || 'localhost';
-  const port = config.server.port || 5173;
+export function getDefaultAllowedOrigins(config: TidewaveConfig): string[] {
+  const { host, port } = config;
+  if (!(host || port)) return [];
   return [`http://${host}:${port}`, `https://${host}:${port}`];
 }
 

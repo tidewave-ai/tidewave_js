@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ViteDevServer } from 'vite';
 import tidewave from '../src/vite-plugin';
-import type { TidewaveConfig } from '../src/vite-plugin';
+import type { TidewaveConfig } from '../src/http';
 
 // Mock Vite server
 interface MockViteDevServer extends Partial<ViteDevServer> {
