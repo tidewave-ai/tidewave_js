@@ -17,10 +17,8 @@ export async function handleMcp(req: Request, res: Response, next: NextFn): Prom
       enableJsonResponse: true,
     });
 
-    console.log(req.body);
-
     if (!(req.body || res.headersSent)) {
-      mcpErrorResponse(res, 'Request body could not be parsed');
+      mcpErrorResponse(res, 'Request body was not parsed');
       return;
     }
 

@@ -198,7 +198,7 @@ describe('Tidewave Vite Plugin', () => {
       expect(typeof calls[0][1]).toBe('function');
 
       // Second call should be decode body middleware
-      expect(calls[1][0]).toBe('/tidewave/*');
+      expect(calls[1][0]).toBe('/tidewave');
       expect(typeof calls[1][1]).toBe('function');
 
       // Third call should be MCP endpoint

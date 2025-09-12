@@ -8,8 +8,8 @@ curl-mcp body='{}' port='5001':
 initialize-mcp:
     @just curl-mcp '{"jsonrpc":"2.0","method":"initialize","params":{"protocolVersion":"2025-03-26","clientInfo":{"name":"curl-test","version":"1.0.0"},"capabilities":{}},"id":1}'
 
-list-tools-mcp:
-    @just curl-mcp '{"jsonrpc":"2.0","method":"tools/list","params":{},"id":2}'
+list-tools-mcp port='5001':
+    @just curl-mcp '{"jsonrpc":"2.0","method":"tools/list","params":{},"id":2}' {{port}}
 
 curl-shell command port='5001':
     curl -X POST http://localhost:{{port}}/tidewave/shell \

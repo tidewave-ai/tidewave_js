@@ -36,7 +36,7 @@ export function configureServer(
   const securityChecker = checkSecurity(config);
 
   server.use(`${ENDPOINT}/*`, securityChecker);
-  server.use(`${ENDPOINT}/*`, bodyParser.json());
+  server.use(`${ENDPOINT}`, bodyParser.json());
   server.use(`${ENDPOINT}/mcp`, handleMcp);
   server.use(`${ENDPOINT}/shell`, handleShell);
 
