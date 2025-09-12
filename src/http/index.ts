@@ -13,7 +13,14 @@ export interface Request extends IncomingMessage {
 export type Response = ServerResponse<IncomingMessage>;
 export type NextFn = NextFunction;
 
-export const endpoint = '/tidewave' as const;
+export const ENDPOINT = '/tidewave' as const;
+const DEFAULT_PORT = 5001 as const;
+const DEFAULT_OPTIONS: TidewaveConfig = {
+  allowRemoteAccess: false,
+  allowedOrigins: [],
+  port: 5001,
+  host: 'localhost',
+} as const;
 
 export interface TidewaveConfig {
   allowRemoteAccess?: boolean;
@@ -22,19 +29,22 @@ export interface TidewaveConfig {
   host?: string;
 }
 
-export function configureServer(server: Server = connect(), config: TidewaveConfig): Server {
+export function configureServer(
+  server: Server = connect(),
+  config: TidewaveConfig = DEFAULT_OPTIONS,
+): Server {
   const securityChecker = checkSecurity(config);
 
-  server.use(`${endpoint}/*`, securityChecker);
-  server.use(`${endpoint}/*`, bodyParser.json());
-  server.use(`${endpoint}/mcp`, handleMcp);
-  server.use(`${endpoint}/shell`, handleShell);
+  server.use(`${ENDPOINT}/*`, securityChecker);
+  server.use(`${ENDPOINT}/*`, bodyParser.json());
+  server.use(`${ENDPOINT}/mcp`, handleMcp);
+  server.use(`${ENDPOINT}/shell`, handleShell);
 
   return server;
 }
 
-export function serve(server: Server, config: TidewaveConfig): void {
-  http.createServer(server).listen(config.port || 5000);
+export function serve(server: Server, config: TidewaveConfig = DEFAULT_OPTIONS): void {
+  http.createServer(server).listen(config.port || DEFAULT_PORT);
 }
 
 export function checkSecurity(config: TidewaveConfig) {
