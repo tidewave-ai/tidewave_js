@@ -62,7 +62,7 @@ async function handleGetSourcePath(
 
 async function handleMcp(options: { prefix?: string }): Promise<void> {
   if (options.prefix) chdir(options.prefix);
-  console.error('Starting tidewave MCP server using stdio');
+  console.log('[Tidewave] Starting MCP server using stdio');
   const transport = new StdioServerTransport(process.stdin, process.stdout);
   await serveMcp(transport);
 }

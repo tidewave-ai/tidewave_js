@@ -32,7 +32,7 @@ export function decodeBody(req: Request): Promise<Record<string, unknown>> {
       try {
         resolve(body ? JSON.parse(body) : {});
       } catch (e) {
-        console.error(`Failed to parse body: ${e}`);
+        console.error(`[Tidewave] Failed to parse body: ${e}`);
         reject(e);
       }
     });

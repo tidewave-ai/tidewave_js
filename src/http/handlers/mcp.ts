@@ -9,7 +9,7 @@ export async function handleMcp(req: Request, res: Response, next: NextFn): Prom
       return;
     }
 
-    console.log(`Received ${req.method} message`);
+    console.debug(`[Tidewave] Received ${req.method} message`);
 
     // stateless mode, no session managament
     const transport = new StreamableHTTPServerTransport({
@@ -21,7 +21,7 @@ export async function handleMcp(req: Request, res: Response, next: NextFn): Prom
     await serveMcp(transport);
     await transport.handleRequest(req, res, body);
   } catch (e) {
-    console.error(`Failed to serve MCP with ${e}`);
+    console.error(`[Tidewave] Failed to serve MCP with ${e}`);
 
     if (!res.headersSent) {
       res.statusCode = 500;

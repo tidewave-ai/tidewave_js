@@ -2,7 +2,7 @@ import type { EvaluationRequest } from '../core';
 
 process.on('message', async ({ code, args }: EvaluationRequest) => {
   if (!process.send) {
-    console.error('Unable to establish communication channel with code-executor.');
+    console.error('[Tidewave] Unable to establish communication channel with code-executor.');
     process.exit(1);
   }
 

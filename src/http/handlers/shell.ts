@@ -105,7 +105,7 @@ export async function handleShell(req: Request, res: Response, next: NextFn): Pr
       }
     });
   } catch (e) {
-    console.error(`Failed to execute shell command: ${e}`);
+    console.error(`[Tidewave] Failed to execute shell command: ${e}`);
 
     if (!res.headersSent) {
       res.statusCode = 500;
