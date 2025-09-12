@@ -1,7 +1,4 @@
-import { checkOrigin, checkRemoteIp } from './http/security';
-import { type Request, type Response, type NextFn, type TidewaveConfig, endpoint } from './http';
-import { handleShell } from './http/handlers/shell';
-import { handleMcp } from './http/handlers/mcp';
+import { type TidewaveConfig, configureServer } from './http';
 import type { Plugin, ViteDevServer } from 'vite';
 
 export default function tidewave(
@@ -32,13 +29,5 @@ function tidewaveServer(server: ViteDevServer, config: TidewaveConfig): void {
     return;
   }
 
-  const middleware = (req: Request, res: Response, next: NextFn): void => {
-    if (!checkRemoteIp(req, res, config)) return;
-    if (!checkOrigin(req, res, config)) return;
-    next();
-  };
-
-  server.middlewares.use(`${endpoint}/*`, middleware);
-  server.middlewares.use(`${endpoint}/mcp`, handleMcp);
-  server.middlewares.use(`${endpoint}/shell`, handleShell);
+  server.middlewares = configureServer(server.middlewares, config);
 }

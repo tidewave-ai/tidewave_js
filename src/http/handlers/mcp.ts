@@ -1,5 +1,5 @@
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { decodeBody, methodNotAllowed, type Request, type Response, type NextFn } from '..';
+import { methodNotAllowed, type Request, type Response, type NextFn } from '..';
 import { serveMcp } from '../../mcp';
 
 export async function handleMcp(req: Request, res: Response, next: NextFn): Promise<void> {
@@ -17,28 +17,38 @@ export async function handleMcp(req: Request, res: Response, next: NextFn): Prom
       enableJsonResponse: true,
     });
 
-    const body = await decodeBody(req);
+    console.log(req.body);
+
+    if (!(req.body || res.headersSent)) {
+      mcpErrorResponse(res, 'Request body could not be parsed');
+      return;
+    }
+
     await serveMcp(transport);
-    await transport.handleRequest(req, res, body);
+    await transport.handleRequest(req, res, req.body);
   } catch (e) {
     console.error(`[Tidewave] Failed to serve MCP with ${e}`);
 
     if (!res.headersSent) {
-      res.statusCode = 500;
-      res.setHeader('content-type', 'application/json');
-      res.end(
-        JSON.stringify({
-          jsonrpc: 2.0,
-          id: null,
-          error: {
-            code: -32603,
-            message: 'Internal server error',
-            data: e instanceof Error ? e.message : String(e),
-          },
-        }),
-      );
+      mcpErrorResponse(res, e);
     }
 
     next(e);
   }
+}
+
+function mcpErrorResponse(res: Response, err: Error | unknown): void {
+  res.statusCode = 500;
+  res.setHeader('content-type', 'application/json');
+  res.end(
+    JSON.stringify({
+      jsonrpc: 2.0,
+      id: null,
+      error: {
+        code: -32603,
+        message: 'Internal server error',
+        data: err instanceof Error ? err.message : String(err),
+      },
+    }),
+  );
 }

@@ -1,5 +1,5 @@
 import { spawn } from 'child_process';
-import { type Request, type Response, type NextFn, methodNotAllowed, decodeBody } from '../index';
+import { type Request, type Response, type NextFn, methodNotAllowed } from '../index';
 import { platform } from 'os';
 
 export async function handleShell(req: Request, res: Response, next: NextFn): Promise<void> {
@@ -9,8 +9,7 @@ export async function handleShell(req: Request, res: Response, next: NextFn): Pr
       return;
     }
 
-    const body = await decodeBody(req);
-    const command = body.command as string;
+    const command = req.body?.command as string;
 
     if (!command) {
       res.statusCode = 400;
