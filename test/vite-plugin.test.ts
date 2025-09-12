@@ -74,7 +74,7 @@ describe('Tidewave Vite Plugin', () => {
       expect(middlewareUse).toHaveBeenCalledTimes(3);
 
       // Global security middleware
-      expect(middlewareUse).toHaveBeenCalledWith('*', expect.any(Function));
+      expect(middlewareUse).toHaveBeenCalledWith('/tidewave/*', expect.any(Function));
 
       // MCP route
       expect(middlewareUse).toHaveBeenCalledWith('/tidewave/mcp', expect.any(Function));
@@ -194,7 +194,7 @@ describe('Tidewave Vite Plugin', () => {
       const calls = middlewareUse.mock.calls;
 
       // First call should be global middleware
-      expect(calls[0][0]).toBe('*');
+      expect(calls[0][0]).toBe('/tidewave/*');
       expect(typeof calls[0][1]).toBe('function');
 
       // Second call should be MCP endpoint

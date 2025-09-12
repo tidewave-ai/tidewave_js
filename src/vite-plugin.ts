@@ -25,7 +25,7 @@ function tidewaveServer(server: ViteDevServer, config: TidewaveConfig): void {
     next();
   };
 
-  server.middlewares.use('*', middleware);
+  server.middlewares.use(`${endpoint}/*`, middleware);
   server.middlewares.use(`${endpoint}/mcp`, handleMcp);
   server.middlewares.use(`${endpoint}/shell`, handleShell);
 }
