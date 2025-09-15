@@ -1,6 +1,6 @@
 {
   "name": "tidewave",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Tidewave JavaScript CLI for documentation extraction and MCP server",
   "keywords": [
     "typescript",
@@ -29,7 +29,7 @@
     "CHANGELOG.md"
   ],
   "scripts": {
-    "dist": "bun build --outdir dist --root src --external commander --external chalk --external typescript src/**/*.ts --target node",
+    "dist": "bun build --outdir dist --root src --external commander --external chalk --external typescript src/**/*.ts src/*.ts --target node",
     "dev": "bun run src/cli/index.ts",
     "test": "bun test",
     "lint": "eslint src/ --ext .ts,.js",
@@ -41,14 +41,18 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.4",
+    "body-parser": "^2.2.0",
     "chalk": "^5.3.0",
     "commander": "^12.1.0",
+    "connect": "^3.7.0",
     "typescript": "^5",
     "zod": "3.25.76"
   },
   "devDependencies": {
     "@eslint/js": "^9.16.0",
+    "@types/body-parser": "^1.19.6",
     "@types/bun": "latest",
+    "@types/connect": "^3.4.38",
     "@types/node": "^22.10.1",
     "@typescript-eslint/eslint-plugin": "^8.18.0",
     "@typescript-eslint/parser": "^8.18.0",
@@ -57,6 +61,7 @@
     "eslint": "^9.16.0",
     "globals": "^15.14.0",
     "prettier": "^3.4.2",
+    "vite": "^7.1.5",
     "vitest": "^3.2.4"
   },
   "peerDependencies": {

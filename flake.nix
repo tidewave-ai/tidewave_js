@@ -3,10 +3,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05-small";
   };
 
-  outputs = {
-    nixpkgs,
-    ...
-  }: let
+  outputs = {nixpkgs, ...}: let
     inherit (nixpkgs.lib) genAttrs;
     inherit (nixpkgs.lib.systems) flakeExposed;
     forAllSystems = f:
@@ -20,12 +17,16 @@
     in {
       default = mkShell {
         name = "tidewave-javascript";
-        packages = with pkgs; [
-          bun
-          # nodejs_24
-          # nodePackages.npm
-          typescript
-        ] ++ lib.optional stdenv.isLinux [inotify-tools];
+        packages = with pkgs;
+          [
+            bun
+            # with homebrew
+            # nodejs_24
+            # nodePackages.npm
+            typescript
+            just
+          ]
+          ++ lib.optional stdenv.isLinux [inotify-tools];
       };
     });
 

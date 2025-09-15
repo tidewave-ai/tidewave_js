@@ -53,7 +53,8 @@ export default [
       // Function style preferences
       'prefer-arrow-callback': 'error',
       'arrow-body-style': ['error', 'as-needed'],
-      'func-style': ['error', 'declaration'], // Prefer function declarations for better stack traces
+      // Prefer function declarations for better stack traces
+      'func-style': ['error', 'declaration', { allowArrowFunctions: true }],
     },
   },
   {

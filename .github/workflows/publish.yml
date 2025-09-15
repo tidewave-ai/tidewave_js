@@ -14,32 +14,32 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Check code formatting
+        run: bun format:check
+
+      - name: Run ESLint
+        run: bun lint
+
+      - name: Type check
+        run: bun type:check
+
+      - name: Run tests
+        run: bun test
+
+      - name: Build project
+        run: bun dist
+
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           registry-url: 'https://registry.npmjs.org'
-          cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Check code formatting
-        run: npm run format:check
-
-      - name: Run ESLint
-        run: npm run lint
-
-      - name: Type check
-        run: npm run type:check
-
-      - name: Build project
-        run: npm run build
-
-      - name: Run tests
-        run: npx vitest run -c vitest.config.js
-
-      - name: Publish to npm
+      - run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --access public
