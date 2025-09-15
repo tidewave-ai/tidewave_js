@@ -10,8 +10,6 @@ import { isExtractError, isResolveError } from '../core';
 import { name, version } from '../../package.json';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { serveMcp } from '../mcp';
-import { configureServer, serve } from '../http';
-import connect from 'connect';
 
 function chdir(path: string): void {
   try {
@@ -64,29 +62,15 @@ async function handleGetSourcePath(
 
 interface McpOptions {
   prefix?: string;
-  type?: 'stdio' | 'http';
 }
 
 async function handleMcp(options: McpOptions): Promise<void> {
-  const type = options.type || 'stdio';
-
   if (options.prefix) chdir(options.prefix);
 
-  console.log(`[Tidewave] Starting MCP server using ${type}`);
+  console.log('[Tidewave] Starting MCP server');
 
-  if (type === 'stdio') {
-    const transport = new StdioServerTransport(process.stdin, process.stdout);
-    await serveMcp(transport);
-    return;
-  }
-
-  if (type === 'http') {
-    const server = configureServer(connect());
-    serve(server);
-    return;
-  }
-
-  console.error(`[Tidewave] Unknown MCP server type issued: ${options.type}`);
+  const transport = new StdioServerTransport(process.stdin, process.stdout);
+  await serveMcp(transport);
 }
 
 const {
@@ -98,7 +82,6 @@ program
   .command('mcp')
   .description('Starts a MCP server for tidewave (stdio)')
   .option(docsCli.options.prefix!.flag, docsCli.options.prefix!.desc)
-  .option('-t, --type <TYPE>', 'Defines the MCP transport type to be used', ['stdio', 'http'])
   .action(handleMcp);
 
 program
