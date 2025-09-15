@@ -52,7 +52,7 @@ Configuration options:
 ```javascript
 tidewave({
   allowRemoteAccess: false, // Allow access from remote IPs
-  allowedOrigins: ['*'], // Allowed CORS origins
+  allowedOrigins: ['localhost'], // Allowed origins: defaults to the Vite's host+port
 });
 ```
 
