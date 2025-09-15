@@ -22,9 +22,16 @@
   "bin": {
     "tidewave": "dist/cli/index.js"
   },
+  "types": "dist/index.d.ts",
   "exports": {
-    ".": "./dist/index.js",
-    "./vite-plyugin": "./dist/vite-plugin.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./vite-plugin": {
+      "types": "./dist/vite-plugin.d.ts",
+      "import": "./dist/vite-plugin.js"
+    }
   },
   "files": [
     "dist/",
@@ -33,7 +40,9 @@
     "CHANGELOG.md"
   ],
   "scripts": {
-    "dist": "bun build --outdir dist --root src --external commander --external chalk --external typescript src/**/*.ts src/*.ts --target node",
+    "dist": "bun run clean && bun run build:js && bun run build:types",
+    "build:js": "bun build --outdir dist --root src --external commander --external chalk --external typescript src/**/*.ts src/*.ts --target node",
+    "build:types": "tsc -p tsconfig.declarations.json",
     "dev": "bun run src/cli/index.ts",
     "test": "bun test",
     "lint": "eslint src/ --ext .ts,.js",
