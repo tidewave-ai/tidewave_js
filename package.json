@@ -22,6 +22,10 @@
   "bin": {
     "tidewave": "dist/cli/index.js"
   },
+  "exports": {
+    ".": "./dist/index.js",
+    "./vite-plyugin": "./dist/vite-plugin.js"
+  },
   "files": [
     "dist/",
     "README.md",
