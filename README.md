@@ -66,10 +66,19 @@ function. Add the handler to your API routes:
 ```typescript
 import { toNodeHandler } from 'tidewave/next-js';
 
+// Optional tidewave internal config
 export default toNodeHandler({
   allowRemoteAccess: false,
   allowedOrigins: [],
 });
+
+// Next.js specific config
+export const config = {
+  runtime: 'nodejs',
+  api: {
+    bodyParser: false,
+  },
+};
 ```
 
 This exposes MCP endpoints at `/api/tidewave/mcp` and `/api/tidewave/shell`.
