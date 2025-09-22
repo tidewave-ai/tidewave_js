@@ -14,41 +14,23 @@ const DEFAULT_CONFIG: TidewaveConfig = {
 
 export function toNodeHandler(config: TidewaveConfig = DEFAULT_CONFIG) {
   const router = createRouter<NextApiRequest, NextApiResponse>();
-
-  // Reuse existing security middleware
   router.use(expressWrapper(checkSecurity(config)));
-
-  // Reuse existing body parser
   router.use(expressWrapper(bodyParser.json()));
-
-  // Reuse existing handlers with expressWrapper
   router.post(`/api/${ENDPOINT}/mcp`, expressWrapper(handleMcp));
   router.post(`/api/${ENDPOINT}/shell`, expressWrapper(handleShell));
 
   return router.handler({
-    onError: (err: unknown, _req: NextApiRequest, res: NextApiResponse) => {
+    onError: (err: unknown, req: NextApiRequest, res: NextApiResponse) => {
       console.error('[Tidewave] Handler error:', err);
       if (!res.headersSent) {
         res.status(500).json({
-          jsonrpc: '2.0',
-          id: null,
-          error: {
-            code: -32603,
-            message: 'Internal server error',
-            data: err instanceof Error ? err.message : String(err),
-          },
+          message: `Internal server error from: ${req.url}`,
+          data: err instanceof Error ? err.message : String(err),
         });
       }
     },
-    onNoMatch: (_req: NextApiRequest, res: NextApiResponse) => {
-      res.status(404).json({
-        jsonrpc: '2.0',
-        id: null,
-        error: {
-          code: -32601,
-          message: 'Method not found',
-        },
-      });
+    onNoMatch: (req: NextApiRequest, res: NextApiResponse) => {
+      res.status(404).json({ message: `Route not found: ${req.url}` });
     },
   });
 }
