@@ -22,11 +22,11 @@ export function toNodeHandler(config: TidewaveConfig = DEFAULT_CONFIG) {
   router.use(expressWrapper(bodyParser.json()));
 
   // Reuse existing handlers with expressWrapper
-  router.post(`${ENDPOINT}/mcp`, expressWrapper(handleMcp));
-  router.post(`${ENDPOINT}/shell`, expressWrapper(handleShell));
+  router.post(`/api/${ENDPOINT}/mcp`, expressWrapper(handleMcp));
+  router.post(`/api/${ENDPOINT}/shell`, expressWrapper(handleShell));
 
   return router.handler({
-    onError: (err: unknown, req: NextApiRequest, res: NextApiResponse) => {
+    onError: (err: unknown, _req: NextApiRequest, res: NextApiResponse) => {
       console.error('[Tidewave] Handler error:', err);
       if (!res.headersSent) {
         res.status(500).json({
@@ -40,7 +40,7 @@ export function toNodeHandler(config: TidewaveConfig = DEFAULT_CONFIG) {
         });
       }
     },
-    onNoMatch: (req: NextApiRequest, res: NextApiResponse) => {
+    onNoMatch: (_req: NextApiRequest, res: NextApiResponse) => {
       res.status(404).json({
         jsonrpc: '2.0',
         id: null,
