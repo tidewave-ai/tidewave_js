@@ -15,24 +15,24 @@ const DEFAULT_CONFIG: TidewaveConfig = {
 type NextHandler = (_req: NextApiRequest, _res: NextApiResponse) => Promise<void>;
 
 export function toNodeHandler(config: TidewaveConfig = DEFAULT_CONFIG): NextHandler {
-  const router = createRouter<NextApiRequest, NextApiResponse>();
-  router.use(expressWrapper(checkSecurity(config)));
-  router.use(expressWrapper(bodyParser.json()));
-  router.post('/mcp', expressWrapper(handleMcp));
-  router.post('/shell', expressWrapper(handleShell));
+  const next: () => Promise<boolean> = () => new Promise(resolve => resolve(true));
 
-  return router.handler({
-    onError: (err: unknown, req: NextApiRequest, res: NextApiResponse) => {
-      console.error('[Tidewave] Handler error:', err);
-      if (!res.headersSent) {
-        res.status(500).json({
-          message: `Internal server error from: ${req.url}`,
-          data: err instanceof Error ? err.message : String(err),
-        });
+  return async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
+    const securityMiddleware = checkSecurity(config);
+    await expressWrapper(securityMiddleware)(req, res, next);
+    await expressWrapper(bodyParser.json())(req, res, next);
+
+    const path = req.query.path as string[];
+    const endpoint = path?.[0];
+
+    if (req.method === 'POST') {
+      if (endpoint === 'mcp') {
+        return handleMcp(req as any, res as any, () => {});
+      } else if (endpoint === 'shell') {
+        return handleShell(req as any, res as any, () => {});
       }
-    },
-    // onNoMatch: (req: NextApiRequest, res: NextApiResponse) => {
-    //   res.status(404).json({ message: `Route not found: ${req.url}` });
-    // },
-  });
+    }
+
+    res.status(404).json({ message: `Route not found: ${req.method} ${req.url}` });
+  };
 }
