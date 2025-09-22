@@ -56,6 +56,24 @@ tidewave({
 });
 ```
 
+### HTTP MCP via Next.js Integration
+
+Tidewave provides seamless integration with Next.js through a simple handler
+function. Add the handler to your API routes:
+
+**Pages Router** - Create `pages/api/tidewave/[...all].ts`:
+
+```typescript
+import { toNodeHandler } from 'tidewave/next-js';
+
+export default toNodeHandler({
+  allowRemoteAccess: false,
+  allowedOrigins: [],
+});
+```
+
+This exposes MCP endpoints at `/api/tidewave/mcp` and `/api/tidewave/shell`.
+
 ### CLI Usage
 
 Tidewave also provides the MCP features over a CLI tool. Use it directly via
