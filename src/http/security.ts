@@ -1,8 +1,24 @@
 import type { Request, Response, TidewaveConfig } from './index';
 
+function fetchRemoteIp(req: Request): string | null {
+  const remote = req.socket.remoteAddress;
+
+  if (remote) return remote;
+
+  const ip = (req.headers['x-real-ip'] && req.headers['x-forwarded-for']) || null;
+
+  if (Array.isArray(ip)) {
+    return ip.join();
+  }
+
+  return ip;
+}
+
 export function checkRemoteIp(req: Request, res: Response, config: TidewaveConfig): boolean {
-  const { remoteAddress } = req.socket;
-  if (isLocalIp(remoteAddress)) return true;
+  const ip = fetchRemoteIp(req);
+
+  if (!ip) return false;
+  if (isLocalIp(ip)) return true;
   if (config.allowRemoteAccess) return true;
 
   const message =

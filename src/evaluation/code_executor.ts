@@ -1,10 +1,9 @@
 import { fork } from 'child_process';
-import { join } from 'path';
 import type { EvaluatedModuleResult, EvaluationRequest } from '../core';
 
 export async function executeIsolated(request: EvaluationRequest): Promise<EvaluatedModuleResult> {
   return new Promise(resolve => {
-    const workerPath = join(__dirname, 'eval_worker.ts');
+    const workerPath = require.resolve('./eval_worker');
 
     const child = fork(workerPath, { silent: true });
 
