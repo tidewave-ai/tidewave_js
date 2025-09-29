@@ -6,6 +6,7 @@ import { checkOrigin, checkRemoteIp } from './security';
 import { handleMcp } from './handlers/mcp';
 import { handleShell } from './handlers/shell';
 import bodyParser from 'body-parser';
+import type { TidewaveConfig } from '../config-loader';
 
 export interface Request extends IncomingMessage {
   body?: Record<string, unknown>;
@@ -21,13 +22,6 @@ const DEFAULT_OPTIONS: TidewaveConfig = {
   port: 5001,
   host: 'localhost',
 } as const;
-
-export interface TidewaveConfig {
-  allowRemoteAccess?: boolean;
-  allowedOrigins?: string[];
-  port?: number;
-  host?: string;
-}
 
 export function configureServer(
   server: Server = connect(),

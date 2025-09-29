@@ -1,4 +1,5 @@
-import type { Request, Response, TidewaveConfig } from './index';
+import type { TidewaveConfig } from '../config-loader';
+import type { Request, Response } from './index';
 
 function fetchRemoteIp(req: Request): string | null {
   const remote = req.socket.remoteAddress;

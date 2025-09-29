@@ -1,18 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { NextResponse, type NextRequest } from 'next/server';
-import {
-  checkSecurity,
-  methodNotAllowed,
-  type TidewaveConfig,
-  type Request,
-  type Response,
-  ENDPOINT,
-} from './http';
+import { checkSecurity, methodNotAllowed, type Request, type Response } from './http';
 import { handleMcp } from './http/handlers/mcp';
 import { handleShell } from './http/handlers/shell';
 import bodyParser from 'body-parser';
-import { IncomingMessage, ServerResponse } from 'http';
-import { Socket } from 'net';
+import { loadConfig, type TidewaveConfig } from './config-loader';
 
 const DEFAULT_CONFIG: TidewaveConfig = {
   allowRemoteAccess: false,
@@ -53,17 +45,20 @@ export function connectWrapper<Req extends Request, Res extends Response>(
     }).then(next);
 }
 
-export function toNodeHandler(config: TidewaveConfig = DEFAULT_CONFIG): NextJsHandler {
+export async function toNodeHandler(config?: TidewaveConfig): Promise<NextJsHandler> {
   // we don't need any `next` request handler
   const next: () => void = () => {};
+  const loadedConfig: TidewaveConfig = config || (await loadConfig(DEFAULT_CONFIG));
 
   return async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
-    const securityMiddleware = checkSecurity(config);
+    const securityMiddleware = checkSecurity(loadedConfig);
     await connectWrapper(securityMiddleware)(req, res, next);
     await connectWrapper(bodyParser.json())(req, res, next);
 
-    const path = req.query.path as string[];
-    const endpoint = path?.[0];
+    // Parse endpoint manually, rewrite doesn't populate query
+    const url = new URL(req.url ?? '', `http://${req.headers.host}`);
+    const segments = url.pathname.split('/').filter(Boolean);
+    const [_tidewave, endpoint] = segments;
 
     if (req.method !== 'POST') {
       return methodNotAllowed(res);
@@ -76,16 +71,6 @@ export function toNodeHandler(config: TidewaveConfig = DEFAULT_CONFIG): NextJsHa
   };
 }
 
-async function requestAdapter(next: NextRequest): Promise<Request> {
-  const req: Request = new IncomingMessage(new Socket());
-  const body = (await next.json()) as Record<string, unknown>;
-  req.method = next.method;
-  req.body = body;
-  req.url = next.url;
-  req.headers = Object.fromEntries(next.headers);
-  return req;
-}
-
 function nextMethodNotAllowed(): NextResponse {
   return NextResponse.json(
     { message: 'method not allowed' },
@@ -96,126 +81,30 @@ function nextMethodNotAllowed(): NextResponse {
   );
 }
 
-interface ResponseData {
-  body: Buffer;
-  statusCode: number;
-  headers: Record<string, string>;
-}
-
-type StreamCallback = (_err: Error | null | undefined) => void;
-
-function captureResponse(res: ServerResponse): Promise<ResponseData> {
-  return new Promise(resolve => {
-    const chunks: Buffer[] = [];
-
-    const respdata: ResponseData = {
-      body: Buffer.alloc(0),
-      statusCode: 200,
-      headers: {},
-    };
-
-    const originalSetHeader = res.setHeader.bind(res);
-
-    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-    res.write = (chunk: any, encoding, cb?: StreamCallback): boolean => {
-      if (Buffer.isBuffer(chunk)) {
-        chunks.push(chunk);
-      } else if (typeof chunk === 'string') {
-        const enc = typeof encoding === 'string' ? encoding : 'utf8';
-        chunks.push(Buffer.from(chunk, enc));
-      }
-
-      if (typeof cb === 'function') {
-        process.nextTick(cb);
-      } else if (typeof encoding === 'function') {
-        process.nextTick(encoding);
-      }
-
-      return true;
-    };
-
-    res.end = (
-      chunk?: any /* eslint-disable-line @typescript-eslint/no-explicit-any */,
-      encoding?: BufferEncoding | StreamCallback,
-      cb?: StreamCallback,
-    ): ServerResponse => {
-      if (chunk) {
-        if (Buffer.isBuffer(chunk)) {
-          chunks.push(chunk);
-        } else if (typeof chunk === 'string') {
-          const enc = typeof encoding === 'string' ? encoding : 'utf8';
-          chunks.push(Buffer.from(chunk, enc));
-        }
-      }
-
-      respdata.statusCode = res.statusCode;
-
-      if (res.getHeaders) {
-        const responseHeaders = res.getHeaders();
-        respdata.headers = Object.fromEntries(
-          Object.entries(responseHeaders).map(([key, value]) => [
-            key.toLowerCase(),
-            Array.isArray(value) ? value.join(', ') : String(value),
-          ]),
-        );
-      }
-
-      respdata.body = Buffer.concat(chunks);
-
-      // Handle callbacks
-      if (typeof cb === 'function') {
-        process.nextTick(cb);
-      } else if (typeof encoding === 'function') {
-        process.nextTick(encoding);
-      }
-
-      resolve(respdata);
-      return res;
-    };
-
-    res.setHeader = (name: string, value: string | string[] | number): ServerResponse => {
-      respdata.headers[name.toLowerCase()] = Array.isArray(value)
-        ? value.join(', ')
-        : String(value);
-      return originalSetHeader(name, value);
-    };
-  });
-}
-
-export function toNextMiddleware(config: TidewaveConfig): NextJsMiddleware {
+export function toNextMiddleware(): NextJsMiddleware {
   return async function middleware(req: NextRequest): Promise<NextResponse> {
-    const next: () => void = () => {};
+    const env = process.env.NODE_ENV;
+
+    if (!(env === 'development'))
+      return NextResponse.json(
+        { message: 'Tidewave is designed to work only on dev environment' },
+        { status: 406 },
+      );
 
     if (req.method !== 'POST') return nextMethodNotAllowed();
 
-    const msg = await requestAdapter(req);
-    const res = new ServerResponse(msg);
+    const { pathname } = req.nextUrl;
 
-    const securityMiddleware = checkSecurity(config);
-    await connectWrapper(securityMiddleware)(msg, res, next);
+    if (!isTidewaveRoute(pathname))
+      return NextResponse.json({ message: `Route ${pathname} doesn't exist` }, { status: 404 });
 
-    const responsePromise = captureResponse(res);
-
-    if (req.nextUrl.pathname === `${ENDPOINT}/mcp`) {
-      await connectWrapper(handleMcp)(msg, res, next);
-      const responseData = await responsePromise;
-      return new NextResponse(responseData.body.toString(), {
-        status: responseData.statusCode,
-        headers: responseData.headers,
-      });
-    }
-
-    if (req.nextUrl.pathname === `${ENDPOINT}/shell`) {
-      console.log('Ih, passou por aqui');
-      await connectWrapper(handleShell)(msg, res, next);
-      const responseData = await responsePromise;
-      console.log('Aqui oh', responseData);
-      return new NextResponse(responseData.body.toString(), {
-        status: responseData.statusCode,
-        headers: responseData.headers,
-      });
-    }
-
-    return NextResponse.json({ message: `Route not found: ${req.method} ${req.nextUrl.pathname}` });
+    // since next.js v12, middleware doesn't
+    // accept relative URLs
+    return NextResponse.rewrite(new URL(`/api${pathname}`, req.url));
   };
+}
+
+export function isTidewaveRoute(pathname: string): boolean {
+  if (!pathname.includes('/tidewave')) return false;
+  return pathname.includes('/mcp') || pathname.includes('/shell');
 }
