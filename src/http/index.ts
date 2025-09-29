@@ -6,7 +6,7 @@ import { checkOrigin, checkRemoteIp } from './security';
 import { handleMcp } from './handlers/mcp';
 import { handleShell } from './handlers/shell';
 import bodyParser from 'body-parser';
-import type { TidewaveConfig } from '../config-loader';
+import type { TidewaveConfig } from '../core';
 
 export interface Request extends IncomingMessage {
   body?: Record<string, unknown>;

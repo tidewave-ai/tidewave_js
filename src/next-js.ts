@@ -4,7 +4,7 @@ import { checkSecurity, methodNotAllowed, type Request, type Response } from './
 import { handleMcp } from './http/handlers/mcp';
 import { handleShell } from './http/handlers/shell';
 import bodyParser from 'body-parser';
-import { loadConfig, type TidewaveConfig } from './config-loader';
+import type { TidewaveConfig } from './core';
 
 const DEFAULT_CONFIG: TidewaveConfig = {
   allowRemoteAccess: false,
@@ -45,13 +45,14 @@ export function connectWrapper<Req extends Request, Res extends Response>(
     }).then(next);
 }
 
-export async function toNodeHandler(config?: TidewaveConfig): Promise<NextJsHandler> {
+export async function toNodeHandler(
+  config: TidewaveConfig = DEFAULT_CONFIG,
+): Promise<NextJsHandler> {
   // we don't need any `next` request handler
   const next: () => void = () => {};
-  const loadedConfig: TidewaveConfig = config || (await loadConfig(DEFAULT_CONFIG));
 
   return async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
-    const securityMiddleware = checkSecurity(loadedConfig);
+    const securityMiddleware = checkSecurity(config);
     await connectWrapper(securityMiddleware)(req, res, next);
     await connectWrapper(bodyParser.json())(req, res, next);
 
@@ -69,16 +70,6 @@ export async function toNodeHandler(config?: TidewaveConfig): Promise<NextJsHand
 
     return res.status(404).json({ message: `Route not found: ${req.method} ${req.url}` });
   };
-}
-
-function nextMethodNotAllowed(): NextResponse {
-  return NextResponse.json(
-    { message: 'method not allowed' },
-    {
-      headers: [['Allow', 'POST']],
-      status: 405,
-    },
-  );
 }
 
 export function toNextMiddleware(): NextJsMiddleware {

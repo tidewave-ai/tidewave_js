@@ -66,7 +66,13 @@ Add the handler to your API routes and `middleware.ts`:
 ```typescript
 import { toNodeHandler } from 'tidewave/next-js';
 
-export default await toNodeHandler();
+// Optional internal tidewave config
+export default await toNodeHandler({
+  allowRemoteAccess: true,
+  allowedOrigins: ['http://mysite.com'],
+  port: 1234,
+  host: 'localhost',
+});
 
 // Next.js specific config
 export const config = {
@@ -88,18 +94,6 @@ export const middleware = toNextMiddleware();
 
 export const config = {
   matcher: '/tidewave/(.*)',
-};
-```
-
-You can define Tidewave config on a `tidewave.config.js` file to be used on the
-Next.JS integration, example:
-
-```javascript
-export default {
-  port: 1234,
-  host: 'localhost',
-  allowRemoteAccess: false,
-  allowedOrigins: [],
 };
 ```
 

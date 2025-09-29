@@ -1,4 +1,4 @@
-import { loadConfig, type TidewaveConfig } from './config-loader';
+import type { TidewaveConfig } from './core';
 import { configureServer } from './http';
 import type { Plugin, ViteDevServer } from 'vite';
 
@@ -17,20 +17,22 @@ export default function tidewave(
   };
 }
 
-async function tidewaveServer(server: ViteDevServer, config?: TidewaveConfig): Promise<void> {
-  const loadedConfig: TidewaveConfig = config || (await loadConfig(DEFAULT_CONFIG));
+async function tidewaveServer(
+  server: ViteDevServer,
+  config: TidewaveConfig = DEFAULT_CONFIG,
+): Promise<void> {
   const { config: serverConfig } = server;
   const { host, port } = serverConfig.server;
 
   if (port) {
-    loadedConfig.port = port;
+    config.port = port;
   }
 
   if (typeof host === 'string') {
-    loadedConfig.host = host;
+    config.host = host;
   }
 
-  if (!(loadedConfig.host || loadedConfig.port)) {
+  if (!(config.host || config.port)) {
     console.error(
       `[Tidewave] should have both host and port configured, got: host: ${host} port: ${port}`,
     );

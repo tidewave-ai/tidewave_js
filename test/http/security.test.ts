@@ -8,7 +8,7 @@ import {
   getDefaultAllowedOrigins,
 } from '../../src/http/security';
 import type { Request, Response } from '../../src/http';
-import type { TidewaveConfig } from '../../src/config-loader';
+import type { TidewaveConfig } from '../../src/core';
 
 // Mock request/response helpers
 const createMockRequest = (remoteAddress = '127.0.0.1', origin?: string): Partial<Request> => ({
