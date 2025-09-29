@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { NextResponse, type NextRequest } from 'next/server';
 import {
   checkSecurity,
-  maybeRewriteCSP,
+  CSPMiddleware,
   methodNotAllowed,
   type NextFn,
   type Request,
@@ -52,27 +52,25 @@ function connectWrapper<Req extends Request, Res extends Response>(
     }).then(next);
 }
 
-function nexthandler(handler: (req: Request, resp: Response, next: NextFn) => void) {
-  return (req: NextApiRequest, res: NextApiResponse): void =>
-    connectWrapper(handler)(req, res, () => {});
-}
-
 function notfound(req: NextApiRequest, res: NextApiResponse): void {
   return res.status(404).json({ message: `Route not found: ${req.method} ${req.url}` });
 }
 
-const NEXT_HANDLERS: Record<string, (req: NextApiRequest, res: NextApiResponse) => void> = {
-  mcp: nexthandler(handleMcp),
-  shell: nexthandler(handleShell),
-};
+const NEXT_HANDLERS: Record<string, (req: Request, res: Response, next: NextFn) => Promise<void>> =
+  {
+    mcp: connectWrapper(handleMcp),
+    shell: connectWrapper(handleShell),
+  };
 
 export async function toNodeHandler(
   config: TidewaveConfig = DEFAULT_CONFIG,
 ): Promise<NextJsHandler> {
   return async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
+    const next: () => void = () => {};
+    await connectWrapper(CSPMiddleware)(req, res, next);
     const securityMiddleware = checkSecurity(config);
-    nexthandler(securityMiddleware);
-    nexthandler(bodyParser.json());
+    await connectWrapper(securityMiddleware)(req, res, next);
+    await connectWrapper(bodyParser.json())(req, res, next);
 
     // Parse endpoint manually, rewrite doesn't populate query
     const url = new URL(req.url ?? '', `http://${req.headers.host}`);
@@ -84,10 +82,7 @@ export async function toNodeHandler(
     }
 
     const handler = NEXT_HANDLERS[endpoint || ''];
-    if (handler) {
-      handler(req, res);
-      nexthandler(maybeRewriteCSP);
-    }
+    if (handler) return await handler(req, res, next);
 
     return notfound(req, res);
   };

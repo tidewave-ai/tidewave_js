@@ -1,7 +1,7 @@
 import type { ServerResponse } from 'http';
 import type { IncomingMessage, NextFunction, Server } from 'connect';
 import connect from 'connect';
-import http from 'node:http';
+import http, { type OutgoingHttpHeader, type OutgoingHttpHeaders } from 'node:http';
 import { checkOrigin, checkRemoteIp } from './security';
 import { handleMcp } from './handlers/mcp';
 import { handleShell } from './handlers/shell';
@@ -29,12 +29,12 @@ export function configureServer(
 ): Server {
   const securityChecker = checkSecurity(config);
 
+  server.use(`${ENDPOINT}`, CSPMiddleware);
   server.use(`${ENDPOINT}`, logger);
   server.use(`${ENDPOINT}`, securityChecker);
   server.use(`${ENDPOINT}`, bodyParser.json());
   server.use(`${ENDPOINT}/mcp`, handleMcp);
   server.use(`${ENDPOINT}/shell`, handleShell);
-  server.use(`${ENDPOINT}`, maybeRewriteCSP);
 
   return server;
 }
@@ -56,16 +56,46 @@ export function logger(req: Request, _: Response, next: NextFn): void {
   next();
 }
 
-export function maybeRewriteCSP(_: Request, res: Response, next: NextFn): void {
-  const csp = res.getHeader('content-security-policy');
-  if (typeof csp === 'string' || Array.isArray(csp)) {
-    const rewrittenCSP = rewriteCSP(csp);
-    res.setHeader('content-security-policy', rewrittenCSP);
-  }
-  res.removeHeader('x-frame-options');
-  console.log('Headers: ', res.getHeaders());
+type WriteHeadArgs =
+  | [statusCode: number, headers?: OutgoingHttpHeaders | OutgoingHttpHeader[]]
+  | [
+      statusCode: number,
+      reasonPhrase?: string,
+      headers?: OutgoingHttpHeaders | OutgoingHttpHeader[],
+    ];
 
+export function CSPMiddleware(_: Request, res: Response, next: NextFn): void {
+  // rewrite before send headers to client
+  // nodejs responses are streams
+  const originalwritehead = res.writeHead.bind(res);
+  res.writeHead = function (...args: WriteHeadArgs): Response {
+    maybeRewriteCSP(res);
+
+    if (typeof args[1] !== 'string' && args[2] !== undefined) {
+      return originalwritehead(args[0], args[1]);
+    }
+
+    return originalwritehead(args[0], args[1] as string | undefined, args[2]);
+  };
   next();
+}
+
+export function maybeRewriteCSP(res: Response): void {
+  try {
+    if (res.writableEnded || res.headersSent) {
+      return;
+    }
+
+    const csp = res.getHeader('content-security-policy');
+    if (typeof csp === 'string' || Array.isArray(csp)) {
+      const rewrittenCSP = rewriteCSP(csp);
+      res.setHeader('content-security-policy', rewrittenCSP);
+    }
+
+    res.removeHeader('x-frame-options');
+  } catch (err) {
+    console.error(`[Tidewave] Failed to rewrite CSP header with: ${err}`);
+  }
 }
 
 function rewriteCSP(cspHeader: string | string[]): string {

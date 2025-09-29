@@ -2,8 +2,6 @@ curl-mcp body='{}' port='5001':
     curl -X POST \
         -H 'accept: application/json,text/event-stream' \
         -H 'content-type: application/json' \
-        -H 'x-frame-options: DENY' \
-        -H "content-security-policy: frame-ancestors 'self'; script-src 'self'" \
         -d '{{body}}' \
         -i \
         http://localhost:{{port}}/tidewave/mcp
@@ -18,8 +16,6 @@ curl-shell command port='5001':
     curl -X POST http://localhost:{{port}}/tidewave/shell \
         -H 'content-type: application/json' \
         -H 'accept: application/json,text/event-stream' \
-        -H 'x-frame-options: DENY' \
-        -H "content-security-policy: frame-ancestors 'self'; script-src 'self'" \
         -d '{"command": "{{command}}"}' \
         -i \
         --output -
