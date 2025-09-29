@@ -1,6 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { NextResponse, type NextRequest } from 'next/server';
-import { checkSecurity, methodNotAllowed, type Request, type Response } from './http';
+import {
+  checkSecurity,
+  maybeRewriteCSP,
+  methodNotAllowed,
+  type NextFn,
+  type Request,
+  type Response,
+} from './http';
 import { handleMcp } from './http/handlers/mcp';
 import { handleShell } from './http/handlers/shell';
 import bodyParser from 'body-parser';
@@ -36,7 +43,7 @@ export type RequestHandler<Req extends Request, Res extends Response> = (
   res: Res,
 ) => ValueOrPromise<void>;
 
-export function connectWrapper<Req extends Request, Res extends Response>(
+function connectWrapper<Req extends Request, Res extends Response>(
   fn: ExpressRequestHandler<Req, Res>,
 ): Nextable<RequestHandler<Req, Res>> {
   return (req, res, next) =>
@@ -45,16 +52,27 @@ export function connectWrapper<Req extends Request, Res extends Response>(
     }).then(next);
 }
 
+function nexthandler(handler: (req: Request, resp: Response, next: NextFn) => void) {
+  return (req: NextApiRequest, res: NextApiResponse): void =>
+    connectWrapper(handler)(req, res, () => {});
+}
+
+function notfound(req: NextApiRequest, res: NextApiResponse): void {
+  return res.status(404).json({ message: `Route not found: ${req.method} ${req.url}` });
+}
+
+const NEXT_HANDLERS: Record<string, (req: NextApiRequest, res: NextApiResponse) => void> = {
+  mcp: nexthandler(handleMcp),
+  shell: nexthandler(handleShell),
+};
+
 export async function toNodeHandler(
   config: TidewaveConfig = DEFAULT_CONFIG,
 ): Promise<NextJsHandler> {
-  // we don't need any `next` request handler
-  const next: () => void = () => {};
-
   return async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
     const securityMiddleware = checkSecurity(config);
-    await connectWrapper(securityMiddleware)(req, res, next);
-    await connectWrapper(bodyParser.json())(req, res, next);
+    nexthandler(securityMiddleware);
+    nexthandler(bodyParser.json());
 
     // Parse endpoint manually, rewrite doesn't populate query
     const url = new URL(req.url ?? '', `http://${req.headers.host}`);
@@ -65,10 +83,13 @@ export async function toNodeHandler(
       return methodNotAllowed(res);
     }
 
-    if (endpoint === 'mcp') return connectWrapper(handleMcp)(req, res, next);
-    if (endpoint === 'shell') return connectWrapper(handleShell)(req, res, next);
+    const handler = NEXT_HANDLERS[endpoint || ''];
+    if (handler) {
+      handler(req, res);
+      nexthandler(maybeRewriteCSP);
+    }
 
-    return res.status(404).json({ message: `Route not found: ${req.method} ${req.url}` });
+    return notfound(req, res);
   };
 }
 
