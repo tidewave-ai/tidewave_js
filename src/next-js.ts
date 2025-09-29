@@ -91,8 +91,6 @@ export function toNextMiddleware(): NextJsMiddleware {
         { status: 406 },
       );
 
-    if (req.method !== 'POST') return nextMethodNotAllowed();
-
     const { pathname } = req.nextUrl;
 
     if (!isTidewaveRoute(pathname))
@@ -105,6 +103,5 @@ export function toNextMiddleware(): NextJsMiddleware {
 }
 
 export function isTidewaveRoute(pathname: string): boolean {
-  if (!pathname.includes('/tidewave')) return false;
-  return pathname.includes('/mcp') || pathname.includes('/shell');
+  return pathname.startsWith('/tidewave');
 }
