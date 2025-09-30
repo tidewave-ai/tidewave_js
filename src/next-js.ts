@@ -1,15 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { NextResponse, type NextRequest } from 'next/server';
-import {
-  checkSecurity,
-  CSPMiddleware,
-  methodNotAllowed,
-  type NextFn,
-  type Request,
-  type Response,
-} from './http';
-import { handleMcp } from './http/handlers/mcp';
-import { handleShell } from './http/handlers/shell';
+import { headers } from 'next/headers';
+import { checkSecurity, HANDLERS, methodNotAllowed, type Request, type Response } from './http';
 import bodyParser from 'body-parser';
 import type { TidewaveConfig } from './core';
 
@@ -52,22 +44,27 @@ function connectWrapper<Req extends Request, Res extends Response>(
     }).then(next);
 }
 
-function notfound(req: NextApiRequest, res: NextApiResponse): void {
-  return res.status(404).json({ message: `Route not found: ${req.method} ${req.url}` });
-}
-
-const NEXT_HANDLERS: Record<string, (req: Request, res: Response, next: NextFn) => Promise<void>> =
-  {
-    mcp: connectWrapper(handleMcp),
-    shell: connectWrapper(handleShell),
-  };
-
-export async function toNodeHandler(
+export async function tidewaveHandler(
   config: TidewaveConfig = DEFAULT_CONFIG,
 ): Promise<NextJsHandler> {
+  const env = process.env.NODE_ENV;
+
+  if (!(env === 'development')) {
+    throw Error(
+      `[Tidewave] tidewave is designed to only work on development environment, got: ${env}`,
+    );
+  }
+
+  const origin = (await headers()).get('host');
+
+  if (origin) {
+    const [hostname, port] = origin.split(':');
+    config.host = hostname ? hostname : config.host;
+    config.port = port ? Number(port) : config.port;
+  }
+
   return async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
     const next: () => void = () => {};
-    await connectWrapper(CSPMiddleware)(req, res, next);
     const securityMiddleware = checkSecurity(config);
     await connectWrapper(securityMiddleware)(req, res, next);
     await connectWrapper(bodyParser.json())(req, res, next);
@@ -81,27 +78,29 @@ export async function toNodeHandler(
       return methodNotAllowed(res);
     }
 
-    const handler = NEXT_HANDLERS[endpoint || ''];
-    if (handler) return await handler(req, res, next);
+    const handler = HANDLERS[endpoint || ''];
+    if (handler) return await connectWrapper(handler)(req, res, next);
 
-    return notfound(req, res);
+    return res.status(404).json({ message: `Route not found: ${req.method} ${req.url}` });
   };
 }
 
-export function toNextMiddleware(): NextJsMiddleware {
-  return async function middleware(req: NextRequest): Promise<NextResponse> {
-    const env = process.env.NODE_ENV;
+export function tidewaveMiddleware(): NextJsMiddleware {
+  const env = process.env.NODE_ENV;
 
-    if (!(env === 'development'))
-      return NextResponse.json(
-        { message: 'Tidewave is designed to work only on dev environment' },
-        { status: 406 },
-      );
-
+  if (!(env === 'development')) {
+    throw Error(
+      `[Tidewave] tidewave is designed to only work on development environment, got: ${env}`,
+    );
+  }
+  return async function middleware(
+    req: NextRequest,
+    next?: NextJsMiddleware,
+  ): Promise<NextResponse> {
     const { pathname } = req.nextUrl;
 
-    if (!isTidewaveRoute(pathname))
-      return NextResponse.json({ message: `Route ${pathname} doesn't exist` }, { status: 404 });
+    if (!isTidewaveRoute(pathname) && next) return next(req);
+    if (!isTidewaveRoute(pathname)) return NextResponse.next();
 
     // since next.js v12, middleware doesn't
     // accept relative URLs

@@ -11,8 +11,6 @@ export async function handleShell(req: Request, res: Response, next: NextFn): Pr
 
     const command = req.body?.command as string;
 
-    console.debug(`[Tidewave] Received cmd exec: ${command}`);
-
     if (!command) {
       res.statusCode = 400;
       res.end('Missing command in request body');
@@ -48,7 +46,6 @@ export async function handleShell(req: Request, res: Response, next: NextFn): Pr
           ]),
           data,
         ]);
-        console.debug(`[Tidewave] got stdout chunk: ${chunk}`);
         res.write(chunk);
       }
     });
@@ -65,7 +62,6 @@ export async function handleShell(req: Request, res: Response, next: NextFn): Pr
           ]),
           data,
         ]);
-        console.debug(`[Tidewave] got stderr chunk: ${chunk}`);
         res.write(chunk);
       }
     });
@@ -94,7 +90,6 @@ export async function handleShell(req: Request, res: Response, next: NextFn): Pr
           ]),
           statusBuffer,
         ]);
-        console.debug(`[Tidewave] cmd exited with ${chunk} ${code} code`);
         res.write(chunk);
       }
 
@@ -107,7 +102,6 @@ export async function handleShell(req: Request, res: Response, next: NextFn): Pr
       if (!child.killed) {
         child.kill();
       }
-      console.debug('[Tidewave] cmd closed');
     });
   } catch (e) {
     console.error(`[Tidewave] Failed to execute shell command: ${e}`);

@@ -59,26 +59,20 @@ tidewave({
 ### HTTP MCP via Next.js Integration
 
 Tidewave provides seamless integration with Next.js through a handler function.
-Add the handler to your API routes and `middleware.ts`:
+Add the handler to your API routes **and** `middleware.ts`:
 
 **Pages Router** - Create `pages/api/tidewave/[...all].ts`:
 
 ```typescript
-import { toNodeHandler } from 'tidewave/next-js';
+import { tidewaveHandler } from 'tidewave/next-js';
 
-// Optional internal tidewave config
-export default await toNodeHandler({
-  allowRemoteAccess: true,
-  allowedOrigins: ['http://mysite.com'],
-  port: 1234,
-  host: 'localhost',
-});
+export default await tidewaveHandler();
 
 // Next.js specific config
 export const config = {
   runtime: 'nodejs',
   api: {
-    bodyParser: false,
+    bodyParser: false, // tidewave already parses the body internally
   },
 };
 ```
@@ -88,12 +82,37 @@ This exposes MCP endpoints at `/api/tidewave/mcp` and `/api/tidewave/shell`.
 Then create `middleware.ts` with:
 
 ```typescript
-import { toNextMiddleware } from 'tidewave/next-js';
+import { tidewaveMiddleware } from 'tidewave/next-js';
 
-export const middleware = toNextMiddleware();
+export const middleware = tidewaveMiddleware();
 
 export const config = {
   matcher: '/tidewave/(.*)',
+};
+```
+
+In case you already have an existing `middleware.ts`:
+
+```typescript
+import { tidewaveMiddleware } from 'tidewave/next-js';
+
+const withTidewave = tidewaveMiddleware();
+
+export function middleware(req: NextRequest): Promise<NextResponse> {
+  // This will return a unchanged NextResponse.next()
+  // if path doesn't match with `/tidewave`
+  // if does match it will rewrite to `/api/tidewave` instead
+  withTidewave(req, (req: NextRequest) => {
+    // your own logic
+    return NextResponse.json({ message: 'hello, world!' });
+  });
+}
+
+export const config = {
+  matcher: [
+    '/tidewave/(.*)', // tidewave specific matcher
+    '/your/route/', // your specific matcher
+  ],
 };
 ```
 
