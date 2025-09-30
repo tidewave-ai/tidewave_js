@@ -125,3 +125,10 @@ export function createExtractError(
     },
   };
 }
+
+export interface TidewaveConfig {
+  port?: number;
+  host?: string;
+  allowRemoteAccess?: boolean;
+  allowedOrigins?: string[];
+}

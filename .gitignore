@@ -72,3 +72,6 @@ vite.config.ts.timestamp-*
 CLAUDE.md
 .claude/
 .mcp.json
+
+/.yalc/
+yalc.lock

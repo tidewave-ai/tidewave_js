@@ -6,6 +6,7 @@ import { checkOrigin, checkRemoteIp } from './security';
 import { handleMcp } from './handlers/mcp';
 import { handleShell } from './handlers/shell';
 import bodyParser from 'body-parser';
+import type { TidewaveConfig } from '../core';
 
 export interface Request extends IncomingMessage {
   body?: Record<string, unknown>;
@@ -22,12 +23,12 @@ const DEFAULT_OPTIONS: TidewaveConfig = {
   host: 'localhost',
 } as const;
 
-export interface TidewaveConfig {
-  allowRemoteAccess?: boolean;
-  allowedOrigins?: string[];
-  port?: number;
-  host?: string;
-}
+export type Handler = (req: Request, res: Response, next: NextFn) => Promise<void>;
+
+export const HANDLERS: Record<string, Handler> = {
+  mcp: handleMcp,
+  shell: handleShell,
+} as const;
 
 export function configureServer(
   server: Server = connect(),
@@ -37,8 +38,10 @@ export function configureServer(
 
   server.use(`${ENDPOINT}`, securityChecker);
   server.use(`${ENDPOINT}`, bodyParser.json());
-  server.use(`${ENDPOINT}/mcp`, handleMcp);
-  server.use(`${ENDPOINT}/shell`, handleShell);
+
+  for (const [path, handler] of Object.entries(HANDLERS)) {
+    server.use(ENDPOINT + '/' + path, handler);
+  }
 
   return server;
 }
