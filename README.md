@@ -61,6 +61,11 @@ tidewave({
 Tidewave provides seamless integration with Next.js through a handler function.
 Add the handler to your API routes **and** `middleware.ts`:
 
+> ![WARNING]
+> Note that the below helper functions will only work on
+> development mode `NODE_ENV === 'development'`
+> if the validation fails, an Error will be thrown
+
 **Pages Router** - Create `pages/api/tidewave/[...all].ts`:
 
 ```typescript
