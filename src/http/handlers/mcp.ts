@@ -9,8 +9,6 @@ export async function handleMcp(req: Request, res: Response, next: NextFn): Prom
       return;
     }
 
-    console.debug(`[Tidewave] Received ${req.method} message`);
-
     // stateless mode, no session managament
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,

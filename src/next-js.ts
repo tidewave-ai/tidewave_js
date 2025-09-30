@@ -1,14 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import {
-  checkSecurity,
-  methodNotAllowed,
-  type TidewaveConfig,
-  type Request,
-  type Response,
-} from './http';
-import { handleMcp } from './http/handlers/mcp';
-import { handleShell } from './http/handlers/shell';
+import { NextResponse, type NextRequest } from 'next/server';
+import { headers } from 'next/headers';
+import { checkSecurity, HANDLERS, methodNotAllowed, type Request, type Response } from './http';
 import bodyParser from 'body-parser';
+import type { TidewaveConfig } from './core';
 
 const DEFAULT_CONFIG: TidewaveConfig = {
   allowRemoteAccess: false,
@@ -18,6 +13,7 @@ const DEFAULT_CONFIG: TidewaveConfig = {
 };
 
 type NextJsHandler = (_req: NextApiRequest, _res: NextApiResponse) => Promise<void>;
+type NextJsMiddleware = (_req: NextRequest) => Promise<NextResponse>;
 
 type NextHandler = () => ValueOrPromise<unknown>;
 
@@ -39,7 +35,7 @@ export type RequestHandler<Req extends Request, Res extends Response> = (
   res: Res,
 ) => ValueOrPromise<void>;
 
-export function connectWrapper<Req extends Request, Res extends Response>(
+function connectWrapper<Req extends Request, Res extends Response>(
   fn: ExpressRequestHandler<Req, Res>,
 ): Nextable<RequestHandler<Req, Res>> {
   return (req, res, next) =>
@@ -48,25 +44,70 @@ export function connectWrapper<Req extends Request, Res extends Response>(
     }).then(next);
 }
 
-export function toNodeHandler(config: TidewaveConfig = DEFAULT_CONFIG): NextJsHandler {
-  // we don't need any `next` request handler
-  const next: () => void = () => {};
+export async function tidewaveHandler(
+  config: TidewaveConfig = DEFAULT_CONFIG,
+): Promise<NextJsHandler> {
+  const env = process.env.NODE_ENV;
+
+  if (!(env === 'development')) {
+    throw Error(
+      `[Tidewave] tidewave is designed to only work on development environment, got: ${env}`,
+    );
+  }
+
+  const origin = (await headers()).get('host');
+
+  if (origin) {
+    const [hostname, port] = origin.split(':');
+    config.host = hostname ? hostname : config.host;
+    config.port = port ? Number(port) : config.port;
+  }
 
   return async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
+    const next: () => void = () => {};
     const securityMiddleware = checkSecurity(config);
     await connectWrapper(securityMiddleware)(req, res, next);
     await connectWrapper(bodyParser.json())(req, res, next);
 
-    const path = req.query.path as string[];
-    const endpoint = path?.[0];
+    // Parse endpoint manually, rewrite doesn't populate query
+    const url = new URL(req.url ?? '', `http://${req.headers.host}`);
+    const segments = url.pathname.split('/').filter(Boolean);
+    const [_tidewave, endpoint] = segments;
 
     if (req.method !== 'POST') {
       return methodNotAllowed(res);
     }
 
-    if (endpoint === 'mcp') return connectWrapper(handleMcp)(req, res, next);
-    if (endpoint === 'shell') return connectWrapper(handleShell)(req, res, next);
+    const handler = HANDLERS[endpoint || ''];
+    if (handler) return await connectWrapper(handler)(req, res, next);
 
     return res.status(404).json({ message: `Route not found: ${req.method} ${req.url}` });
   };
+}
+
+export function tidewaveMiddleware(): NextJsMiddleware {
+  const env = process.env.NODE_ENV;
+
+  if (!(env === 'development')) {
+    throw Error(
+      `[Tidewave] tidewave is designed to only work on development environment, got: ${env}`,
+    );
+  }
+  return async function middleware(
+    req: NextRequest,
+    next?: NextJsMiddleware,
+  ): Promise<NextResponse> {
+    const { pathname } = req.nextUrl;
+
+    if (!isTidewaveRoute(pathname) && next) return next(req);
+    if (!isTidewaveRoute(pathname)) return NextResponse.next();
+
+    // since next.js v12, middleware doesn't
+    // accept relative URLs
+    return NextResponse.rewrite(new URL(`/api${pathname}`, req.url));
+  };
+}
+
+export function isTidewaveRoute(pathname: string): boolean {
+  return pathname.startsWith('/tidewave');
 }

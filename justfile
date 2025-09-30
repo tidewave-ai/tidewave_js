@@ -3,6 +3,7 @@ curl-mcp body='{}' port='5001':
         -H 'accept: application/json,text/event-stream' \
         -H 'content-type: application/json' \
         -d '{{body}}' \
+        -i \
         http://localhost:{{port}}/tidewave/mcp
 
 initialize-mcp:
@@ -14,8 +15,9 @@ list-tools-mcp port='5001':
 curl-shell command port='5001':
     curl -X POST http://localhost:{{port}}/tidewave/shell \
         -H 'content-type: application/json' \
-        -H 'accept: text/event-stream,application/json' \
+        -H 'accept: application/json,text/event-stream' \
         -d '{"command": "{{command}}"}' \
+        -i \
         --output -
 
 default:
