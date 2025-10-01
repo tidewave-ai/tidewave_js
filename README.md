@@ -3,16 +3,16 @@
 Tidewave is the coding agent for full-stack web app development.
 [See our website](https://tidewave.ai) for more information.
 
-This package is recommended for JavaScript-powered backends as
-well as JavaScript libraries/applications without a backend.
-If you are using React with Phoenix, Rails, Django, or another
-server-side framework, [follow the steps here instead](http://hexdocs.pm/tidewave/react.html).
+This package is recommended for JavaScript-powered backends as well as
+JavaScript libraries/applications without a backend. If you are using React with
+Phoenix, Rails, Django, or another server-side framework,
+[follow the steps here instead](http://hexdocs.pm/tidewave/react.html).
 
-Our current release connects your editor's assistant to JavaScript runtime
-via [MCP](https://modelcontextprotocol.io/). Tidewave's MCP server gives
-your editor and coding agents access to the documentation, type annotations,
-and source file locations of the packages being currently used by your project,
-without relying on external systems.
+Our current release connects your editor's assistant to JavaScript runtime via
+[MCP](https://modelcontextprotocol.io/). Tidewave's MCP server gives your editor
+and coding agents access to the documentation, type annotations, and source file
+locations of the packages being currently used by your project, without relying
+on external systems.
 
 Support for Tidewave Web will come in future releases.
 
