@@ -3,19 +3,24 @@
 Tidewave is the coding agent for full-stack web app development.
 [See our website](https://tidewave.ai) for more information.
 
-Our current release connects your editor's assistant to your web framework
-runtime via [MCP](https://modelcontextprotocol.io/). Support for Tidewave Web
-will come in future releases.
+This package is recommended for JavaScript-powered backends as
+well as JavaScript libraries/applications without a backend.
+If you are using React with Phoenix, Rails, Django, or another
+server-side framework, [follow the steps here instead](http://hexdocs.pm/tidewave/react.html).
+
+Our current release connects your editor's assistant to JavaScript runtime
+via [MCP](https://modelcontextprotocol.io/). Tidewave's MCP server gives
+your editor and coding agents access to the documentation, type annotations,
+and source file locations of the packages being currently used by your project,
+without relying on external systems.
+
+Support for Tidewave Web will come in future releases.
 
 ## Usage
 
 ### Standalone MCP
 
-Tidewave's MCP server gives your editor and coding agents access to the
-documentation, type annotations, and source file locations of the packages being
-currently used by your project, without relying on external systems.
-
-Simply configure your editor to run `tidewave` in the same directory as your
+Configure your editor to run `tidewave` in the same directory as your
 `package.json` as a STDIO MCP Server:
 
 ```bash
@@ -44,8 +49,7 @@ export default defineConfig({
 });
 ```
 
-This exposes MCP endpoints at `/tidewave/mcp` and `/tidewave/shell` during
-development.
+This exposes the MCP endpoint at `/tidewave/mcp`.
 
 Configuration options:
 
@@ -56,14 +60,10 @@ tidewave({
 });
 ```
 
-### HTTP MCP via Next.js Integration
+### HTTP MCP for Next.js
 
-Tidewave provides seamless integration with Next.js through a handler function.
-Add the handler to your API routes **and** `middleware.ts`:
-
-> [!WARNING] Note that the below helper functions will only work on development
-> mode `NODE_ENV === 'development'` if the validation fails, an Error will be
-> thrown
+Tidewave provides seamless integration with Next.js, you only need to expose its
+routes and then plug its middleware accordingly:
 
 **Pages Router** - Create `pages/api/tidewave/[...all].ts`:
 
@@ -76,14 +76,12 @@ export default await tidewaveHandler();
 export const config = {
   runtime: 'nodejs',
   api: {
-    bodyParser: false, // tidewave already parses the body internally
+    bodyParser: false, // Tidewave already parses the body internally
   },
 };
 ```
 
-This exposes MCP endpoints at `/api/tidewave/mcp` and `/api/tidewave/shell`.
-
-Then create `middleware.ts` with:
+**Middleware** - Then create (or modify) `middleware.ts` with:
 
 ```typescript
 import { tidewaveMiddleware } from 'tidewave/next-js';
@@ -120,6 +118,8 @@ export const config = {
 };
 ```
 
+This exposes the MCP endpoint at `/tidewave/mcp`.
+
 ### CLI Usage
 
 Tidewave also provides the MCP features over a CLI tool. Use it directly via
@@ -148,14 +148,6 @@ npx tidewave docs react:Component#render
 npx tidewave source ./src/utils:formatDate
 npx tidewave source typescript:createProgram
 ```
-
-### Runtime Support
-
-Tidewave JavaScript supports multiple JavaScript runtimes:
-
-- **Node.js** - Full support with npm/npx
-- **Bun** - Native support with bunx
-- **Deno** - Support via npm: protocol
 
 ## Contributing
 
