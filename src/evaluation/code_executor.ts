@@ -1,9 +1,14 @@
 import { fork } from 'child_process';
+import { createRequire } from 'module';
+import { dirname, join } from 'path';
 import type { EvaluatedModuleResult, EvaluationRequest } from '../core';
 
 export async function executeIsolated(request: EvaluationRequest): Promise<EvaluatedModuleResult> {
   return new Promise(resolve => {
-    const workerPath = require.resolve('./eval_worker');
+    // Resolve worker path from package - works even when this code is bundled
+    const require = createRequire(import.meta.url);
+    const packageRoot = dirname(require.resolve('tidewave/package.json'));
+    const workerPath = join(packageRoot, 'dist/evaluation/eval_worker.js');
 
     const child = fork(workerPath, { silent: true });
 

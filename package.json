@@ -38,7 +38,8 @@
       "types": "./dist/next-js.d.ts",
       "import": "./dist/next-js.js",
       "require": "./dist/next-js.js"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist/",
