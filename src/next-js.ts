@@ -44,7 +44,7 @@ function connectWrapper<Req extends Request, Res extends Response>(
 export async function tidewaveHandler(
   config: TidewaveConfig = DEFAULT_CONFIG,
 ): Promise<NextJsHandler> {
-  const env = process.env.NODE_ENV;
+  const env = process.env['NODE_ENV'];
 
   if (!(env === 'development')) {
     throw Error(
