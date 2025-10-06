@@ -87,6 +87,8 @@ $ npm install -D tidewave
 $ yarn add -D tidewave
 # or
 $ pnpm add --save-dev tidewave
+# or
+$ bun add --dev tidewave
 ```
 
 Then, configure it:
