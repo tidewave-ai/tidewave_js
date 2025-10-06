@@ -40,6 +40,20 @@ Available MCP options:
 Tidewave also provides HTTP-based MCP access through a Vite plugin for
 development environments. Add the plugin to your `vite.config.js`:
 
+Install it with:
+
+```sh
+$ npm install -D tidewave
+# or
+$ yarn add -D tidewave
+# or
+$ pnpm add --save-dev tidewave
+# or
+$ bun add --dev tidewave
+```
+
+Then, configure it:
+
 ```javascript
 import { defineConfig } from 'vite';
 import tidewave from 'tidewave/vite-plugin';
@@ -63,16 +77,40 @@ tidewave({
 ### HTTP MCP for Next.js
 
 Tidewave provides seamless integration with Next.js, you only need to expose its
-routes and then plug its middleware accordingly:
+routes and then plug its middleware accordingly.
+
+Install it with:
+
+```sh
+$ npm install -D tidewave
+# or
+$ yarn add -D tidewave
+# or
+$ pnpm add --save-dev tidewave
+# or
+$ bun add --dev tidewave
+```
+
+Then, configure it:
 
 **Pages Router** - Create `pages/api/tidewave/[...all].ts`:
 
 ```typescript
-import { tidewaveHandler } from 'tidewave/next-js';
+import type { NextApiRequest, NextApiResponse } from 'next';
 
-export default await tidewaveHandler();
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
+  if (process.env.NODE_ENV === 'development') {
+    const { tidewaveHandler } = await import('tidewave/next-js');
+    const handler = await tidewaveHandler();
+    return handler(req, res);
+  } else {
+    res.status(404).end();
+  }
+}
 
-// Next.js specific config
 export const config = {
   runtime: 'nodejs',
   api: {
