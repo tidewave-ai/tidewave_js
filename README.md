@@ -40,6 +40,18 @@ Available MCP options:
 Tidewave also provides HTTP-based MCP access through a Vite plugin for
 development environments. Add the plugin to your `vite.config.js`:
 
+Install it with:
+
+```sh
+$ npm install -D tidewave
+# or
+$ yarn add -D tidewave
+# or
+$ pnpm add --save-dev tidewave
+```
+
+Then, configure it:
+
 ```javascript
 import { defineConfig } from 'vite';
 import tidewave from 'tidewave/vite-plugin';
@@ -68,6 +80,18 @@ routes and then plug its middleware accordingly.
 **Important:** Tidewave is a development-only tool and should not run in
 production. See the [Production Builds](#production-builds-with-nextjs) section
 below for details.
+
+Install it with:
+
+```sh
+$ npm install -D tidewave
+# or
+$ yarn add -D tidewave
+# or
+$ pnpm add --save-dev tidewave
+```
+
+Then, configure it:
 
 **Pages Router** - Create `pages/api/tidewave/[...all].ts`:
 
