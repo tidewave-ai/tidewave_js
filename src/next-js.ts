@@ -3,12 +3,7 @@ import { checkSecurity, HANDLERS, methodNotAllowed, type Request, type Response 
 import bodyParser from 'body-parser';
 import type { TidewaveConfig } from './core';
 
-const DEFAULT_CONFIG: TidewaveConfig = {
-  allowRemoteAccess: false,
-  allowedOrigins: [],
-  port: 3000,
-  host: 'localhost',
-};
+const DEFAULT_CONFIG: TidewaveConfig = {};
 
 type NextJsHandler = (_req: NextApiRequest, _res: NextApiResponse) => Promise<void>;
 

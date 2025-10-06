@@ -27,13 +27,6 @@ export async function handleShell(req: Request, res: Response, next: NextFn): Pr
       cwd: process.cwd(),
     });
 
-    let outputEnded = false;
-    let errorEnded = false;
-
-    const checkEnd = (): void => {
-      if (outputEnded && errorEnded && !res.destroyed) res.end();
-    };
-
     child.stdout.on('data', (data: Buffer) => {
       if (!res.destroyed) {
         const chunk = Buffer.concat([
@@ -66,16 +59,6 @@ export async function handleShell(req: Request, res: Response, next: NextFn): Pr
       }
     });
 
-    child.stdout.on('end', () => {
-      outputEnded = true;
-      checkEnd();
-    });
-
-    child.stderr.on('end', () => {
-      errorEnded = true;
-      checkEnd();
-    });
-
     child.on('exit', code => {
       if (!res.destroyed) {
         const statusData = JSON.stringify({ status: code || 0 });
@@ -93,9 +76,7 @@ export async function handleShell(req: Request, res: Response, next: NextFn): Pr
         res.write(chunk);
       }
 
-      outputEnded = true;
-      errorEnded = true;
-      checkEnd();
+      res.end();
     });
 
     req.on('close', () => {
