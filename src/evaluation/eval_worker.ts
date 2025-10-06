@@ -14,7 +14,7 @@ process.on('message', async ({ code, args }: EvaluationRequest) => {
     process.send({
       type: 'result',
       success: true,
-      data: (result || null) && result,
+      data: (result ?? null) && result,
     });
   } catch (error) {
     process.send({

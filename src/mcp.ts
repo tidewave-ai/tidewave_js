@@ -50,7 +50,7 @@ async function handleProjectEvaluation({
     content: [
       {
         type: 'text',
-        text: `IO:\n\n${result.stdout}\n+${result.stderr}\n\nResult:${result.result}`,
+        text: `Stdout:\n\n${result.stdout}\n\nStderr:${result.stderr}\n\nResult:${result.result}`,
       },
     ],
     isError: false,
