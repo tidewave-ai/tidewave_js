@@ -84,7 +84,7 @@ export const config = {
 **Middleware** - Then create (or modify) `middleware.ts` with:
 
 ```typescript
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from 'next/server';
 
 export function middleware(req: NextRequest): NextResponse {
   const { pathname } = req.nextUrl;
