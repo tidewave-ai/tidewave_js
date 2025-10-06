@@ -84,8 +84,12 @@ export const config = {
 **Middleware** - Then create (or modify) `middleware.ts` with:
 
 ```typescript
-export function middleware(req: NextRequest): Promise<NextResponse> {
-  if (req.nextUrl.pathname.startsWith('/tidewave')) {
+import { NextRequest, NextResponse } from "next/server";
+
+export function middleware(req: NextRequest): NextResponse {
+  const { pathname } = req.nextUrl;
+
+  if (pathname.startsWith('/tidewave')) {
     return NextResponse.rewrite(new URL(`/api${pathname}`, req.url));
   }
 
