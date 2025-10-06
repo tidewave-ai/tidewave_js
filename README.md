@@ -84,37 +84,18 @@ export const config = {
 **Middleware** - Then create (or modify) `middleware.ts` with:
 
 ```typescript
-import { tidewaveMiddleware } from 'tidewave/next-js';
-
-export const middleware = tidewaveMiddleware();
-
-export const config = {
-  matcher: '/tidewave/(.*)',
-};
-```
-
-In case you already have an existing `middleware.ts`:
-
-```typescript
-import { tidewaveMiddleware } from 'tidewave/next-js';
-
-const withTidewave = tidewaveMiddleware();
-
 export function middleware(req: NextRequest): Promise<NextResponse> {
-  // This will return a unchanged NextResponse.next()
-  // if path doesn't match with `/tidewave`
-  // if does match it will rewrite to `/api/tidewave` instead
-  withTidewave(req, (req: NextRequest) => {
-    // your own logic
-    return NextResponse.json({ message: 'hello, world!' });
-  });
+  if (req.nextUrl.pathname.startsWith('/tidewave')) {
+    return NextResponse.rewrite(new URL(`/api${pathname}`, req.url));
+  }
+
+  // here you could add your own logic or different middlewares
+  // while changing the config.matcher to a string[]
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: [
-    '/tidewave/(.*)', // tidewave specific matcher
-    '/your/route/', // your specific matcher
-  ],
+  matcher: '/tidewave/(.*)',
 };
 ```
 
