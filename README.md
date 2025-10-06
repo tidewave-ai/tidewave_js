@@ -77,10 +77,6 @@ tidewave({
 Tidewave provides seamless integration with Next.js, you only need to expose its
 routes and then plug its middleware accordingly.
 
-**Important:** Tidewave is a development-only tool and should not run in
-production. See the [Production Builds](#production-builds-with-nextjs) section
-below for details.
-
 Install it with:
 
 ```sh
@@ -96,11 +92,21 @@ Then, configure it:
 **Pages Router** - Create `pages/api/tidewave/[...all].ts`:
 
 ```typescript
-import { tidewaveHandler } from 'tidewave/next-js';
+import type { NextApiRequest, NextApiResponse } from 'next';
 
-export default await tidewaveHandler();
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
+  if (process.env.NODE_ENV === 'development') {
+    const { tidewaveHandler } = await import('tidewave/next-js');
+    const handler = await tidewaveHandler();
+    return handler(req, res);
+  } else {
+    res.status(404).end();
+  }
+}
 
-// Next.js specific config
 export const config = {
   runtime: 'nodejs',
   api: {
@@ -132,50 +138,6 @@ export const config = {
 ```
 
 This exposes the MCP endpoint at `/tidewave/mcp`.
-
-#### Production Builds with Next.js
-
-Tidewave automatically prevents itself from running in production environments
-through multiple safeguards:
-
-**1. Conditional Exports (Webpack)**
-
-When using Next.js's default bundler (webpack), the package uses conditional
-exports to automatically substitute a production stub that returns 404
-
-With webpack, this means **zero development code is included in your production
-bundle**.
-
-**2. Import-Time Check (Safety Net)**
-
-For bundlers that don't support conditional exports (like Turbopack), Tidewave
-includes an import-time check that throws an error when `NODE_ENV=production`:
-
-This fails fast when your production server starts, preventing accidental dev
-tool exposure.
-
-If you're using Turbopack, we recommend the following approach on pages router:
-
-```typescript
-// pages/api/tidewave/[...all].ts
-import { tidewaveHandler } from 'tidewave/next-js';
-
-const handler =
-  process.env.NODE_ENV === 'development'
-    ? await tidewaveHandler()
-    : () => {
-        /* noop */
-      };
-
-export default handler;
-
-export const config = {
-  runtime: 'nodejs',
-  api: {
-    bodyParser: false, // Tidewave already parses the body internally
-  },
-};
-```
 
 ### CLI Usage
 

@@ -3,19 +3,6 @@ import { checkSecurity, HANDLERS, methodNotAllowed, type Request, type Response 
 import bodyParser from 'body-parser';
 import type { TidewaveConfig } from './core';
 
-// Production environment check - using bracket notation to prevent build-time replacement
-// This throws at import time to fail fast when server starts in production
-if (process.env['NODE_ENV'] === 'production') {
-  throw new Error(
-    '[Tidewave] Detected production environment. Tidewave is a development-only tool and should not be imported in production builds.\n\n' +
-      'Solutions:\n' +
-      '1. Use webpack instead of Turbopack: Remove --turbopack flag from your build command (webpack respects conditional exports)\n' +
-      '2. Install tidewave as a devDependency: This prevents it from being included in production dependencies\n' +
-      '3. Conditionally import: Only import tidewave routes in development environment\n\n' +
-      'See https://github.com/dashbit/tidewave_javascript#http-mcp-for-nextjs for more details.',
-  );
-}
-
 const DEFAULT_CONFIG: TidewaveConfig = {
   allowRemoteAccess: false,
   allowedOrigins: [],

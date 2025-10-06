@@ -36,18 +36,8 @@
     },
     "./next-js": {
       "types": "./dist/next-js.d.ts",
-      "development": {
-        "import": "./dist/next-js.js",
-        "require": "./dist/next-js.js"
-      },
-      "production": {
-        "import": "./dist/next-js.prod.js",
-        "require": "./dist/next-js.prod.js"
-      },
-      "default": {
-        "import": "./dist/next-js.js",
-        "require": "./dist/next-js.js"
-      }
+      "import": "./dist/next-js.js",
+      "require": "./dist/next-js.js"
     }
   },
   "files": [
