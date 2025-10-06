@@ -44,6 +44,14 @@ function connectWrapper<Req extends Request, Res extends Response>(
 export async function tidewaveHandler(
   config: TidewaveConfig = DEFAULT_CONFIG,
 ): Promise<NextJsHandler> {
+  const env = process.env.NODE_ENV;
+
+  if (!(env === 'development')) {
+    throw Error(
+      `[Tidewave] tidewave is designed to only work on development environment, got: ${env}`,
+    );
+  }
+
   return async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
     const origin = req.headers.host;
 
