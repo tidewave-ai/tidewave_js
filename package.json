@@ -49,7 +49,7 @@
   ],
   "scripts": {
     "dist": "bun run clean && bun run build:js && bun run build:types",
-    "build:js": "bun build --outdir dist --root src --external commander --external chalk --external typescript src/next-js.ts src/vite-plugin.ts src/evaluation/eval_worker.ts --target node",
+    "build:js": "bun build --outdir dist --root src --external commander --external chalk --external typescript src/next-js.ts src/vite-plugin.ts src/evaluation/eval_worker.ts src/cli/index.ts --target node",
     "build:types": "tsc -p tsconfig.declarations.json",
     "dev": "bun run src/cli/index.ts",
     "test": "bun test",
