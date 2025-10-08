@@ -119,8 +119,8 @@ export const config = {
 };
 ```
 
-*Note: this uses the **Pages Router**, however it works regardless of the router
-type you use in your application.*
+_Note: this uses the **Pages Router**, however it works regardless of the router
+type you use in your application._
 
 Then create (or modify) `middleware.ts` with:
 
