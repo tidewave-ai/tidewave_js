@@ -93,7 +93,7 @@ $ bun add --dev tidewave
 
 Then, configure it:
 
-**Pages Router** - Create `pages/api/tidewave/[...all].ts`:
+Create `pages/api/tidewave.ts` and `pages/api/tidewave/[...all].ts`, both with:
 
 ```typescript
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -119,7 +119,10 @@ export const config = {
 };
 ```
 
-**Middleware** - Then create (or modify) `middleware.ts` with:
+*Note: this uses the **Pages Router**, however it works regardless of the router
+type you use in your application.*
+
+Then create (or modify) `middleware.ts` with:
 
 ```typescript
 import { NextRequest, NextResponse } from 'next/server';
@@ -137,7 +140,7 @@ export function middleware(req: NextRequest): NextResponse {
 }
 
 export const config = {
-  matcher: '/tidewave/(.*)',
+  matcher: ['/tidewave', '/tidewave/(.*)'],
 };
 ```
 
