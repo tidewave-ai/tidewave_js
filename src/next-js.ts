@@ -53,6 +53,18 @@ export async function tidewaveHandler(
   return async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
     const origin = req.headers.host;
 
+    // Parse endpoint manually, rewrite doesn't populate query
+    const url = new URL(req.url ?? '', `http://${origin}`);
+    const segments = url.pathname.split('/').filter(Boolean);
+    const [_tidewave, endpoint] = segments;
+
+    // Note that this is the original request URL, not accounting for
+    // Next.js rewrite. We validate that the request targets /tidewave,
+    // rather than /api/tidewave.
+    if (!url.pathname.startsWith('/tidewave')) {
+      return res.status(404).json({ message: 'This route only works when accessed at /tidewave' });
+    }
+
     if (origin) {
       const [hostname, port] = origin.split(':');
       config.host = hostname ? hostname : config.host;
@@ -63,11 +75,6 @@ export async function tidewaveHandler(
     const securityMiddleware = checkSecurity(config);
     await connectWrapper(securityMiddleware)(req, res, next);
     await connectWrapper(bodyParser.json())(req, res, next);
-
-    // Parse endpoint manually, rewrite doesn't populate query
-    const url = new URL(req.url ?? '', `http://${origin}`);
-    const segments = url.pathname.split('/').filter(Boolean);
-    const [_tidewave, endpoint] = segments;
 
     if (req.method === 'GET' && endpoint === undefined) {
       return await respondTidewaveHTML(res, config);
