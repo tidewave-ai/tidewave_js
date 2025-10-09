@@ -143,7 +143,7 @@ export function middleware(req: NextRequest): NextResponse {
 }
 
 export const config = {
-  matcher: ['/tidewave', '/tidewave/(.*)'],
+  matcher: ['/tidewave/:path*'],
 };
 ```
 
