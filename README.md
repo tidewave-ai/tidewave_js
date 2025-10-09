@@ -93,7 +93,7 @@ $ bun add --dev tidewave
 
 Then, configure it:
 
-Create `pages/api/tidewave.ts` and `pages/api/tidewave/[...all].ts`, both with:
+Create `pages/api/tidewave/[...all].ts` with:
 
 ```typescript
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -130,12 +130,15 @@ import { NextRequest, NextResponse } from 'next/server';
 export function middleware(req: NextRequest): NextResponse {
   const { pathname } = req.nextUrl;
 
+  if (pathname === '/tidewave') {
+    return NextResponse.rewrite(new URL(`/api/tidewave/index`, req.url));
+  }
+
   if (pathname.startsWith('/tidewave')) {
     return NextResponse.rewrite(new URL(`/api${pathname}`, req.url));
   }
 
-  // here you could add your own logic or different middlewares
-  // while changing the config.matcher to a string[]
+  // Here you could add your own logic or different middlewares.
   return NextResponse.next();
 }
 
