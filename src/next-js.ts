@@ -69,7 +69,7 @@ export async function tidewaveHandler(
     const segments = url.pathname.split('/').filter(Boolean);
     const [_tidewave, endpoint] = segments;
 
-    if (req.method === 'GET' && endpoint === 'index') {
+    if (req.method === 'GET' && endpoint === undefined) {
       return await respondTidewaveHTML(res, config);
     }
 
