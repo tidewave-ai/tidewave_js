@@ -5,6 +5,7 @@ import { checkSecurity, HANDLERS, methodNotAllowed, type Request, type Response 
 import bodyParser from 'body-parser';
 import type { TidewaveConfig } from './core';
 import { default as tidewavePackage } from '../package.json' with { type: 'json' };
+import { initializeLogging } from './logger/instrumentation';
 
 const DEFAULT_CONFIG: TidewaveConfig = {};
 
@@ -152,4 +153,24 @@ function escapeHtml(text: string): string {
   };
 
   return text.replace(/[&<>"']/g, match => map[match]!);
+}
+
+/**
+ * Initialize Tidewave logging for Next.js applications.
+ * This function should be exported as `register` from your instrumentation.ts file.
+ *
+ * @example
+ * ```typescript
+ * // instrumentation.ts
+ * export { tidewaveLogger as register } from 'tidewave/next-js'
+ * ```
+ */
+export function tidewaveLogger(): void {
+  // Only initialize in development and Node.js runtime
+  const env = process.env['NODE_ENV'];
+  const runtime = process.env['NEXT_RUNTIME'];
+
+  if (env === 'development' && runtime !== 'edge') {
+    initializeLogging();
+  }
 }
