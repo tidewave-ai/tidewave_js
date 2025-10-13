@@ -116,7 +116,5 @@ export class CircularBufferLogExporter implements LogRecordExporter {
   }
 }
 
-// Singleton instance
-export const logExporter = new CircularBufferLogExporter(
-  parseInt(process.env.TIDEWAVE_LOG_BUFFER_SIZE || '1024'),
-);
+// Singleton instance with fixed buffer size of 1024 entries
+export const logExporter = new CircularBufferLogExporter(1024);

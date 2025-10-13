@@ -133,32 +133,49 @@ async function handleGetLogs(args: GetLogsInputSchema): Promise<CallToolResult> 
 
     const stats = logExporter.getStats();
 
-    const output = {
-      logs: logs.map(log => ({
-        timestamp: log.timestamp,
-        level: log.severityText,
-        message: log.body,
-        ...(log.traceId && { traceId: log.traceId }),
-        ...(log.spanId && { spanId: log.spanId }),
-        ...(log.attributes && { attributes: log.attributes }),
-      })),
-      metadata: {
-        returned: logs.length,
-        ...stats,
-        filters: {
-          ...(args.tail && { tail: args.tail }),
-          ...(args.grep && { grep: args.grep }),
-          ...(args.level && { level: args.level }),
-          ...(args.since && { since: args.since }),
-        },
-      },
-    };
+    // Format each log as text
+    const logLines = logs.map(log => {
+      let line = `[${log.timestamp}] ${log.severityText}: ${log.body}`;
+
+      // Add trace info if available
+      if (log.traceId || log.spanId) {
+        const traceInfo = [];
+        if (log.traceId) traceInfo.push(`traceId=${log.traceId}`);
+        if (log.spanId) traceInfo.push(`spanId=${log.spanId}`);
+        line += ` (${traceInfo.join(', ')})`;
+      }
+
+      return line;
+    });
+
+    // Build metadata summary
+    const metadata = [
+      '',
+      '--- Metadata ---',
+      `Returned: ${logs.length} logs`,
+      `Total logs: ${stats.totalLogs}`,
+      `Buffer size: ${stats.bufferSize}`,
+      `Buffer usage: ${stats.bufferUsage}`,
+    ];
+
+    // Add filter info if any filters were applied
+    const filters = [];
+    if (args.tail) filters.push(`tail=${args.tail}`);
+    if (args.grep) filters.push(`grep="${args.grep}"`);
+    if (args.level) filters.push(`level=${args.level}`);
+    if (args.since) filters.push(`since=${args.since}`);
+
+    if (filters.length > 0) {
+      metadata.push(`Filters: ${filters.join(', ')}`);
+    }
+
+    const output = [...logLines, ...metadata].join('\n');
 
     return {
       content: [
         {
           type: 'text',
-          text: JSON.stringify(output, null, 2),
+          text: output,
         },
       ],
       isError: false,

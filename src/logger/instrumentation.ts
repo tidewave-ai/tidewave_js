@@ -8,21 +8,18 @@ let isLoggingInitialized = false;
 type ConsoleMethods = 'log' | 'info' | 'warn' | 'error' | 'debug';
 
 export function initializeLogging(): void {
-  // Check if we're in a browser environment
   const isBrowser =
     typeof globalThis !== 'undefined' &&
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     typeof (globalThis as any).window !== 'undefined';
 
   if (isLoggingInitialized || isBrowser) {
-    return; // Only initialize on server, once
+    return;
   }
 
   try {
-    // Create resource with default attributes
     const resource = defaultResource();
 
-    // Create logger provider with our circular buffer exporter
     const loggerProvider = new LoggerProvider({
       resource,
       processors: [
@@ -34,14 +31,12 @@ export function initializeLogging(): void {
       ],
     });
 
-    // Register globally
     logs.setGlobalLoggerProvider(loggerProvider);
 
     // Patch console methods to emit OTel logs
     patchConsole();
 
     isLoggingInitialized = true;
-    console.log('[Tidewave] Logging initialized with circular buffer');
   } catch (error) {
     console.error('[Tidewave] Failed to initialize logging:', error);
   }
@@ -63,10 +58,8 @@ function patchConsole(): void {
       const original = console[method].bind(console);
 
       console[method] = (...args: unknown[]): void => {
-        // Call original first
         original(...args);
 
-        // Emit OTel log
         try {
           const body = args
             .map((arg: unknown) => {

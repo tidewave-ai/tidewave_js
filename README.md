@@ -143,131 +143,28 @@ export const config = {
 
 This exposes the MCP endpoint at `/tidewave/mcp`.
 
-### Logging Integration
-
-Tidewave can capture application logs using OpenTelemetry, making them available
-via the `get_logs` MCP tool for debugging. This feature is **development-only**
-and uses an in-memory circular buffer.
-
-#### Next.js Logging
-
-To enable logging in Next.js, create an `instrumentation.ts` file in your
-project root (or `src/` directory):
+**Logging** (optional): To capture application logs for debugging via the
+`get_logs` MCP tool, create an `instrumentation.ts` file:
 
 ```typescript
 // instrumentation.ts
-export { tidewaveLogger as register } from 'tidewave/next-js';
-```
+import { registerTidewaveLogger } from 'tidewave/next-js';
 
-This will:
-
-- Automatically patch `console.log`, `console.info`, `console.warn`,
-  `console.error`, and `console.debug`
-- Capture all console output in a circular buffer (default: 1024 entries)
-- Make logs available via the `get_logs` MCP tool
-- Only run in development mode (`NODE_ENV=development`)
-- Skip initialization in Edge runtime
-
-**Configuration:**
-
-Set the buffer size via environment variable:
-
-```bash
-TIDEWAVE_LOG_BUFFER_SIZE=2048 npm run dev
-```
-
-**Requirements:**
-
-- Next.js 13+ with `instrumentation.ts` support
-- Enable in `next.config.js`:
-  ```javascript
-  module.exports = {
-    experimental: {
-      instrumentationHook: true,
-    },
-  };
-  ```
-
-#### Vite Logging
-
-Logging is automatically enabled when you use the Vite plugin. No additional
-configuration needed!
-
-```javascript
-import { defineConfig } from 'vite';
-import tidewave from 'tidewave/vite-plugin';
-
-export default defineConfig({
-  plugins: [tidewave()],
-});
-```
-
-The plugin will automatically:
-
-- Capture all console output during development
-- Store logs in a circular buffer (default: 1024 entries)
-- Make logs available via the `get_logs` MCP tool
-
-#### Using the `get_logs` Tool
-
-Once logging is enabled, use the `get_logs` MCP tool to retrieve logs:
-
-**Parameters:**
-
-- `tail` (number, default: 100): Number of log entries to return from the end
-- `level` (string, optional): Filter by severity level (`DEBUG`, `INFO`, `WARN`,
-  `ERROR`)
-- `grep` (string, optional): Filter logs with regex pattern (case insensitive)
-- `since` (string, optional): ISO 8601 timestamp - return logs after this time
-
-**Examples:**
-
-```javascript
-// Get last 50 logs
-get_logs({ tail: 50 });
-
-// Get only errors
-get_logs({ level: 'ERROR' });
-
-// Search for specific text
-get_logs({ grep: 'api/users' });
-
-// Get logs since a specific time
-get_logs({ since: '2025-01-15T10:30:00Z' });
-
-// Combine filters
-get_logs({ tail: 100, level: 'ERROR', grep: 'database' });
-```
-
-**Response Format:**
-
-```json
-{
-  "logs": [
-    {
-      "timestamp": "2025-01-15T10:30:45.123Z",
-      "level": "INFO",
-      "message": "Server started on port 3000",
-      "attributes": {
-        "log.origin": "console",
-        "log.method": "log"
-      }
-    }
-  ],
-  "metadata": {
-    "returned": 50,
-    "totalLogs": 1024,
-    "bufferSize": 1024,
-    "bufferUsage": "100.0%",
-    "filters": {
-      "tail": 50
-    }
-  }
+export function register() {
+  registerTidewaveLogger();
+  // other instrumentation...
 }
 ```
 
-**Note:** Tidewave's internal logs (prefixed with `[Tidewave]`) are
-automatically filtered out.
+Enable in `next.config.js`:
+
+```javascript
+module.exports = {
+  experimental: {
+    instrumentationHook: true,
+  },
+};
+```
 
 ### CLI Usage
 

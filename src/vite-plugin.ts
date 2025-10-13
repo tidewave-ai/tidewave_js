@@ -1,6 +1,7 @@
 import type { TidewaveConfig } from './core';
 import { configureServer } from './http';
 import type { Plugin, ViteDevServer } from 'vite';
+import { initializeLogging } from './logger/instrumentation';
 
 const DEFAULT_CONFIG: TidewaveConfig = {
   port: 5173,
@@ -38,6 +39,8 @@ async function tidewaveServer(
     );
     return;
   }
+
+  initializeLogging();
 
   server.middlewares = configureServer(server.middlewares, config);
 }

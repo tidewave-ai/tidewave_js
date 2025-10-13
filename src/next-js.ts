@@ -157,15 +157,20 @@ function escapeHtml(text: string): string {
 
 /**
  * Initialize Tidewave logging for Next.js applications.
- * This function should be exported as `register` from your instrumentation.ts file.
+ * This function should be called from your `register` function in instrumentation.ts.
  *
  * @example
  * ```typescript
  * // instrumentation.ts
- * export { tidewaveLogger as register } from 'tidewave/next-js'
+ * import { registerTidewaveLogger } from 'tidewave/next-js'
+ *
+ * export function register() {
+ *   registerTidewaveLogger()
+ *   // other instrumentation...
+ * }
  * ```
  */
-export function tidewaveLogger(): void {
+export function registerTidewaveLogger(): void {
   // Only initialize in development and Node.js runtime
   const env = process.env['NODE_ENV'];
   const runtime = process.env['NEXT_RUNTIME'];
