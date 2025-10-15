@@ -1,5 +1,5 @@
 import { logs } from '@opentelemetry/api-logs';
-import { LoggerProvider, BatchLogRecordProcessor } from '@opentelemetry/sdk-logs';
+import { LoggerProvider, SimpleLogRecordProcessor } from '@opentelemetry/sdk-logs';
 import { defaultResource } from '@opentelemetry/resources';
 import { logExporter } from './circular-buffer-exporter';
 
@@ -14,8 +14,11 @@ export function initializeLogging(): void {
     typeof (globalThis as any).window !== 'undefined';
 
   if (isLoggingInitialized || isBrowser) {
+    console.log('[Tidewave] Logging already initialized or is browser, skipping');
     return;
   }
+
+  console.log('[Tidewave] Initializing logging, PID:', process.pid);
 
   try {
     const resource = defaultResource();
@@ -23,11 +26,9 @@ export function initializeLogging(): void {
     const loggerProvider = new LoggerProvider({
       resource,
       processors: [
-        new BatchLogRecordProcessor(logExporter, {
-          maxQueueSize: 100,
-          maxExportBatchSize: 10,
-          scheduledDelayMillis: 1000,
-        }),
+        // Use SimpleLogRecordProcessor for immediate export in development
+        // This ensures logs are available immediately without batching delay
+        new SimpleLogRecordProcessor(logExporter),
       ],
     });
 
@@ -65,7 +66,7 @@ function patchConsole(): void {
             .map((arg: unknown) => {
               if (typeof arg === 'string') return arg;
               if (arg instanceof Error) {
-                return `${arg.name}: ${arg.message}\n${arg.stack}`;
+                return arg.stack;
               }
               if (typeof arg === 'object') {
                 try {

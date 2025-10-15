@@ -24,7 +24,6 @@ export class CircularBufferLogExporter implements LogRecordExporter {
   private maxSize: number;
   private writeIndex: number = 0;
   private count: number = 0;
-  private readonly internalLogPrefix = '[tidewave';
 
   constructor(maxSize: number = 1024) {
     this.buffer = new Array(maxSize);
@@ -34,11 +33,7 @@ export class CircularBufferLogExporter implements LogRecordExporter {
   export(logs: ReadableLogRecord[], resultCallback: (result: ExportResult) => void): void {
     try {
       for (const log of logs) {
-        // Filter out Tidewave's own internal logs
         const body = String(log.body || '');
-        if (body.toLowerCase().startsWith(this.internalLogPrefix)) {
-          continue;
-        }
 
         const storedLog: StoredLogRecord = {
           timestamp: new Date(log.hrTime[0] * 1000 + log.hrTime[1] / 1_000_000).toISOString(),
@@ -117,4 +112,28 @@ export class CircularBufferLogExporter implements LogRecordExporter {
 }
 
 // Singleton instance with fixed buffer size of 1024 entries
-export const logExporter = new CircularBufferLogExporter(1024);
+// Use global variable to ensure the same instance is shared across module contexts
+// This is necessary because Next.js API routes may run in different module contexts
+declare global {
+  // eslint-disable-next-line no-var
+  var __tidewaveLogExporter: CircularBufferLogExporter | undefined;
+}
+
+// Get or create the global singleton instance
+if (!globalThis.__tidewaveLogExporter) {
+  const instanceId = Math.random().toString(36).substring(7);
+  globalThis.__tidewaveLogExporter = new CircularBufferLogExporter(1024);
+
+  // Debug: Log when this module is loaded
+  if (typeof process !== 'undefined' && process.env.NODE_ENV === 'development') {
+    console.log(
+      `[Tidewave] CircularBufferLogExporter instance created: ${instanceId} (PID: ${process.pid})`,
+    );
+  }
+} else if (typeof process !== 'undefined' && process.env.NODE_ENV === 'development') {
+  console.log(
+    `[Tidewave] Reusing existing CircularBufferLogExporter instance (PID: ${process.pid})`,
+  );
+}
+
+export const logExporter = globalThis.__tidewaveLogExporter;

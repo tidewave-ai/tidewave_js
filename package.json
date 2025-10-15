@@ -1,6 +1,6 @@
 {
   "name": "tidewave",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Tidewave JavaScript CLI for documentation extraction and MCP server",
   "keywords": [
     "typescript",
@@ -34,10 +34,15 @@
       "import": "./dist/vite-plugin.js",
       "require": "./dist/vite-plugin.js"
     },
-    "./next-js": {
-      "types": "./dist/next-js.d.ts",
-      "import": "./dist/next-js.js",
-      "require": "./dist/next-js.js"
+    "./next-js/handler": {
+      "types": "./dist/next-js/handler.d.ts",
+      "import": "./dist/next-js/handler.js",
+      "require": "./dist/next-js/handler.js"
+    },
+    "./next-js/logger": {
+      "types": "./dist/next-js/logger.d.ts",
+      "import": "./dist/next-js/logger.js",
+      "require": "./dist/next-js/logger.js"
     },
     "./package.json": "./package.json"
   },
@@ -49,7 +54,7 @@
   ],
   "scripts": {
     "dist": "bun run clean && bun run build:js && bun run build:types",
-    "build:js": "bun build --outdir dist --root src --external commander --external chalk --external typescript --external child_process --external module src/next-js.ts src/vite-plugin.ts src/evaluation/eval_worker.ts src/cli/index.ts --target node",
+    "build:js": "bun build --outdir dist --root src --external commander --external chalk --external typescript --external child_process --external module src/next-js/handler.ts src/next-js/logger.ts src/vite-plugin.ts src/evaluation/eval_worker.ts src/cli/index.ts --target node",
     "build:types": "tsc -p tsconfig.declarations.json",
     "dev": "bun run src/cli/index.ts",
     "test": "bun test",

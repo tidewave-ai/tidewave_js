@@ -124,6 +124,11 @@ async function handleGetSourcePath({ reference }: SourceInputSchema): Promise<Ca
 
 async function handleGetLogs(args: GetLogsInputSchema): Promise<CallToolResult> {
   try {
+    // Debug: Log the exporter instance details
+    console.log('[Tidewave MCP] Getting logs from exporter, stats:', logExporter.getStats());
+    console.log('[Tidewave MCP] Process PID:', process.pid);
+    console.log('[Tidewave MCP] NEXT_RUNTIME:', process.env.NEXT_RUNTIME);
+
     const logs = logExporter.getLogs({
       tail: args.tail,
       grep: args.grep,
@@ -154,20 +159,7 @@ async function handleGetLogs(args: GetLogsInputSchema): Promise<CallToolResult> 
       '--- Metadata ---',
       `Returned: ${logs.length} logs`,
       `Total logs: ${stats.totalLogs}`,
-      `Buffer size: ${stats.bufferSize}`,
-      `Buffer usage: ${stats.bufferUsage}`,
     ];
-
-    // Add filter info if any filters were applied
-    const filters = [];
-    if (args.tail) filters.push(`tail=${args.tail}`);
-    if (args.grep) filters.push(`grep="${args.grep}"`);
-    if (args.level) filters.push(`level=${args.level}`);
-    if (args.since) filters.push(`since=${args.since}`);
-
-    if (filters.length > 0) {
-      metadata.push(`Filters: ${filters.join(', ')}`);
-    }
 
     const output = [...logLines, ...metadata].join('\n');
 

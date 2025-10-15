@@ -1,11 +1,10 @@
 import path from 'path';
 import fs from 'fs/promises';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { checkSecurity, HANDLERS, methodNotAllowed, type Request, type Response } from './http';
+import { checkSecurity, methodNotAllowed, type Request, type Response } from '../http';
 import bodyParser from 'body-parser';
-import type { TidewaveConfig } from './core';
-import { default as tidewavePackage } from '../package.json' with { type: 'json' };
-import { initializeLogging } from './logger/instrumentation';
+import type { TidewaveConfig } from '../core';
+import { default as tidewavePackage } from '../../package.json' with { type: 'json' };
 
 const DEFAULT_CONFIG: TidewaveConfig = {};
 
@@ -51,6 +50,13 @@ export async function tidewaveHandler(
     );
   }
 
+  // Initialize logging in this module context so console patching affects API routes
+  const runtime = process.env['NEXT_RUNTIME'];
+  if (runtime !== 'edge') {
+    const { initializeLogging } = await import('../logger/instrumentation');
+    initializeLogging();
+  }
+
   return async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
     const origin = req.headers.host;
 
@@ -89,6 +95,8 @@ export async function tidewaveHandler(
       return methodNotAllowed(res);
     }
 
+    // Dynamic import to avoid bundling fork() from child_process
+    const { HANDLERS } = await import('../http');
     const handler = HANDLERS[endpoint || ''];
     if (handler) return await connectWrapper(handler)(req, res, next);
 
@@ -153,29 +161,4 @@ function escapeHtml(text: string): string {
   };
 
   return text.replace(/[&<>"']/g, match => map[match]!);
-}
-
-/**
- * Initialize Tidewave logging for Next.js applications.
- * This function should be called from your `register` function in instrumentation.ts.
- *
- * @example
- * ```typescript
- * // instrumentation.ts
- * import { registerTidewaveLogger } from 'tidewave/next-js'
- *
- * export function register() {
- *   registerTidewaveLogger()
- *   // other instrumentation...
- * }
- * ```
- */
-export function registerTidewaveLogger(): void {
-  // Only initialize in development and Node.js runtime
-  const env = process.env['NODE_ENV'];
-  const runtime = process.env['NEXT_RUNTIME'];
-
-  if (env === 'development' && runtime !== 'edge') {
-    initializeLogging();
-  }
 }

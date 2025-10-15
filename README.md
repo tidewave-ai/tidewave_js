@@ -156,16 +156,6 @@ export function register() {
 }
 ```
 
-Enable in `next.config.js`:
-
-```javascript
-module.exports = {
-  experimental: {
-    instrumentationHook: true,
-  },
-};
-```
-
 ### CLI Usage
 
 Tidewave also provides the MCP features over a CLI tool. Use it directly via
