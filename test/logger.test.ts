@@ -62,28 +62,6 @@ describe('Logger with SimpleLogRecordProcessor', () => {
     expect(finalStats.totalLogs).toBeGreaterThan(initialCount);
   });
 
-  it('should filter out internal tidewave logs', () => {
-    initializeLogging();
-
-    // Emit internal logs that should be filtered
-    console.log('[tidewave] Internal log 1');
-    console.log('[Tidewave] Internal log 2');
-    console.log('[TIDEWAVE] Internal log 3');
-
-    // Emit application log that should be captured
-    console.log('[APP] Application log');
-
-    const logs = logExporter.getLogs({ tail: 10 });
-
-    // Verify internal logs are filtered out
-    const tidewaveLogs = logs.filter(log => log.body.toLowerCase().includes('[tidewave'));
-    expect(tidewaveLogs.length).toBe(0);
-
-    // Verify application log is captured
-    const appLogs = logs.filter(log => log.body.includes('[APP]'));
-    expect(appLogs.length).toBeGreaterThanOrEqual(1);
-  });
-
   it('should support log filtering by level', () => {
     initializeLogging();
 

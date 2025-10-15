@@ -124,11 +124,6 @@ async function handleGetSourcePath({ reference }: SourceInputSchema): Promise<Ca
 
 async function handleGetLogs(args: GetLogsInputSchema): Promise<CallToolResult> {
   try {
-    // Debug: Log the exporter instance details
-    console.log('[Tidewave MCP] Getting logs from exporter, stats:', logExporter.getStats());
-    console.log('[Tidewave MCP] Process PID:', process.pid);
-    console.log('[Tidewave MCP] NEXT_RUNTIME:', process.env.NEXT_RUNTIME);
-
     const logs = logExporter.getLogs({
       tail: args.tail,
       grep: args.grep,
@@ -138,11 +133,9 @@ async function handleGetLogs(args: GetLogsInputSchema): Promise<CallToolResult> 
 
     const stats = logExporter.getStats();
 
-    // Format each log as text
     const logLines = logs.map(log => {
       let line = `[${log.timestamp}] ${log.severityText}: ${log.body}`;
 
-      // Add trace info if available
       if (log.traceId || log.spanId) {
         const traceInfo = [];
         if (log.traceId) traceInfo.push(`traceId=${log.traceId}`);
@@ -153,7 +146,6 @@ async function handleGetLogs(args: GetLogsInputSchema): Promise<CallToolResult> 
       return line;
     });
 
-    // Build metadata summary
     const metadata = [
       '',
       '--- Metadata ---',

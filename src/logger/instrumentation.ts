@@ -14,27 +14,18 @@ export function initializeLogging(): void {
     typeof (globalThis as any).window !== 'undefined';
 
   if (isLoggingInitialized || isBrowser) {
-    console.log('[Tidewave] Logging already initialized or is browser, skipping');
     return;
   }
-
-  console.log('[Tidewave] Initializing logging, PID:', process.pid);
 
   try {
     const resource = defaultResource();
 
     const loggerProvider = new LoggerProvider({
       resource,
-      processors: [
-        // Use SimpleLogRecordProcessor for immediate export in development
-        // This ensures logs are available immediately without batching delay
-        new SimpleLogRecordProcessor(logExporter),
-      ],
+      processors: [new SimpleLogRecordProcessor(logExporter)],
     });
 
     logs.setGlobalLoggerProvider(loggerProvider);
-
-    // Patch console methods to emit OTel logs
     patchConsole();
 
     isLoggingInitialized = true;
@@ -59,9 +50,8 @@ function patchConsole(): void {
       const original = console[method].bind(console);
 
       console[method] = (...args: unknown[]): void => {
-        original(...args);
-
         try {
+          original(...args);
           const body = args
             .map((arg: unknown) => {
               if (typeof arg === 'string') return arg;
@@ -87,8 +77,8 @@ function patchConsole(): void {
               'log.method': method,
             },
           });
-        } catch (_err) {
-          // Silently fail to avoid infinite loops
+        } catch {
+          // Silently fail to avoid logging loops
         }
       };
     },

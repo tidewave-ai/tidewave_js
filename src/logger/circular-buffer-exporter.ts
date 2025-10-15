@@ -115,7 +115,6 @@ export class CircularBufferLogExporter implements LogRecordExporter {
 // Use global variable to ensure the same instance is shared across module contexts
 // This is necessary because Next.js API routes may run in different module contexts
 declare global {
-  // eslint-disable-next-line no-var
   var __tidewaveLogExporter: CircularBufferLogExporter | undefined;
 }
 
