@@ -149,7 +149,10 @@ This exposes the MCP endpoint at `/tidewave/mcp`.
 ```typescript
 // instrumentation.ts
 export async function register() {
-  if (process.env.NEXT_RUNTIME !== 'edge') {
+  const runtime = process.env.NEXT_RUNTIME;
+  const env = process.env.NODE_ENV;
+
+  if (runtime !== 'edge' && env !== 'production') {
     const { registerTidewaveLogger } = await import('tidewave/next-js/logger');
     await registerTidewaveLogger();
   }

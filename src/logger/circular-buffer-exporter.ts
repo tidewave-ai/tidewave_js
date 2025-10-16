@@ -112,7 +112,7 @@ export class CircularBufferLogExporter implements LogRecordExporter {
 }
 
 // Singleton instance with fixed buffer size of 1024 entries
-// Use global variable to ensure the same instance is shared across module contexts
+// Use runtime-global variable to ensure the same instance is shared across module contexts
 // This is necessary because Next.js API routes may run in different module contexts
 declare global {
   var __tidewaveLogExporter: CircularBufferLogExporter | undefined;

@@ -131,8 +131,6 @@ async function handleGetLogs(args: GetLogsInputSchema): Promise<CallToolResult> 
       since: args.since,
     });
 
-    const stats = logExporter.getStats();
-
     const logLines = logs.map(log => {
       let line = `[${log.timestamp}] ${log.severityText}: ${log.body}`;
 
@@ -146,14 +144,7 @@ async function handleGetLogs(args: GetLogsInputSchema): Promise<CallToolResult> 
       return line;
     });
 
-    const metadata = [
-      '',
-      '--- Metadata ---',
-      `Returned: ${logs.length} logs`,
-      `Total logs: ${stats.totalLogs}`,
-    ];
-
-    const output = [...logLines, ...metadata].join('\n');
+    const output = logLines.join('\n');
 
     return {
       content: [
