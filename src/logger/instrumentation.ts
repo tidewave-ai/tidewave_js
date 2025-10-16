@@ -41,6 +41,8 @@ export function initializeLogging(): void {
     patchProcessStreams();
 
     isLoggingInitialized = true;
+    // @ts-expect-error - Flag to track logging initialization for MCP server
+    globalThis.__TIDEWAVE_LOGGING_INITIALIZED__ = true;
   } catch (error) {
     console.error('[Tidewave] Failed to initialize logging:', error);
   }

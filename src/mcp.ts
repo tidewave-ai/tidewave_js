@@ -196,14 +196,18 @@ export async function serveMcp(transport: Transport): Promise<void> {
     handleProjectEvaluation,
   );
 
-  server.registerTool(
-    logsMcp.name,
-    {
-      description: logsMcp.description,
-      inputSchema: logsMcp.inputSchema.shape,
-    },
-    handleGetLogs,
-  );
+  // Only register logs MCP if logging has been initialized
+  // @ts-expect-error - Flag set in initializeLogging
+  if (globalThis.__TIDEWAVE_LOGGING_INITIALIZED__) {
+    server.registerTool(
+      logsMcp.name,
+      {
+        description: logsMcp.description,
+        inputSchema: logsMcp.inputSchema.shape,
+      },
+      handleGetLogs,
+    );
+  }
 
   await server.connect(transport);
 }
