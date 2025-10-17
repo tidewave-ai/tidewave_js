@@ -118,21 +118,8 @@ declare global {
   var __tidewaveLogExporter: CircularBufferLogExporter | undefined;
 }
 
-// Get or create the global singleton instance
 if (!globalThis.__tidewaveLogExporter) {
-  const instanceId = Math.random().toString(36).substring(7);
   globalThis.__tidewaveLogExporter = new CircularBufferLogExporter(1024);
-
-  // Debug: Log when this module is loaded
-  if (typeof process !== 'undefined' && process.env.NODE_ENV === 'development') {
-    console.log(
-      `[Tidewave] CircularBufferLogExporter instance created: ${instanceId} (PID: ${process.pid})`,
-    );
-  }
-} else if (typeof process !== 'undefined' && process.env.NODE_ENV === 'development') {
-  console.log(
-    `[Tidewave] Reusing existing CircularBufferLogExporter instance (PID: ${process.pid})`,
-  );
 }
 
 export const logExporter = globalThis.__tidewaveLogExporter;

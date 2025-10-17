@@ -5,8 +5,6 @@ import { logExporter } from './circular-buffer-exporter';
 
 let isLoggingInitialized = false;
 
-type ConsoleMethods = 'log' | 'info' | 'warn' | 'error' | 'debug';
-
 // eslint-disable-next-line no-control-regex
 const ANSI_REGEX = /\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g;
 
@@ -15,7 +13,7 @@ function stripAnsiCodes(text: string): string {
 }
 
 function cleanLogMessage(text: string): string {
-  return stripAnsiCodes(text).replace(/\n$/, '');
+  return stripAnsiCodes(text).replace(/\n$/, '').replaceAll('tidewave', '');
 }
 
 export function initializeLogging(): void {
@@ -46,58 +44,6 @@ export function initializeLogging(): void {
   } catch (error) {
     console.error('[Tidewave] Failed to initialize logging:', error);
   }
-}
-
-function patchConsole(): void {
-  const logger = logs.getLogger('console', '1.0.0');
-
-  const severityMap: Record<ConsoleMethods, string> = {
-    log: 'INFO',
-    info: 'INFO',
-    warn: 'WARN',
-    error: 'ERROR',
-    debug: 'DEBUG',
-  };
-
-  (Object.entries(severityMap) as [ConsoleMethods, string][]).forEach(
-    ([method, severity]): void => {
-      const original = console[method].bind(console);
-
-      console[method] = (...args: unknown[]): void => {
-        try {
-          original(...args);
-          const body = args
-            .map((arg: unknown) => {
-              if (typeof arg === 'string') return arg;
-              if (arg instanceof Error) {
-                return String(arg.stack);
-              }
-              if (typeof arg === 'object') {
-                try {
-                  return JSON.stringify(arg);
-                } catch {
-                  return String(arg);
-                }
-              }
-              return String(arg);
-            })
-            .map(stripAnsiCodes)
-            .join(' ');
-
-          logger.emit({
-            severityText: severity,
-            body,
-            attributes: {
-              'log.origin': 'console',
-              'log.method': method,
-            },
-          });
-        } catch {
-          // Silently fail to avoid logging loops
-        }
-      };
-    },
-  );
 }
 
 function patchProcessStreams(): void {
