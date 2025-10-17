@@ -3,15 +3,22 @@ import { tools } from './tools';
 import { name, version } from '../package.json';
 
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
-import type { DocsInputSchema, ProjectEvalInputSchema, SourceInputSchema } from './tools';
+import type {
+  DocsInputSchema,
+  ProjectEvalInputSchema,
+  SourceInputSchema,
+  GetLogsInputSchema,
+} from './tools';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { isExtractError, isResolveError } from './core';
 import { Tidewave } from '.';
+import { logExporter } from './logger/circular-buffer-exporter';
 
 const {
   docs: { mcp: docsMcp },
   source: { mcp: sourceMcp },
   eval: { mcp: evalMcp },
+  logs: { mcp: logsMcp },
 } = tools;
 
 async function handleProjectEvaluation({
@@ -115,6 +122,53 @@ async function handleGetSourcePath({ reference }: SourceInputSchema): Promise<Ca
   };
 }
 
+async function handleGetLogs(args: GetLogsInputSchema): Promise<CallToolResult> {
+  try {
+    const logs = logExporter.getLogs({
+      tail: args.tail,
+      grep: args.grep,
+      level: args.level,
+      since: args.since,
+    });
+
+    const logLines = logs.map(log => {
+      let line = `[${log.timestamp}] ${log.severityText}: ${log.body}`;
+
+      if (log.traceId || log.spanId) {
+        const traceInfo = [];
+        if (log.traceId) traceInfo.push(`traceId=${log.traceId}`);
+        if (log.spanId) traceInfo.push(`spanId=${log.spanId}`);
+        line += ` (${traceInfo.join(', ')})`;
+      }
+
+      return line;
+    });
+
+    const output = logLines.join('\n');
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: output,
+        },
+      ],
+      isError: false,
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Error retrieving logs: ${errorMessage}`,
+        },
+      ],
+      isError: true,
+    };
+  }
+}
+
 export async function serveMcp(transport: Transport): Promise<void> {
   const server = new McpServer({ name, version });
 
@@ -141,6 +195,19 @@ export async function serveMcp(transport: Transport): Promise<void> {
     { description: evalMcp.description, inputSchema: evalMcp.inputSchema.shape },
     handleProjectEvaluation,
   );
+
+  // Only register logs MCP if logging has been initialized
+  // @ts-expect-error - Flag set in initializeLogging
+  if (globalThis.__TIDEWAVE_LOGGING_INITIALIZED__) {
+    server.registerTool(
+      logsMcp.name,
+      {
+        description: logsMcp.description,
+        inputSchema: logsMcp.inputSchema.shape,
+      },
+      handleGetLogs,
+    );
+  }
 
   await server.connect(transport);
 }

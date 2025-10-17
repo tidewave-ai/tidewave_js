@@ -143,6 +143,22 @@ export const config = {
 
 This exposes the MCP endpoint at `/tidewave/mcp`.
 
+**Logging** (optional): To capture application logs for debugging via the
+`get_logs` MCP tool, create an `instrumentation.ts` file:
+
+```typescript
+// instrumentation.ts
+export async function register() {
+  const runtime = process.env.NEXT_RUNTIME;
+  const env = process.env.NODE_ENV;
+
+  if (runtime !== 'edge' && env !== 'production') {
+    const { registerTidewaveLogger } = await import('tidewave/next-js/logger');
+    await registerTidewaveLogger();
+  }
+}
+```
+
 ### CLI Usage
 
 Tidewave also provides the MCP features over a CLI tool. Use it directly via
