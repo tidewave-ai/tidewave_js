@@ -81,6 +81,8 @@
     "@opentelemetry/core": "^2.1.0",
     "@opentelemetry/resources": "^2.1.0",
     "@opentelemetry/sdk-logs": "^0.206.0",
+    "@opentelemetry/sdk-trace-base": "^2.1.0",
+    "@opentelemetry/sdk-trace-node": "^2.1.0",
     "@opentelemetry/semantic-conventions": "^1.37.0",
     "@types/body-parser": "^1.19.6",
     "@types/bun": "latest",

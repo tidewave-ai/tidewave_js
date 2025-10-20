@@ -2,8 +2,13 @@ import { logs } from '@opentelemetry/api-logs';
 import { LoggerProvider, SimpleLogRecordProcessor } from '@opentelemetry/sdk-logs';
 import { defaultResource } from '@opentelemetry/resources';
 import { logExporter } from './circular-buffer-exporter';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+import { SpanToLogProcessor } from './span-to-log-processor';
 
 let isLoggingInitialized = false;
+let isTracingInitialized = false;
+
+type ConsoleMethods = 'log' | 'info' | 'warn' | 'error' | 'debug';
 
 // eslint-disable-next-line no-control-regex
 const ANSI_REGEX = /\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g;
@@ -13,7 +18,9 @@ function stripAnsiCodes(text: string): string {
 }
 
 function cleanLogMessage(text: string): string {
-  return stripAnsiCodes(text).replace(/\n$/, '').replaceAll('tidewave', '');
+  return stripAnsiCodes(text)
+    .replace(/\n$/, '')
+    .replaceAll(/tidewave/i, '');
 }
 
 export function initializeLogging(): void {
@@ -36,7 +43,7 @@ export function initializeLogging(): void {
 
     logs.setGlobalLoggerProvider(loggerProvider);
     patchConsole();
-    patchProcessStreams();
+    initializeTracing(resource);
 
     isLoggingInitialized = true;
     // @ts-expect-error - Flag to track logging initialization for MCP server
@@ -46,64 +53,78 @@ export function initializeLogging(): void {
   }
 }
 
-function patchProcessStreams(): void {
-  const logger = logs.getLogger('process', '1.0.0');
-
-  if (process.stdout.write) {
-    const originalStdoutWrite = process.stdout.write.bind(process.stdout);
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    process.stdout.write = function (chunk: any, ...args: any[]): boolean {
-      const result = originalStdoutWrite(chunk, ...args);
-
-      try {
-        const message = typeof chunk === 'string' ? chunk : chunk?.toString();
-        if (message && message.trim()) {
-          const cleanMessage = cleanLogMessage(message);
-          if (cleanMessage) {
-            logger.emit({
-              severityText: 'INFO',
-              body: cleanMessage,
-              attributes: {
-                'log.origin': 'stdout',
-              },
-            });
-          }
-        }
-      } catch {
-        // Silently fail
-      }
-
-      return result;
-    };
+function initializeTracing(resource: ReturnType<typeof defaultResource>): void {
+  if (isTracingInitialized) {
+    return;
   }
 
-  if (process.stderr.write) {
-    const originalStderrWrite = process.stderr.write.bind(process.stderr);
+  try {
+    // Initialize a tracer provider with our custom SpanToLogProcessor
+    const tracerProvider = new NodeTracerProvider({
+      resource,
+      spanProcessors: [new SpanToLogProcessor()],
+    });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    process.stderr.write = function (chunk: any, ...args: any[]): boolean {
-      const result = originalStderrWrite(chunk, ...args);
+    // Register the tracer provider globally so Next.js can use it
+    tracerProvider.register();
 
-      try {
-        const message = typeof chunk === 'string' ? chunk : chunk?.toString();
-        if (message && message.trim()) {
-          const cleanMessage = cleanLogMessage(message);
-          if (cleanMessage) {
-            logger.emit({
-              severityText: 'ERROR',
-              body: cleanMessage,
-              attributes: {
-                'log.origin': 'stderr',
-              },
-            });
-          }
-        }
-      } catch {
-        // Silently fail
-      }
-
-      return result;
-    };
+    isTracingInitialized = true;
+  } catch (error) {
+    console.error('[Tidewave] Failed to initialize tracing:', error);
   }
+}
+
+function patchConsole(): void {
+  const logger = logs.getLogger('console', '1.0.0');
+
+  const severityMap: Record<ConsoleMethods, string> = {
+    log: 'INFO',
+    info: 'INFO',
+    warn: 'WARN',
+    error: 'ERROR',
+    debug: 'DEBUG',
+  };
+
+  (Object.entries(severityMap) as [ConsoleMethods, string][]).forEach(
+    ([method, severity]): void => {
+      const original = console[method].bind(console);
+
+      console[method] = (...args: unknown[]): void => {
+        try {
+          // Emit to logger first to avoid potential circular issues
+          const body = args
+            .map((arg: unknown) => {
+              if (typeof arg === 'string') return arg;
+              if (arg instanceof Error) {
+                return String(arg.stack);
+              }
+              if (typeof arg === 'object') {
+                try {
+                  return JSON.stringify(arg);
+                } catch {
+                  return String(arg);
+                }
+              }
+              return String(arg);
+            })
+            .map(cleanLogMessage)
+            .join(' ');
+
+          logger.emit({
+            severityText: severity,
+            body,
+            attributes: {
+              'log.origin': 'console',
+              'log.method': method,
+            },
+          });
+
+          // Call original after logging to avoid recursion
+          original(...args);
+        } catch {
+          // Silently fail to avoid logging loops
+        }
+      };
+    },
+  );
 }
