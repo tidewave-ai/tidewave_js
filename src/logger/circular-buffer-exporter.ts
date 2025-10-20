@@ -8,8 +8,6 @@ export interface StoredLogRecord {
   body: string;
   attributes?: Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
   resource?: Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
-  traceId?: string;
-  spanId?: string;
 }
 
 export interface LogFilterOptions {
@@ -41,8 +39,6 @@ export class CircularBufferLogExporter implements LogRecordExporter {
           body,
           attributes: log.attributes,
           resource: log.resource?.attributes,
-          traceId: log.spanContext?.traceId,
-          spanId: log.spanContext?.spanId,
         };
 
         this.buffer[this.writeIndex] = storedLog;

@@ -131,20 +131,9 @@ async function handleGetLogs(args: GetLogsInputSchema): Promise<CallToolResult> 
       since: args.since,
     });
 
-    const logLines = logs.map(log => {
-      let line = `[${log.timestamp}] ${log.severityText}: ${log.body}`;
-
-      if (log.traceId || log.spanId) {
-        const traceInfo = [];
-        if (log.traceId) traceInfo.push(`traceId=${log.traceId}`);
-        if (log.spanId) traceInfo.push(`spanId=${log.spanId}`);
-        line += ` (${traceInfo.join(', ')})`;
-      }
-
-      return line;
-    });
-
-    const output = logLines.join('\n');
+    const output = logs
+      .map(log => `[${log.timestamp}] ${log.severityText}: ${log.body}`)
+      .join('\n');
 
     return {
       content: [

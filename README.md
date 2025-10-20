@@ -144,7 +144,12 @@ export const config = {
 This exposes the MCP endpoint at `/tidewave/mcp`.
 
 **Logging** (optional): To capture application logs for debugging via the
-`get_logs` MCP tool, create an `instrumentation.ts` file:
+`get_logs` MCP tool, you have two options:
+
+#### Auto Mode (No Custom OpenTelemetry)
+
+If you don't have custom OpenTelemetry instrumentation, create an
+`instrumentation.ts` file:
 
 ```typescript
 // instrumentation.ts
@@ -158,6 +163,50 @@ export async function register() {
   }
 }
 ```
+
+This automatically captures:
+
+- Console logs (`console.log`, `console.error`, etc.)
+- Next.js HTTP request/response spans (`GET /api/users 200 45ms`)
+
+#### Manual Mode (With Custom OpenTelemetry)
+
+If you already have custom OpenTelemetry instrumentation:
+
+```typescript
+// instrumentation.ts
+import { NodeSDK } from '@opentelemetry/sdk-node';
+import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-node';
+
+export async function register() {
+  const runtime = process.env.NEXT_RUNTIME;
+  const env = process.env.NODE_ENV;
+
+  if (runtime === 'nodejs' && env === 'development') {
+    // Import Tidewave components
+    const { registerConsoleLogging, SpanToLogProcessor } = await import(
+      'tidewave/next-js/logger'
+    );
+
+    // Initialize console patching (safe, no conflicts)
+    await registerConsoleLogging();
+
+    // Add SpanToLogProcessor to YOUR tracer provider
+    const sdk = new NodeSDK({
+      spanProcessors: [
+        new BatchSpanProcessor(yourExporter), // Your exporter
+        new SpanToLogProcessor(), // Tidewave's processor
+      ],
+      // ... your other OpenTelemetry config
+    });
+
+    sdk.start();
+  }
+}
+```
+
+This allows Tidewave to capture logs alongside your existing OpenTelemetry setup
+without conflicts.
 
 ### CLI Usage
 

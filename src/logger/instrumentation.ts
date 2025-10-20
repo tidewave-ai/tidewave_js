@@ -5,7 +5,7 @@ import { logExporter } from './circular-buffer-exporter';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { SpanToLogProcessor } from './span-to-log-processor';
 
-let isLoggingInitialized = false;
+let isConsoleLoggingInitialized = false;
 let isTracingInitialized = false;
 
 type ConsoleMethods = 'log' | 'info' | 'warn' | 'error' | 'debug';
@@ -23,13 +23,17 @@ function cleanLogMessage(text: string): string {
     .replaceAll(/tidewave/i, '');
 }
 
-export function initializeLogging(): void {
+/**
+ * Initialize console patching only. Safe to call alongside custom OpenTelemetry.
+ * This captures console.log/info/warn/error and sends them to the log exporter.
+ */
+export function initializeConsoleLogging(): void {
   const isBrowser =
     typeof globalThis !== 'undefined' &&
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     typeof (globalThis as any).window !== 'undefined';
 
-  if (isLoggingInitialized || isBrowser) {
+  if (isConsoleLoggingInitialized || isBrowser) {
     return;
   }
 
@@ -43,23 +47,26 @@ export function initializeLogging(): void {
 
     logs.setGlobalLoggerProvider(loggerProvider);
     patchConsole();
-    initializeTracing(resource);
 
-    isLoggingInitialized = true;
-    // @ts-expect-error - Flag to track logging initialization for MCP server
-    globalThis.__TIDEWAVE_LOGGING_INITIALIZED__ = true;
+    isConsoleLoggingInitialized = true;
   } catch (error) {
-    console.error('[Tidewave] Failed to initialize logging:', error);
+    console.error('[Tidewave] Failed to initialize console logging:', error);
   }
 }
 
-function initializeTracing(resource: ReturnType<typeof defaultResource>): void {
+/**
+ * Initialize OpenTelemetry tracer provider with SpanToLogProcessor.
+ * WARNING: This will register a global tracer provider. If you already have
+ * custom OpenTelemetry setup, DON'T call this. Instead, add SpanToLogProcessor
+ * to your own tracer provider.
+ */
+function initializeTracing(): void {
   if (isTracingInitialized) {
     return;
   }
 
   try {
-    // Initialize a tracer provider with our custom SpanToLogProcessor
+    const resource = defaultResource();
     const tracerProvider = new NodeTracerProvider({
       resource,
       spanProcessors: [new SpanToLogProcessor()],
@@ -72,6 +79,18 @@ function initializeTracing(resource: ReturnType<typeof defaultResource>): void {
   } catch (error) {
     console.error('[Tidewave] Failed to initialize tracing:', error);
   }
+}
+
+/**
+ * Initialize both console logging and OpenTelemetry tracing (auto mode).
+ * Use this if you don't have custom OpenTelemetry instrumentation.
+ */
+export function initializeLogging(): void {
+  initializeConsoleLogging();
+  initializeTracing();
+
+  // @ts-expect-error - Flag to track logging initialization for MCP server
+  globalThis.__TIDEWAVE_LOGGING_INITIALIZED__ = true;
 }
 
 function patchConsole(): void {
