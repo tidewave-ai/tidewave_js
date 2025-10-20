@@ -184,18 +184,18 @@ export async function register() {
 
   if (runtime === 'nodejs' && env === 'development') {
     // Import Tidewave components
-    const { registerConsoleLogging, SpanToLogProcessor } = await import(
+    const { registerConsoleLogging, TidewaveProcessor } = await import(
       'tidewave/next-js/logger'
     );
 
     // Initialize console patching (safe, no conflicts)
     await registerConsoleLogging();
 
-    // Add SpanToLogProcessor to YOUR tracer provider
+    // Add TidewaveProcessor to YOUR tracer provider
     const sdk = new NodeSDK({
       spanProcessors: [
         new BatchSpanProcessor(yourExporter), // Your exporter
-        new SpanToLogProcessor(), // Tidewave's processor
+        new TidewaveProcessor(), // Tidewave's processor
       ],
       // ... your other OpenTelemetry config
     });

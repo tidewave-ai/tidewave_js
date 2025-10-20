@@ -3,7 +3,7 @@ import { LoggerProvider, SimpleLogRecordProcessor } from '@opentelemetry/sdk-log
 import { defaultResource } from '@opentelemetry/resources';
 import { logExporter } from './circular-buffer-exporter';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { SpanToLogProcessor } from './span-to-log-processor';
+import { TidewaveProcessor } from './tidewave-processor';
 
 let isConsoleLoggingInitialized = false;
 let isTracingInitialized = false;
@@ -15,12 +15,6 @@ const ANSI_REGEX = /\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g;
 
 function stripAnsiCodes(text: string): string {
   return text.replace(ANSI_REGEX, '');
-}
-
-function cleanLogMessage(text: string): string {
-  return stripAnsiCodes(text)
-    .replace(/\n$/, '')
-    .replaceAll(/tidewave/i, '');
 }
 
 /**
@@ -55,9 +49,9 @@ export function initializeConsoleLogging(): void {
 }
 
 /**
- * Initialize OpenTelemetry tracer provider with SpanToLogProcessor.
+ * Initialize OpenTelemetry tracer provider with TidewaveProcessor.
  * WARNING: This will register a global tracer provider. If you already have
- * custom OpenTelemetry setup, DON'T call this. Instead, add SpanToLogProcessor
+ * custom OpenTelemetry setup, DON'T call this. Instead, add TidewaveProcessor
  * to your own tracer provider.
  */
 function initializeTracing(): void {
@@ -69,7 +63,7 @@ function initializeTracing(): void {
     const resource = defaultResource();
     const tracerProvider = new NodeTracerProvider({
       resource,
-      spanProcessors: [new SpanToLogProcessor()],
+      spanProcessors: [new TidewaveProcessor()],
     });
 
     // Register the tracer provider globally so Next.js can use it
@@ -109,8 +103,8 @@ function patchConsole(): void {
       const original = console[method].bind(console);
 
       console[method] = (...args: unknown[]): void => {
+        // Try to emit to logger, but don't break console if it fails
         try {
-          // Emit to logger first to avoid potential circular issues
           const body = args
             .map((arg: unknown) => {
               if (typeof arg === 'string') return arg;
@@ -126,7 +120,7 @@ function patchConsole(): void {
               }
               return String(arg);
             })
-            .map(cleanLogMessage)
+            .map(stripAnsiCodes)
             .join(' ');
 
           logger.emit({
@@ -137,12 +131,12 @@ function patchConsole(): void {
               'log.method': method,
             },
           });
-
-          // Call original after logging to avoid recursion
-          original(...args);
         } catch {
-          // Silently fail to avoid logging loops
+          // Silently fail logger errors to avoid breaking console
         }
+
+        // Always call original console method
+        original(...args);
       };
     },
   );

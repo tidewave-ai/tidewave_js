@@ -1,6 +1,6 @@
 {
   "name": "tidewave",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Tidewave JavaScript CLI for documentation extraction and MCP server",
   "keywords": [
     "typescript",

@@ -8,8 +8,8 @@ import { logs } from '@opentelemetry/api-logs';
  * This is used to capture Next.js HTTP request/response spans and
  * make them available via the get_logs tool.
  */
-export class SpanToLogProcessor implements SpanProcessor {
-  private logger = logs.getLogger('span-to-log', '1.0.0');
+export class TidewaveProcessor implements SpanProcessor {
+  private logger = logs.getLogger('tidewave-processor', '1.0.0');
 
   /**
    * Called when a span is started. We don't need to do anything here.
@@ -43,6 +43,12 @@ export class SpanToLogProcessor implements SpanProcessor {
       const httpTarget = span.attributes['http.target'];
       const httpStatusCode = span.attributes['http.status_code'];
 
+      // Filter out /tidewave paths
+      const path = route || httpTarget || httpUrl || 'unknown';
+      if (typeof path === 'string' && path.startsWith('/tidewave')) {
+        return;
+      }
+
       const durationMs = this.calculateDuration(span);
 
       let message = '';
@@ -50,7 +56,6 @@ export class SpanToLogProcessor implements SpanProcessor {
 
       if (spanType === 'BaseServer.handleRequest') {
         const method = httpMethod || 'UNKNOWN';
-        const path = route || httpTarget || httpUrl || 'unknown';
         const status = httpStatusCode || 'unknown';
         message = `${method} ${path} ${status} ${durationMs.toFixed(2)}ms`;
 
@@ -81,7 +86,7 @@ export class SpanToLogProcessor implements SpanProcessor {
       });
     } catch (_error) {
       // Silently fail to avoid breaking tracing
-      // console.error('[SpanToLogProcessor] Error processing span:', error);
+      // console.error('[TidewaveProcessor] Error processing span:', error);
     }
   }
 

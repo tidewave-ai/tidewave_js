@@ -18,7 +18,7 @@ export async function registerTidewaveLogger(): Promise<void> {
 /**
  * Manual mode: Initialize only console logging (no OpenTelemetry provider).
  * Use this if you HAVE custom OpenTelemetry instrumentation and will
- * add SpanToLogProcessor to your own tracer provider.
+ * add TidewaveProcessor to your own tracer provider.
  */
 export async function registerConsoleLogging(): Promise<void> {
   const env = process.env['NODE_ENV'];
@@ -33,5 +33,5 @@ export async function registerConsoleLogging(): Promise<void> {
   initializeConsoleLogging();
 }
 
-// Export SpanToLogProcessor for manual OpenTelemetry integration
-export { SpanToLogProcessor } from '../logger/span-to-log-processor';
+// Export TidewaveProcessor for manual OpenTelemetry integration
+export { TidewaveProcessor } from '../logger/tidewave-processor';
