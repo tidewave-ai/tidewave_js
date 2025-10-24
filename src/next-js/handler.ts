@@ -51,8 +51,8 @@ export async function tidewaveHandler(
   }
 
   if (process.env['NEXT_RUNTIME'] !== 'edge') {
-    const { initializeLogging } = await import('../logger/instrumentation');
-    initializeLogging();
+    // Import instrumentation to automatically patch console
+    await import('../logger/instrumentation');
   }
 
   return async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {

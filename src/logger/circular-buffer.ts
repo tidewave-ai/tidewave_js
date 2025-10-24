@@ -1,7 +1,3 @@
-import type { LogRecordExporter, ReadableLogRecord } from '@opentelemetry/sdk-logs';
-import type { ExportResult } from '@opentelemetry/core';
-import { ExportResultCode } from '@opentelemetry/core';
-
 export interface StoredLogRecord {
   timestamp: string;
   severityText: string;
@@ -17,7 +13,12 @@ export interface LogFilterOptions {
   since?: string;
 }
 
-export class CircularBufferLogExporter implements LogRecordExporter {
+/**
+ * Standalone circular buffer for storing logs.
+ * This is a global singleton that is not tied to any logger or exporter.
+ * Both console.log patches and OpenTelemetry processors write directly to this buffer.
+ */
+export class CircularBuffer {
   private buffer: (StoredLogRecord | undefined)[];
   private maxSize: number;
   private writeIndex: number = 0;
@@ -28,37 +29,19 @@ export class CircularBufferLogExporter implements LogRecordExporter {
     this.maxSize = maxSize;
   }
 
-  export(logs: ReadableLogRecord[], resultCallback: (result: ExportResult) => void): void {
-    try {
-      for (const log of logs) {
-        const body = String(log.body || '');
-
-        const storedLog: StoredLogRecord = {
-          timestamp: new Date(log.hrTime[0] * 1000 + log.hrTime[1] / 1_000_000).toISOString(),
-          severityText: log.severityText || 'INFO',
-          body,
-          attributes: log.attributes,
-          resource: log.resource?.attributes,
-        };
-
-        this.buffer[this.writeIndex] = storedLog;
-        this.writeIndex = (this.writeIndex + 1) % this.maxSize;
-        this.count = Math.min(this.count + 1, this.maxSize);
-      }
-
-      resultCallback({ code: ExportResultCode.SUCCESS });
-    } catch (error) {
-      resultCallback({
-        code: ExportResultCode.FAILED,
-        error: error as Error,
-      });
-    }
+  /**
+   * Add a log entry to the circular buffer.
+   * This method is called directly by console patching and OTel processors.
+   */
+  addLog(log: StoredLogRecord): void {
+    this.buffer[this.writeIndex] = log;
+    this.writeIndex = (this.writeIndex + 1) % this.maxSize;
+    this.count = Math.min(this.count + 1, this.maxSize);
   }
 
-  async shutdown(): Promise<void> {
-    this.buffer = [];
-  }
-
+  /**
+   * Get logs from the buffer with optional filtering.
+   */
   getLogs(options?: LogFilterOptions): StoredLogRecord[] {
     // Get logs in chronological order
     let logs = this.getAllLogs();
@@ -87,6 +70,9 @@ export class CircularBufferLogExporter implements LogRecordExporter {
     return logs;
   }
 
+  /**
+   * Get all logs in chronological order.
+   */
   private getAllLogs(): StoredLogRecord[] {
     if (this.count < this.maxSize) {
       return this.buffer.slice(0, this.count).filter(Boolean) as StoredLogRecord[];
@@ -98,6 +84,9 @@ export class CircularBufferLogExporter implements LogRecordExporter {
     ) as StoredLogRecord[];
   }
 
+  /**
+   * Get statistics about the buffer usage.
+   */
   getStats(): { totalLogs: number; bufferSize: number; bufferUsage: string } {
     return {
       totalLogs: this.count,
@@ -105,17 +94,26 @@ export class CircularBufferLogExporter implements LogRecordExporter {
       bufferUsage: Math.min((this.count / this.maxSize) * 100, 100).toFixed(1) + '%',
     };
   }
+
+  /**
+   * Clear the buffer.
+   */
+  clear(): void {
+    this.buffer = new Array(this.maxSize);
+    this.writeIndex = 0;
+    this.count = 0;
+  }
 }
 
 // Singleton instance with fixed buffer size of 1024 entries
 // Use runtime-global variable to ensure the same instance is shared across module contexts
 // This is necessary because Next.js API routes may run in different module contexts
 declare global {
-  var __tidewaveLogExporter: CircularBufferLogExporter | undefined;
+  var __tidewaveCircularBuffer: CircularBuffer | undefined;
 }
 
-if (!globalThis.__tidewaveLogExporter) {
-  globalThis.__tidewaveLogExporter = new CircularBufferLogExporter(1024);
+if (!globalThis.__tidewaveCircularBuffer) {
+  globalThis.__tidewaveCircularBuffer = new CircularBuffer(1024);
 }
 
-export const logExporter = globalThis.__tidewaveLogExporter;
+export const circularBuffer = globalThis.__tidewaveCircularBuffer;

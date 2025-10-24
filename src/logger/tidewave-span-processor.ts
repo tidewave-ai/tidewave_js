@@ -1,16 +1,15 @@
 import type { SpanProcessor } from '@opentelemetry/sdk-trace-base';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import type { Span, Context } from '@opentelemetry/api';
-import { logs } from '@opentelemetry/api-logs';
+import { circularBuffer } from './circular-buffer';
 
 /**
- * Custom SpanProcessor that converts OpenTelemetry spans to logs.
+ * Custom SpanProcessor that converts OpenTelemetry spans to logs and writes them
+ * directly to the circular buffer.
  * This is used to capture Next.js HTTP request/response spans and
  * make them available via the get_logs tool.
  */
-export class TidewaveProcessor implements SpanProcessor {
-  private logger = logs.getLogger('tidewave-processor', '1.0.0');
-
+export class TidewaveSpanProcessor implements SpanProcessor {
   /**
    * Called when a span is started. We don't need to do anything here.
    */
@@ -19,7 +18,8 @@ export class TidewaveProcessor implements SpanProcessor {
   }
 
   /**
-   * Called when a span ends. This is where we convert the span to a log entry.
+   * Called when a span ends. This is where we convert the span to a log entry
+   * and write it directly to the circular buffer.
    */
   onEnd(span: ReadableSpan): void {
     try {
@@ -69,8 +69,9 @@ export class TidewaveProcessor implements SpanProcessor {
         message = `API route: ${route || 'unknown'} (${durationMs.toFixed(2)}ms)`;
       }
 
-      // Emit log with trace context embedded in attributes
-      this.logger.emit({
+      // Write directly to circular buffer
+      circularBuffer.addLog({
+        timestamp: new Date(span.endTime[0] * 1000 + span.endTime[1] / 1_000_000).toISOString(),
         severityText: severity,
         body: message,
         attributes: {
@@ -86,7 +87,6 @@ export class TidewaveProcessor implements SpanProcessor {
       });
     } catch (_error) {
       // Silently fail to avoid breaking tracing
-      // console.error('[TidewaveProcessor] Error processing span:', error);
     }
   }
 

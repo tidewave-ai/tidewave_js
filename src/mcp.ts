@@ -12,7 +12,7 @@ import type {
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { isExtractError, isResolveError } from './core';
 import { Tidewave } from '.';
-import { logExporter } from './logger/circular-buffer-exporter';
+import { circularBuffer } from './logger/circular-buffer';
 
 const {
   docs: { mcp: docsMcp },
@@ -124,7 +124,7 @@ async function handleGetSourcePath({ reference }: SourceInputSchema): Promise<Ca
 
 async function handleGetLogs(args: GetLogsInputSchema): Promise<CallToolResult> {
   try {
-    const logs = logExporter.getLogs({
+    const logs = circularBuffer.getLogs({
       tail: args.tail,
       grep: args.grep,
       level: args.level,
@@ -185,9 +185,9 @@ export async function serveMcp(transport: Transport): Promise<void> {
     handleProjectEvaluation,
   );
 
-  // Only register logs MCP if logging has been initialized
-  // @ts-expect-error - Flag set in initializeLogging
-  if (globalThis.__TIDEWAVE_LOGGING_INITIALIZED__) {
+  // Only register logs MCP if console has been patched
+  // @ts-expect-error - Flag set when console is patched
+  if (globalThis.__TIDEWAVE_CONSOLE_PATCHED__) {
     server.registerTool(
       logsMcp.name,
       {
