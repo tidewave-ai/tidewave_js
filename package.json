@@ -1,6 +1,6 @@
 {
   "name": "tidewave",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Tidewave JavaScript CLI for documentation extraction and MCP server",
   "keywords": [
     "typescript",
@@ -34,10 +34,15 @@
       "import": "./dist/vite-plugin.js",
       "require": "./dist/vite-plugin.js"
     },
-    "./next-js": {
-      "types": "./dist/next-js.d.ts",
-      "import": "./dist/next-js.js",
-      "require": "./dist/next-js.js"
+    "./next-js/handler": {
+      "types": "./dist/next-js/handler.d.ts",
+      "import": "./dist/next-js/handler.js",
+      "require": "./dist/next-js/handler.js"
+    },
+    "./next-js/instrumentation": {
+      "types": "./dist/next-js/instrumentation.d.ts",
+      "import": "./dist/next-js/instrumentation.js",
+      "require": "./dist/next-js/instrumentation.js"
     },
     "./package.json": "./package.json"
   },
@@ -49,7 +54,7 @@
   ],
   "scripts": {
     "dist": "bun run clean && bun run build:js && bun run build:types",
-    "build:js": "bun build --outdir dist --root src --external commander --external chalk --external typescript src/next-js.ts src/vite-plugin.ts src/evaluation/eval_worker.ts src/cli/index.ts --target node",
+    "build:js": "bun build --outdir dist --root src --external commander --external chalk --external typescript --external child_process --external module --external @opentelemetry/api --external @opentelemetry/api-logs --external @opentelemetry/core --external @opentelemetry/resources --external @opentelemetry/sdk-logs --external @opentelemetry/sdk-trace-base --external @opentelemetry/sdk-trace-node --external @opentelemetry/semantic-conventions src/next-js/handler.ts src/next-js/instrumentation.ts src/vite-plugin.ts src/evaluation/eval_worker.ts src/cli/index.ts --target node",
     "build:types": "tsc -p tsconfig.declarations.json",
     "dev": "bun run src/cli/index.ts",
     "test": "bun test",
@@ -62,6 +67,14 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.4",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/api-logs": "^0.206.0",
+    "@opentelemetry/core": "^2.1.0",
+    "@opentelemetry/resources": "^2.1.0",
+    "@opentelemetry/sdk-logs": "^0.206.0",
+    "@opentelemetry/sdk-trace-base": "^2.1.0",
+    "@opentelemetry/sdk-trace-node": "^2.1.0",
+    "@opentelemetry/semantic-conventions": "^1.37.0",
     "body-parser": "^2.2.0",
     "chalk": "^5.3.0",
     "commander": "^12.1.0",
@@ -77,6 +90,7 @@
     "@types/node": "^22.10.1",
     "@typescript-eslint/eslint-plugin": "^8.18.0",
     "@typescript-eslint/parser": "^8.18.0",
+    "@vercel/otel": "^2.0.1",
     "@vitest/ui": "^3.2.4",
     "bun-types": "latest",
     "eslint": "^9.16.0",

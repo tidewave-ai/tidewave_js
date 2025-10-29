@@ -3,6 +3,7 @@ import { z } from 'zod';
 export type DocsInputSchema = z.infer<typeof docsInputSchema>;
 export type SourceInputSchema = z.infer<typeof sourceInputSchema>;
 export type ProjectEvalInputSchema = z.infer<typeof projectEvalInputSchema>;
+export type GetLogsInputSchema = z.infer<typeof getLogsInputSchema>;
 
 export interface Tool<InputSchema> {
   mcp: {
@@ -23,6 +24,7 @@ export interface Tools {
   docs: Tool<typeof docsInputSchema>;
   source: Tool<typeof sourceInputSchema>;
   eval: Omit<Tool<typeof projectEvalInputSchema>, 'cli'>;
+  logs: Omit<Tool<typeof getLogsInputSchema>, 'cli'>;
 }
 
 const projectEvalDescription = `  
@@ -85,6 +87,21 @@ const sourceInputSchema = z.object({
   reference: z.string().describe(referenceDescription),
 });
 
+export const getLogsInputSchema = z.object({
+  tail: z
+    .number()
+    .min(1)
+    .max(10000)
+    .default(100)
+    .describe('Number of log entries to return from the end'),
+  grep: z.string().optional().describe('Filter logs with regex pattern (case insensitive)'),
+  level: z
+    .enum(['DEBUG', 'INFO', 'WARN', 'ERROR'])
+    .optional()
+    .describe('Filter by log severity level'),
+  since: z.string().optional().describe('ISO 8601 timestamp - return logs after this time'),
+});
+
 export const tools: Tools = {
   docs: {
     mcp: {
@@ -135,6 +152,14 @@ export const tools: Tools = {
       inputSchema: projectEvalInputSchema,
       description: projectEvalDescription,
       name: 'project_eval',
+    },
+  },
+  logs: {
+    mcp: {
+      name: 'get_logs',
+      description:
+        'Retrieve application logs for debugging. Returns logs excluding Tidewave internal logs. Supports filtering by level, time, and pattern matching.',
+      inputSchema: getLogsInputSchema,
     },
   },
 } as const;
