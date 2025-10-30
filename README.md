@@ -1,44 +1,21 @@
 # Tidewave
 
+> Tidewave Web for Next.js is currently in alpha testing!
+
 Tidewave is the coding agent for full-stack web app development.
 [See our website](https://tidewave.ai) for more information.
 
 This package is recommended for JavaScript-powered backends as well as
-JavaScript libraries/applications without a backend. If you are using React with
-Phoenix, Rails, Django, or another server-side framework,
-[follow the steps here instead](http://hexdocs.pm/tidewave/react.html).
+JavaScript libraries/applications using a backend as a service (such as
+Supabase). If you are using React with Phoenix, Rails, Django, or another
+server-side framework, [follow the steps here instead](http://hexdocs.pm/tidewave/react.html).
 
-Our current release connects your editor's assistant to JavaScript runtime via
-[MCP](https://modelcontextprotocol.io/). Tidewave's MCP server gives your editor
-and coding agents access to the documentation, type annotations, and source file
-locations of the packages being currently used by your project, without relying
-on external systems.
+This project can also be used as a standalone Model Context Protocol (MCP)
+server for your editors.
 
-Support for Tidewave Web will come in future releases.
+## Installation
 
-## Usage
-
-### Standalone MCP
-
-Configure your editor to run `tidewave` in the same directory as your
-`package.json` as a STDIO MCP Server:
-
-```bash
-npx tidewave mcp
-# or with Bun
-bunx tidewave mcp
-# or with Deno
-deno run npm:tidewave mcp
-```
-
-Available MCP options:
-
-- `--prefix path` - Specify the directory to find the `package.json` file
-
-### HTTP MCP via Vite Plugin
-
-Tidewave also provides HTTP-based MCP access through a Vite plugin for
-development environments. Add the plugin to your `vite.config.js`:
+### Next.js
 
 Install it with:
 
@@ -52,48 +29,7 @@ $ pnpm add --save-dev tidewave
 $ bun add --dev tidewave
 ```
 
-Then, configure it:
-
-```javascript
-import { defineConfig } from 'vite';
-import tidewave from 'tidewave/vite-plugin';
-
-export default defineConfig({
-  plugins: [tidewave()],
-});
-```
-
-This exposes the MCP endpoint at `/tidewave/mcp`.
-
-Configuration options:
-
-```javascript
-tidewave({
-  allowRemoteAccess: false, // Allow access from remote IPs
-  allowedOrigins: ['localhost'], // Allowed origins: defaults to the Vite's host+port
-});
-```
-
-### HTTP MCP for Next.js
-
-Tidewave provides seamless integration with Next.js, you only need to expose its
-routes and then plug its middleware accordingly.
-
-Install it with:
-
-```sh
-$ npm install -D tidewave
-# or
-$ yarn add -D tidewave
-# or
-$ pnpm add --save-dev tidewave
-# or
-$ bun add --dev tidewave
-```
-
-Then, configure it:
-
-Create `pages/api/tidewave.ts` with:
+Then create `pages/api/tidewave.ts` with:
 
 ```typescript
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -141,48 +77,8 @@ export const config = {
 };
 ```
 
-This exposes the MCP endpoint at `/tidewave/mcp`.
-
-**Logging** (optional): To capture application logs for debugging via the
-`get_logs` MCP tool, add OpenTelemetry instrumentation.
-
-Create an `instrumentation.ts` file in your project root:
-
-```typescript
-// instrumentation.ts
-import { NodeSDK } from '@opentelemetry/sdk-node';
-
-export async function register() {
-  const runtime = process.env.NEXT_RUNTIME;
-  const env = process.env.NODE_ENV;
-
-  if (runtime === 'nodejs' && env === 'development') {
-    const { TidewaveSpanProcessor, TidewaveLogRecordProcessor } = await import(
-      'tidewave/next-js/instrumentation'
-    );
-
-    const sdk = new NodeSDK({
-      spanProcessors: [new TidewaveSpanProcessor()],
-      logRecordProcessors: [new TidewaveLogRecordProcessor()], // Optional
-    });
-
-    sdk.start();
-  }
-}
-```
-
-This captures:
-
-- Console logs (`console.log`, `console.error`, etc.) - automatic when you
-  import the module
-- Next.js HTTP request/response spans (`GET /api/users 200 45ms`) - via
-  `TidewaveSpanProcessor`
-- OpenTelemetry logger logs - via `TidewaveLogRecordProcessor` (optional)
-
-#### With Existing OpenTelemetry Setup
-
-If you already have custom OpenTelemetry instrumentation, simply add the
-Tidewave processors to your existing setup:
+Finally, we recommend creating the `instrumentation.ts` file below,
+to expose your application's spans, events, and logs to Tidewave/MCP:
 
 ```typescript
 // instrumentation.ts
@@ -193,9 +89,9 @@ export async function register() {
   const runtime = process.env.NEXT_RUNTIME;
   const env = process.env.NODE_ENV;
 
-  // Your existing configuration
+  // Add your app own processes here existing configuration
   const sdkConfig = {
-    spanProcessors: [new BatchSpanProcessor(yourExporter)],
+    spanProcessors: [],
     logRecordProcessors: [],
   };
 
@@ -214,13 +110,65 @@ export async function register() {
 }
 ```
 
-This allows Tidewave to capture logs alongside your existing OpenTelemetry setup
-without conflicts.
+### React + Vite
 
-### CLI Usage
+Install it with:
 
-Tidewave also provides the MCP features over a CLI tool. Use it directly via
-npx/bunx/deno:
+```sh
+$ npm install -D tidewave
+# or
+$ yarn add -D tidewave
+# or
+$ pnpm add --save-dev tidewave
+# or
+$ bun add --dev tidewave
+```
+
+Then configure your `vite.config.js` (also works for `.ts` and `.mjs`):
+
+```javascript
+import { defineConfig } from 'vite';
+import tidewave from 'tidewave/vite-plugin';
+
+export default defineConfig({
+  plugins: [tidewave()],
+});
+```
+
+### Configuration
+
+Next.js' `tidewaveHandler` and Vite's `tidewave` accept the configuration options below:
+
+- `allow_remote_access:` allow remote connections when true (default false)
+- `allowed_origins:` defaults to the current host/port
+- `team`: enable Tidewave Web for teams
+
+## CLI
+
+Tidewave.js also comes with a CLI for developers who want to use it
+as a standalone MCP or query its functionality directly. Note this
+functionality is separate from Tidewave Web.
+
+### STDIO MCP
+
+Configure your editor to run `tidewave` in the same directory as your
+`package.json` as a STDIO MCP Server:
+
+```bash
+npx tidewave mcp
+# or with Bun
+bunx tidewave mcp
+# or with Deno
+deno run npm:tidewave mcp
+```
+
+Available options:
+
+- `--prefix path` - Specify the directory to find the `package.json` file
+
+### Get docs / get source
+
+Fetch docs or retrieve the source location for classes, types, methods, etc:
 
 ```bash
 # Extract documentation for a symbol
