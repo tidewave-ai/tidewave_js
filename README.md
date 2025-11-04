@@ -5,15 +5,15 @@
 Tidewave is the coding agent for full-stack web app development.
 [See our website](https://tidewave.ai) for more information.
 
-If you are using Next.js or you have a React + Vite frontend, talking
-either to a backend as a service (such as Supabase) or a third-party
-framework, you are in the right place!
+If you are using Next.js or you have a React + Vite frontend, talking either to
+a backend as a service (such as Supabase) or a third-party framework, you are in
+the right place!
 
 If you are using React with Django, FastAPI, Flask, Phoenix, or Rails,
 [follow the steps here instead](http://hexdocs.pm/tidewave/react.html).
 
-This project can also be used through the CLI or as a standalone Model
-Context Protocol (MCP) server for your editors.
+This project can also be used through the CLI or as a standalone Model Context
+Protocol (MCP) server for your editors.
 
 ## Installation
 
@@ -79,8 +79,8 @@ export const config = {
 };
 ```
 
-Finally, we recommend creating the `instrumentation.ts` file below,
-to expose your application's spans, events, and logs to Tidewave/MCP:
+Finally, we recommend creating the `instrumentation.ts` file below, to expose
+your application's spans, events, and logs to Tidewave/MCP:
 
 ```typescript
 // instrumentation.ts
@@ -112,11 +112,15 @@ export async function register() {
 }
 ```
 
-Now make sure [Tidewave is installed](https://hexdocs.pm/tidewave/installation.html) and you are ready to connect Tidewave to your app.
+Now make sure
+[Tidewave is installed](https://hexdocs.pm/tidewave/installation.html) and you
+are ready to connect Tidewave to your app.
 
 ### React + Vite
 
-If you are building a front-end application, using a backend as a service, such as Supabase, or a non-officially supported web framework, we recommend using our React + Vite integration.
+If you are building a front-end application, using a backend as a service, such
+as Supabase, or a non-officially supported web framework, we recommend using our
+React + Vite integration.
 
 Install it with:
 
@@ -141,13 +145,21 @@ export default defineConfig({
 });
 ```
 
-Now make sure [Tidewave is installed](https://hexdocs.pm/tidewave/installation.html) and you are ready to connect Tidewave to your app.
+Now make sure
+[Tidewave is installed](https://hexdocs.pm/tidewave/installation.html) and you
+are ready to connect Tidewave to your app.
 
-If you are using Supabase or similar, you can prompt Tidewave to use the `supabase` CLI so it has complete access to your database. For non-officially supported web frameworks, our React + Vite integration allows Tidewave Web to perform changes on the front-end, and the agent will be able to modify your backend code as usual, but some functionality (such as accessing logs, doing database calls, etc) won't be available.
+If you are using Supabase or similar, you can prompt Tidewave to use the
+`supabase` CLI so it has complete access to your database. For non-officially
+supported web frameworks, our React + Vite integration allows Tidewave Web to
+perform changes on the front-end, and the agent will be able to modify your
+backend code as usual, but some functionality (such as accessing logs, doing
+database calls, etc) won't be available.
 
 ### Configuration
 
-Next.js' `tidewaveHandler` and Vite's `tidewave` accept the configuration options below:
+Next.js' `tidewaveHandler` and Vite's `tidewave` accept the configuration
+options below:
 
 - `allow_remote_access:` allow remote connections when true (default false)
 - `allowed_origins:` defaults to the current host/port
@@ -155,9 +167,9 @@ Next.js' `tidewaveHandler` and Vite's `tidewave` accept the configuration option
 
 ## CLI
 
-Tidewave.js also comes with a CLI for developers who want to use it
-as a standalone MCP or query its functionality directly. Note this
-functionality is separate from Tidewave Web.
+Tidewave.js also comes with a CLI for developers who want to use it as a
+standalone MCP or query its functionality directly. Note this functionality is
+separate from Tidewave Web.
 
 ### STDIO MCP
 
