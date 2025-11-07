@@ -106,7 +106,6 @@ directory of the project (or inside `src` folder if using one):
 
 ```typescript
 // instrumentation.ts
-// instrumentation.ts
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import type { SpanProcessor } from '@opentelemetry/sdk-trace-base';
 import type { LogRecordProcessor } from '@opentelemetry/sdk-logs';
