@@ -41,7 +41,7 @@ export default async function handler(
   res: NextApiResponse,
 ) {
   if (process.env.NODE_ENV === 'development') {
-    const { tidewaveHandler } = await import('tidewave/next-js');
+    const { tidewaveHandler } = await import('tidewave/next-js/handler');
     const handler = await tidewaveHandler();
     return handler(req, res);
   } else {
@@ -60,14 +60,29 @@ export const config = {
 _Note: this uses the **Pages Router**, however it works regardless of the router
 type you use in your application._
 
-Then create (or modify) `middleware.ts` with:
+If you are using Next.js 16+, then create (or modify) `proxy.ts` with:
+
+```typescript
+import { NextRequest, NextResponse } from 'next/server';
+
+export function proxy(req: NextRequest): NextResponse {
+  if (req.nextUrl.pathname.startsWith('/tidewave')) {
+    return NextResponse.rewrite(new URL('/api/tidewave', req.url));
+  }
+
+  // Here you could add your own logic or different middlewares.
+  return NextResponse.next();
+}
+```
+
+For Next.js 15+ and earlier, create (or modify) `middleware.ts` with:
 
 ```typescript
 import { NextRequest, NextResponse } from 'next/server';
 
 export function middleware(req: NextRequest): NextResponse {
   if (req.nextUrl.pathname.startsWith('/tidewave')) {
-    return NextResponse.rewrite(new URL(`/api/tidewave`, req.url));
+    return NextResponse.rewrite(new URL('/api/tidewave', req.url));
   }
 
   // Here you could add your own logic or different middlewares.
@@ -79,20 +94,31 @@ export const config = {
 };
 ```
 
-Finally, we recommend creating the `instrumentation.ts` file below, to expose
-your application's spans, events, and logs to Tidewave/MCP:
+Finally, we expose your application's spans, events, and logs to Tidewave MCP.
+First install the NodeSDK:
+
+```sh
+npm install @opentelemetry/sdk-node
+```
+
+And then create (or modify) a custom `instrumentation.ts` file in the root
+directory of the project (or inside `src` folder if using one):
 
 ```typescript
 // instrumentation.ts
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-node';
+import type { SpanProcessor } from '@opentelemetry/sdk-trace-base';
+import type { LogRecordProcessor } from '@opentelemetry/sdk-logs';
 
 export async function register() {
   const runtime = process.env.NEXT_RUNTIME;
   const env = process.env.NODE_ENV;
 
   // Add your app own processes here existing configuration
-  const sdkConfig = {
+  const sdkConfig: {
+    spanProcessors: SpanProcessor[];
+    logRecordProcessors: LogRecordProcessor[];
+  } = {
     spanProcessors: [],
     logRecordProcessors: [],
   };
