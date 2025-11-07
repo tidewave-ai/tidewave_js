@@ -34,14 +34,14 @@ $ bun add --dev tidewave
 Then create `pages/api/tidewave.ts` with:
 
 ```typescript
-import type { NextApiRequest, NextApiResponse } from "next";
+import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
-  if (process.env.NODE_ENV === "development") {
-    const { tidewaveHandler } = await import("tidewave/next-js/handler");
+  if (process.env.NODE_ENV === 'development') {
+    const { tidewaveHandler } = await import('tidewave/next-js/handler');
     const handler = await tidewaveHandler();
     return handler(req, res);
   } else {
@@ -50,7 +50,7 @@ export default async function handler(
 }
 
 export const config = {
-  runtime: "nodejs",
+  runtime: 'nodejs',
   api: {
     bodyParser: false, // Tidewave already parses the body internally
   },
@@ -63,11 +63,11 @@ type you use in your application._
 If you are using Next.js 16+, then create (or modify) `proxy.ts` with:
 
 ```typescript
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from 'next/server';
 
 export function proxy(req: NextRequest): NextResponse {
-  if (req.nextUrl.pathname.startsWith("/tidewave")) {
-    return NextResponse.rewrite(new URL("/api/tidewave", req.url));
+  if (req.nextUrl.pathname.startsWith('/tidewave')) {
+    return NextResponse.rewrite(new URL('/api/tidewave', req.url));
   }
 
   // Here you could add your own logic or different middlewares.
@@ -81,8 +81,8 @@ For Next.js 15+ and earlier, create (or modify) `middleware.ts` with:
 import { NextRequest, NextResponse } from 'next/server';
 
 export function middleware(req: NextRequest): NextResponse {
-  if (req.nextUrl.pathname.startsWith("/tidewave")) {
-    return NextResponse.rewrite(new URL("/api/tidewave", req.url));
+  if (req.nextUrl.pathname.startsWith('/tidewave')) {
+    return NextResponse.rewrite(new URL('/api/tidewave', req.url));
   }
 
   // Here you could add your own logic or different middlewares.
@@ -90,24 +90,26 @@ export function middleware(req: NextRequest): NextResponse {
 }
 
 export const config = {
-  matcher: ["/tidewave/:path*"],
+  matcher: ['/tidewave/:path*'],
 };
 ```
 
-Finally, we expose your application's spans, events, and logs to Tidewave MCP. First install the NodeSDK:
+Finally, we expose your application's spans, events, and logs to Tidewave MCP.
+First install the NodeSDK:
 
 ```sh
 npm install @opentelemetry/sdk-node
 ```
 
-And then create (or modify) a custom `instrumentation.ts` file in the root directory of the project (or inside `src` folder if using one):
+And then create (or modify) a custom `instrumentation.ts` file in the root
+directory of the project (or inside `src` folder if using one):
 
 ```typescript
 // instrumentation.ts
 // instrumentation.ts
-import { NodeSDK } from "@opentelemetry/sdk-node";
-import type { SpanProcessor } from "@opentelemetry/sdk-trace-base";
-import type { LogRecordProcessor } from "@opentelemetry/sdk-logs";
+import { NodeSDK } from '@opentelemetry/sdk-node';
+import type { SpanProcessor } from '@opentelemetry/sdk-trace-base';
+import type { LogRecordProcessor } from '@opentelemetry/sdk-logs';
 
 export async function register() {
   const runtime = process.env.NEXT_RUNTIME;
@@ -123,9 +125,9 @@ export async function register() {
   };
 
   // Conditionally add Tidewave processors in development
-  if (runtime === "nodejs" && env === "development") {
+  if (runtime === 'nodejs' && env === 'development') {
     const { TidewaveSpanProcessor, TidewaveLogRecordProcessor } = await import(
-      "tidewave/next-js/instrumentation"
+      'tidewave/next-js/instrumentation'
     );
 
     sdkConfig.spanProcessors.push(new TidewaveSpanProcessor());
