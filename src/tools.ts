@@ -27,7 +27,7 @@ export interface Tools {
   logs: Omit<Tool<typeof getLogsInputSchema>, 'cli'>;
 }
 
-const projectEvalDescription = `  
+const projectEvalDescription = `
 Evaluates JavaScript/TypeScript code in the context of the project.
 
 The current NodeJS version is: ${process.version}
@@ -75,7 +75,7 @@ Module reference format:
 
 Examples:
 - src/types.ts:SymbolInfo (local file symbol)
-- lodash:isEmpty (dependency function)  
+- lodash:isEmpty (dependency function)
 - react:Component#render (instance method)
 - node:Math.max (builtin static method)`;
 
@@ -88,12 +88,7 @@ const sourceInputSchema = z.object({
 });
 
 export const getLogsInputSchema = z.object({
-  tail: z
-    .number()
-    .min(1)
-    .max(10000)
-    .default(100)
-    .describe('Number of log entries to return from the end'),
+  tail: z.number().describe('Number of log entries to return from the end'),
   grep: z.string().optional().describe('Filter logs with regex pattern (case insensitive)'),
   level: z
     .enum(['DEBUG', 'INFO', 'WARN', 'ERROR'])
