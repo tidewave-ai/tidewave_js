@@ -1,7 +1,7 @@
 {
   "name": "tidewave",
-  "version": "0.4.0",
-  "description": "Tidewave JavaScript CLI for documentation extraction and MCP server",
+  "version": "0.5.0",
+  "description": "Tidewave for JavaScript/Next.js",
   "keywords": [
     "typescript",
     "documentation",
@@ -12,7 +12,7 @@
   "homepage": "https://tidewave.ai",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dashbit/tidewave_javascript.git"
+    "url": "git+https://github.com/tidewave-ai/tidewave_js.git"
   },
   "license": "Apache-2.0",
   "author": "Dashbit",
