@@ -328,7 +328,10 @@ async function createInstrumentation(dir: string, dryRun: boolean): Promise<void
 
     // Check if Tidewave is already configured
     const content = fs.readFileSync(existingPath, 'utf-8');
-    if (content.includes('TidewaveSpanProcessor') && content.includes('TidewaveLogRecordProcessor')) {
+    if (
+      content.includes('TidewaveSpanProcessor') &&
+      content.includes('TidewaveLogRecordProcessor')
+    ) {
       console.log(chalk.green(`✅ ${existingFile} already configured for Tidewave`));
       return;
     }
