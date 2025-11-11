@@ -1,5 +1,4 @@
 // src/cli/install.ts
-import { Project } from 'ts-morph';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as child_process from 'child_process';
@@ -242,18 +241,11 @@ async function createMiddleware(
   if (fs.existsSync(filePath)) {
     console.log(chalk.yellow(`⏭️  ${fileName} already exists`));
 
-    // Use ts-morph to check if Tidewave is already configured
-    const project = new Project();
-    const sourceFile = project.addSourceFileAtPath(filePath);
-    const functionName = isNext16Plus ? 'proxy' : 'middleware';
-    const targetFunction = sourceFile.getFunction(functionName);
-
-    if (targetFunction) {
-      const body = targetFunction.getBodyText();
-      if (body && body.includes('/tidewave') && body.includes('/api/tidewave')) {
-        console.log(chalk.green(`✅ ${fileName} already configured for Tidewave`));
-        return;
-      }
+    // Check if Tidewave is already configured
+    const content = fs.readFileSync(filePath, 'utf-8');
+    if (content.includes('/tidewave') && content.includes('/api/tidewave')) {
+      console.log(chalk.green(`✅ ${fileName} already configured for Tidewave`));
+      return;
     }
 
     console.log(chalk.gray(`\n  Please manually add the following to your ${fileName}:\n`));
@@ -334,21 +326,11 @@ async function createInstrumentation(dir: string, dryRun: boolean): Promise<void
 
     console.log(chalk.yellow(`⏭️  ${existingFile} already exists`));
 
-    // Use ts-morph to check if Tidewave is already configured
-    const project = new Project();
-    const sourceFile = project.addSourceFileAtPath(existingPath);
-    const registerFunction = sourceFile.getFunction('register');
-
-    if (registerFunction) {
-      const body = registerFunction.getBodyText();
-      if (
-        body &&
-        body.includes('TidewaveSpanProcessor') &&
-        body.includes('TidewaveLogRecordProcessor')
-      ) {
-        console.log(chalk.green(`✅ ${existingFile} already configured for Tidewave`));
-        return;
-      }
+    // Check if Tidewave is already configured
+    const content = fs.readFileSync(existingPath, 'utf-8');
+    if (content.includes('TidewaveSpanProcessor') && content.includes('TidewaveLogRecordProcessor')) {
+      console.log(chalk.green(`✅ ${existingFile} already configured for Tidewave`));
+      return;
     }
 
     console.log(chalk.gray('\n  Please manually add the following to your instrumentation.ts:\n'));
