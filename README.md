@@ -1,13 +1,13 @@
 # Tidewave
 
-> Tidewave Web for Next.js and React+Vite is currently in alpha testing!
-
 Tidewave is the coding agent for full-stack web app development.
 [See our website](https://tidewave.ai) for more information.
 
-If you are using Next.js or you have a React + Vite frontend, talking either to
-a backend as a service (such as Supabase) or a third-party framework, you are in
-the right place!
+This project supports:
+
+  * Next.js 15/16
+
+  * React + Vite frontends, with either a backend as a service (such as Supabase) or a third-party framework
 
 If you are using React with Django, FastAPI, Flask, Phoenix, or Rails,
 [follow the steps here instead](http://hexdocs.pm/tidewave/react.html).
@@ -187,8 +187,9 @@ database calls, etc) won't be available.
 Next.js' `tidewaveHandler` and Vite's `tidewave` accept the configuration
 options below:
 
-- `allow_remote_access:` allow remote connections when true (default false)
-- `allowed_origins:` defaults to the current host/port
+- `allow_remote_access:` allow remote connections when true (default false).
+  Enable this only if you trust your network and you want Tidewave MCP to be
+  accessed from another trusted machine
 - `team`: enable Tidewave Web for teams
 
 ## CLI
