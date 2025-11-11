@@ -25,13 +25,13 @@ Protocol (MCP) server for your editors.
 If you are using Next.js, install Tidewave with:
 
 ```sh
-$ npx tidewave install --dev
+$ npx tidewave install
 # or
-$ yarn dlx tidewave install --dev
+$ yarn dlx tidewave install
 # or
-$ pnpm dlx tidewave install --dev
+$ pnpm dlx tidewave install
 # or
-$ bunx tidewave install --dev
+$ bunx tidewave install
 ```
 
 And you are almost there! Now make sure
