@@ -5,9 +5,10 @@ Tidewave is the coding agent for full-stack web app development.
 
 This project supports:
 
-  * Next.js 15/16
+- Next.js 15/16
 
-  * React + Vite frontends, with either a backend as a service (such as Supabase) or a third-party framework
+- React + Vite frontends, with either a backend as a service (such as Supabase)
+  or a third-party framework
 
 If you are using React with Django, FastAPI, Flask, Phoenix, or Rails,
 [follow the steps here instead](http://hexdocs.pm/tidewave/react.html).
