@@ -25,6 +25,28 @@ Protocol (MCP) server for your editors.
 If you are using Next.js, install Tidewave with:
 
 ```sh
+$ npx tidewave install --dev
+# or
+$ yarn dlx tidewave install --dev
+# or
+$ pnpm dlx tidewave install --dev
+# or
+$ bunx tidewave install --dev
+```
+
+And you are almost there! Now make sure
+[Tidewave is installed](https://hexdocs.pm/tidewave/installation.html) and you
+are ready to connect Tidewave to your app.
+
+In case the command abovees do not work, you can toggle the manual installation
+instructions below
+
+<details>
+<summary>Show manual installation steps</summary><br />
+
+**1. Add Tidewave as a dependency**
+
+```sh
 $ npm install -D tidewave
 # or
 $ yarn add -D tidewave
@@ -33,6 +55,8 @@ $ pnpm add --save-dev tidewave
 # or
 $ bun add --dev tidewave
 ```
+
+**2. Create `pages/api/tidewave.ts`**
 
 Then create `pages/api/tidewave.ts` with:
 
@@ -60,8 +84,7 @@ export const config = {
 };
 ```
 
-_Note: this uses the **Pages Router**, however it works regardless of the router
-type you use in your application._
+**3. Create the proxy.ts or middleware.ts**
 
 If you are using Next.js 16+, then create (or modify) `proxy.ts` with:
 
@@ -96,6 +119,8 @@ export const config = {
   matcher: ['/tidewave/:path*'],
 };
 ```
+
+**4. Create instrumentation.ts**
 
 Finally, we expose your application's spans, events, and logs to Tidewave MCP.
 First install the NodeSDK:
@@ -141,9 +166,7 @@ export async function register() {
 }
 ```
 
-Now make sure
-[Tidewave is installed](https://hexdocs.pm/tidewave/installation.html) and you
-are ready to connect Tidewave to your app.
+</details>
 
 ### React + Vite
 
