@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, test, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 import { handleInstall } from '../src/cli/install';
@@ -6,16 +6,6 @@ import { handleInstall } from '../src/cli/install';
 const TEST_FIXTURES = path.join(__dirname, 'fixtures');
 const NEXT15_FIXTURE = path.join(TEST_FIXTURES, 'next15');
 const NEXT16_FIXTURE = path.join(TEST_FIXTURES, 'next16');
-
-// Mock console to suppress output during tests
-const mockConsole = () => {
-  vi.spyOn(console, 'log').mockImplementation(() => {});
-  vi.spyOn(console, 'error').mockImplementation(() => {});
-};
-
-const restoreConsole = () => {
-  vi.restoreAllMocks();
-};
 
 // Helper to clean up created files
 function cleanupFiles(dir: string) {
@@ -54,13 +44,11 @@ function cleanupFiles(dir: string) {
 describe('install command', () => {
   describe('Next.js 15', () => {
     beforeEach(() => {
-      mockConsole();
       cleanupFiles(NEXT15_FIXTURE);
     });
 
     afterEach(() => {
       cleanupFiles(NEXT15_FIXTURE);
-      restoreConsole();
     });
 
     test('should create middleware.ts for Next.js 15', async () => {
@@ -114,13 +102,11 @@ describe('install command', () => {
 
   describe('Next.js 16', () => {
     beforeEach(() => {
-      mockConsole();
       cleanupFiles(NEXT16_FIXTURE);
     });
 
     afterEach(() => {
       cleanupFiles(NEXT16_FIXTURE);
-      restoreConsole();
     });
 
     test('should create proxy.ts for Next.js 16', async () => {
@@ -171,13 +157,11 @@ describe('install command', () => {
 
   describe('Existing files', () => {
     beforeEach(() => {
-      mockConsole();
       cleanupFiles(NEXT16_FIXTURE);
     });
 
     afterEach(() => {
       cleanupFiles(NEXT16_FIXTURE);
-      restoreConsole();
     });
 
     test('should skip existing middleware files if already configured', async () => {
