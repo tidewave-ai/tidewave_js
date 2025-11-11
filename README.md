@@ -1,7 +1,6 @@
 # Tidewave
 
-Tidewave is the coding agent for full-stack web app development.
-[See our website](https://tidewave.ai) for more information.
+Tidewave is the coding agent for full-stack web app development. Integrate Claude Code, OpenAI Codex, and other agents with your web app and web framework at every layer, from UI to database. [See our website](https://tidewave.ai) for more information.
 
 This project supports:
 
