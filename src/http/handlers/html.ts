@@ -5,7 +5,10 @@ import { default as tidewavePackage } from '../../../package.json' with { type: 
 export function createHandleHtml(config: TidewaveConfig): Handler {
   return async function handleHtml(req: Request, res: Response, next: NextFn): Promise<void> {
     // Only handle exact /tidewave path, not sub-paths
-    if (req.url !== '/' && req.url !== '') {
+    const url = req.url || '/';
+    const [pathname] = url.split('?');
+
+    if (pathname !== '/' && pathname !== '') {
       return next();
     }
 
