@@ -1,10 +1,8 @@
-import path from 'path';
-import fs from 'fs/promises';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { checkSecurity, methodNotAllowed, type Request, type Response } from '../http';
+import { checkSecurity, type Request, type Response } from '../http';
 import bodyParser from 'body-parser';
 import type { TidewaveConfig } from '../core';
-import { default as tidewavePackage } from '../../package.json' with { type: 'json' };
+import { getProjectName } from '../core';
 
 const DEFAULT_CONFIG: TidewaveConfig = {};
 
@@ -55,6 +53,10 @@ export async function tidewaveHandler(
     await import('../logger/instrumentation');
   }
 
+  // Set framework and projectName upfront
+  config.framework = 'nextjs';
+  config.projectName = config.projectName || (await getProjectName('next_app'));
+
   return async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
     const origin = req.headers.host;
     const url = new URL(req.url ?? '', `http://${origin}`);
@@ -76,81 +78,12 @@ export async function tidewaveHandler(
     await connectWrapper(securityMiddleware)(req, res, next);
     await connectWrapper(bodyParser.json())(req, res, next);
 
-    if (req.method === 'GET' && endpoint === undefined) {
-      return await respondTidewaveHTML(res, config);
-    }
+    const { getHandlers } = await import('../http');
+    const handlers = getHandlers(config);
 
-    if (req.method === 'GET' && endpoint === 'config') {
-      return await respondTidewaveConfigJSON(res, config);
-    }
-
-    if (req.method !== 'POST') {
-      return methodNotAllowed(res);
-    }
-
-    const { HANDLERS } = await import('../http');
-    const handler = HANDLERS[endpoint || ''];
+    const handler = handlers[endpoint || ''];
     if (handler) return await connectWrapper(handler)(req, res, next);
 
     return res.status(404).json({ message: `Route not found: ${req.method} ${req.url}` });
   };
-}
-
-async function respondTidewaveHTML(res: NextApiResponse, config: TidewaveConfig): Promise<void> {
-  const clientUrl = config.clientUrl || 'https://tidewave.ai';
-
-  const tidewaveConfig = await tidewaveConfigJSON(config);
-
-  res.status(200).setHeader('Content-Type', 'text/html').end(`
-    <html>
-      <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta name="tidewave:config" content="${escapeHtml(JSON.stringify(tidewaveConfig))}" />
-        <script type="module" src="${clientUrl}/tc/tc.js"></script>
-      </head>
-      <body></body>
-    </html>
-  `);
-}
-
-async function respondTidewaveConfigJSON(
-  res: NextApiResponse,
-  config: TidewaveConfig,
-): Promise<void> {
-  const tidewaveConfig = await tidewaveConfigJSON(config);
-  res.status(200).json(tidewaveConfig);
-}
-
-async function tidewaveConfigJSON(config: TidewaveConfig): Promise<object> {
-  return {
-    project_name: await getProjectName(),
-    framework_type: 'nextjs',
-    tidewave_version: tidewavePackage.version,
-    team: config.team || {},
-  };
-}
-
-async function getProjectName(): Promise<string> {
-  const rootDir = process.cwd();
-  const packageJsonPath = path.join(rootDir, 'package.json');
-  try {
-    const packageJson = await fs.readFile(packageJsonPath, 'utf8');
-    const { name } = JSON.parse(packageJson);
-    return name || 'next_app';
-  } catch {
-    return 'next_app';
-  }
-}
-
-function escapeHtml(text: string): string {
-  const map: Record<string, string> = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;',
-  };
-
-  return text.replace(/[&<>"']/g, match => map[match]!);
 }
