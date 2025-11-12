@@ -8,7 +8,8 @@ export function createHandleHtml(config: TidewaveConfig): Handler {
     const url = req.url || '/';
     const [pathname] = url.split('?');
 
-    if (pathname !== '/' && pathname !== '') {
+    // vite middleware strips the url, but next.js does not, so we check all three
+    if (pathname !== '' && pathname !== '/' && pathname !== '/tidewave') {
       return next();
     }
 
@@ -24,15 +25,15 @@ export function createHandleHtml(config: TidewaveConfig): Handler {
       res.statusCode = 200;
       res.setHeader('Content-Type', 'text/html');
       res.end(`
-    <html>
-      <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta name="tidewave:config" content="${escapeHtml(JSON.stringify(tidewaveConfig))}" />
-        <script type="module" src="${clientUrl}/tc/tc.js"></script>
-      </head>
-      <body></body>
-    </html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="tidewave:config" content="${escapeHtml(JSON.stringify(tidewaveConfig))}" />
+    <script type="module" src="${clientUrl}/tc/tc.js"></script>
+  </head>
+  <body></body>
+</html>
   `);
     } catch (err) {
       console.error(`[Tidewave] Failed to serve HTML: ${err}`);
