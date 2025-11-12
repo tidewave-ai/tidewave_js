@@ -54,7 +54,7 @@
   ],
   "scripts": {
     "dist": "bun run clean && bun run build:js && bun run build:types",
-    "build:js": "bun build --outdir dist --root src --external commander --external chalk --external typescript --external child_process --external module --external @opentelemetry/api --external @opentelemetry/api-logs --external @opentelemetry/core --external @opentelemetry/resources --external @opentelemetry/sdk-logs --external @opentelemetry/sdk-trace-base --external @opentelemetry/sdk-trace-node --external @opentelemetry/semantic-conventions src/next-js/handler.ts src/next-js/instrumentation.ts src/vite-plugin.ts src/evaluation/eval_worker.ts src/cli/index.ts --target node",
+    "build:js": "bun build --outdir dist --root src --external commander --external chalk --external typescript --external child_process --external module --external @opentelemetry/api --external @opentelemetry/sdk-logs --external @opentelemetry/sdk-trace-base src/next-js/handler.ts src/next-js/instrumentation.ts src/vite-plugin.ts src/evaluation/eval_worker.ts src/cli/index.ts --target node",
     "build:types": "tsc -p tsconfig.declarations.json",
     "dev": "bun run src/cli/index.ts",
     "test": "bun test",
@@ -76,7 +76,9 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.16.0",
-    "@opentelemetry/sdk-trace-node": "^2.1.0",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/sdk-logs": "^0.206.0",
+    "@opentelemetry/sdk-trace-base": "^2.1.0",
     "@types/body-parser": "^1.19.6",
     "@types/bun": "latest",
     "@types/connect": "^3.4.38",
