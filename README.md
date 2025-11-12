@@ -127,6 +127,7 @@ First install the NodeSDK:
 
 ```sh
 npm install @opentelemetry/sdk-node
+npm install -D @opentelemetry/sdk-trace-base @opentelemetry/sdk-logs
 ```
 
 And then create (or modify) a custom `instrumentation.ts` file in the root
