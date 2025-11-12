@@ -33,6 +33,10 @@ async function tidewaveServer(
 
   if (typeof host === 'string') {
     config.host = host;
+  } else if (host === undefined) {
+    // The host can be undefined, in which case the default is localhost,
+    // see https://vite.dev/config/server-options#server-host.
+    config.host = 'localhost';
   }
 
   if (!(config.host || config.port)) {
