@@ -1,5 +1,6 @@
 import type { TidewaveConfig } from './core';
 import { configureServer } from './http';
+import { getProjectName } from './core';
 import type { Plugin, ViteDevServer } from 'vite';
 // Import instrumentation to automatically patch console
 import './logger/instrumentation';
@@ -41,5 +42,9 @@ async function tidewaveServer(
     return;
   }
 
-  server.middlewares = configureServer(server.middlewares, config);
+  // Set framework and projectName upfront
+  config.framework = 'vite';
+  config.projectName = config.projectName || (await getProjectName('vite_app'));
+
+  configureServer(server.middlewares, config);
 }

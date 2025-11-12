@@ -62,19 +62,25 @@ describe('Tidewave Vite Plugin', () => {
   });
 
   describe('Server Configuration', () => {
-    it('should register middleware on server configuration', () => {
+    it('should register middleware on server configuration', async () => {
       const mockServer = createMockServer();
       const plugin = tidewave();
 
-      (plugin.configureServer as any)(mockServer);
+      await (plugin.configureServer as any)(mockServer);
 
       const middlewareUse = (mockServer as any)._middlewareUse;
 
-      // Should register 4 middleware: security + decode body + mcp + shell routes
-      expect(middlewareUse).toHaveBeenCalledTimes(4);
+      // Should register 6 middleware: security + decode body + html + config + mcp + shell routes
+      expect(middlewareUse).toHaveBeenCalledTimes(6);
 
       // Global security middleware
       expect(middlewareUse).toHaveBeenCalledWith('/tidewave', expect.any(Function));
+
+      // HTML route
+      expect(middlewareUse).toHaveBeenCalledWith('/tidewave/', expect.any(Function));
+
+      // Config route
+      expect(middlewareUse).toHaveBeenCalledWith('/tidewave/config', expect.any(Function));
 
       // MCP route
       expect(middlewareUse).toHaveBeenCalledWith('/tidewave/mcp', expect.any(Function));
@@ -83,7 +89,7 @@ describe('Tidewave Vite Plugin', () => {
       expect(middlewareUse).toHaveBeenCalledWith('/tidewave/shell', expect.any(Function));
     });
 
-    it('should pass config to configureServer', () => {
+    it('should pass config to configureServer', async () => {
       const config: TidewaveConfig = {
         allowRemoteAccess: false,
         allowedOrigins: ['https://custom.com'],
@@ -92,31 +98,31 @@ describe('Tidewave Vite Plugin', () => {
       const mockServer = createMockServer();
       const plugin = tidewave(config);
 
-      (plugin.configureServer as any)(mockServer);
+      await (plugin.configureServer as any)(mockServer);
 
       // Middleware should be registered (config is passed internally)
       const middlewareUse = (mockServer as any)._middlewareUse;
-      expect(middlewareUse).toHaveBeenCalledTimes(4);
+      expect(middlewareUse).toHaveBeenCalledTimes(6);
     });
   });
 
   describe('Route Registration', () => {
-    it('should register MCP route with correct path', () => {
+    it('should register MCP route with correct path', async () => {
       const mockServer = createMockServer();
       const plugin = tidewave();
 
-      (plugin.configureServer as any)(mockServer);
+      await (plugin.configureServer as any)(mockServer);
 
       const middlewareUse = (mockServer as any)._middlewareUse;
 
       expect(middlewareUse).toHaveBeenCalledWith('/tidewave/mcp', expect.any(Function));
     });
 
-    it('should register shell route with correct path', () => {
+    it('should register shell route with correct path', async () => {
       const mockServer = createMockServer();
       const plugin = tidewave();
 
-      (plugin.configureServer as any)(mockServer);
+      await (plugin.configureServer as any)(mockServer);
 
       const middlewareUse = (mockServer as any)._middlewareUse;
 
@@ -184,11 +190,11 @@ describe('Tidewave Vite Plugin', () => {
   });
 
   describe('Middleware Registration', () => {
-    it('should register middleware in correct order', () => {
+    it('should register middleware in correct order', async () => {
       const mockServer = createMockServer();
       const plugin = tidewave();
 
-      (plugin.configureServer as any)(mockServer);
+      await (plugin.configureServer as any)(mockServer);
 
       const middlewareUse = (mockServer as any)._middlewareUse;
       const calls = middlewareUse.mock.calls;
@@ -201,13 +207,21 @@ describe('Tidewave Vite Plugin', () => {
       expect(calls[1][0]).toBe('/tidewave');
       expect(typeof calls[1][1]).toBe('function');
 
-      // Third call should be MCP endpoint
-      expect(calls[2][0]).toBe('/tidewave/mcp');
+      // Third call should be HTML endpoint (empty string = '/')
+      expect(calls[2][0]).toBe('/tidewave/');
       expect(typeof calls[2][1]).toBe('function');
 
-      // Fourth call should be shell endpoint
-      expect(calls[3][0]).toBe('/tidewave/shell');
+      // Fourth call should be config endpoint
+      expect(calls[3][0]).toBe('/tidewave/config');
       expect(typeof calls[3][1]).toBe('function');
+
+      // Fifth call should be MCP endpoint
+      expect(calls[4][0]).toBe('/tidewave/mcp');
+      expect(typeof calls[4][1]).toBe('function');
+
+      // Sixth call should be shell endpoint
+      expect(calls[5][0]).toBe('/tidewave/shell');
+      expect(typeof calls[5][1]).toBe('function');
     });
   });
 });

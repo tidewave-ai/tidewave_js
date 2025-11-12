@@ -1,5 +1,6 @@
 import ts from 'typescript';
-
+import path from 'path';
+import fs from 'fs/promises';
 export type Program = ts.Program;
 export type TypeChecker = ts.TypeChecker;
 export type SourceFile = ts.SourceFile;
@@ -132,8 +133,26 @@ export interface TidewaveConfig {
   clientUrl?: string;
   allowRemoteAccess?: boolean;
   allowedOrigins?: string[];
+  projectName?: string;
+  framework?: string;
   team?: {
     id?: string;
     token?: string;
   };
+}
+
+export async function getProjectName(defaultName = 'app'): Promise<string> {
+  if (typeof process === 'undefined' || !process.cwd) {
+    return defaultName;
+  }
+
+  const rootDir = process.cwd();
+  const packageJsonPath = path.join(rootDir, 'package.json');
+  try {
+    const packageJson = await fs.readFile(packageJsonPath, 'utf8');
+    const { name } = JSON.parse(packageJson);
+    return name || defaultName;
+  } catch {
+    return defaultName;
+  }
 }
