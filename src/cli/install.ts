@@ -130,7 +130,13 @@ async function installDependencies(dir: string, dryRun: boolean): Promise<void> 
   const devDepCommands: Record<string, string[]> = {
     npm: ['install', '-D', 'tidewave', '@opentelemetry/sdk-trace-base', '@opentelemetry/sdk-logs'],
     yarn: ['add', '-D', 'tidewave', '@opentelemetry/sdk-trace-base', '@opentelemetry/sdk-logs'],
-    pnpm: ['add', '--save-dev', 'tidewave', '@opentelemetry/sdk-trace-base', '@opentelemetry/sdk-logs'],
+    pnpm: [
+      'add',
+      '--save-dev',
+      'tidewave',
+      '@opentelemetry/sdk-trace-base',
+      '@opentelemetry/sdk-logs',
+    ],
     bun: ['add', '--dev', 'tidewave', '@opentelemetry/sdk-trace-base', '@opentelemetry/sdk-logs'],
   };
 
