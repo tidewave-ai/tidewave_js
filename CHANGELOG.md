@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.5.3] - 2025-11-12
+
+* Make sure `instrumentation.ts` is compatible with webpack
+* Handle undefined hosts in Vite
+
 ## [0.5.2] - 2025-11-12
 
 * Make sure chalk and commander are added as dependencies
