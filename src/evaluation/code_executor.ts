@@ -12,37 +12,40 @@ export async function executeIsolated(request: EvaluationRequest): Promise<Evalu
 
     const child = fork(workerPath, { silent: true });
 
-    const evaluation: EvaluatedModuleResult = {
-      success: false,
-      result: null,
-      stdout: '',
-      stderr: '',
-    };
+    let result: { success: boolean; result: string | null } | null = null;
+    const stdoutChunks: string[] = [];
+    const stderrChunks: string[] = [];
 
     child.stdout?.on('data', data => {
-      evaluation.stdout += data.toString();
+      stdoutChunks.push(data.toString());
     });
 
     child.stderr?.on('data', data => {
-      evaluation.stderr += data.toString();
+      stderrChunks.push(data.toString());
     });
 
     child.on('message', (msg: { type: 'result'; data: string; success: boolean }) => {
       if (msg.type === 'result') {
         const { data, success } = msg;
-        evaluation.result = data;
-        evaluation.success = success;
+        result = { success, result: data };
         // Acknowledge the result and tell the child to exit gracefully.
         child.send({ type: 'finish' });
       }
     });
 
     child.on('exit', code => {
+      if (result === null) {
+        result = {
+          success: false,
+          result: `Evaluation process terminated unexpectedly with code ${code}`,
+        };
+      }
+
       resolve({
-        success: evaluation.success && code === 0,
-        result: evaluation.result,
-        stdout: evaluation.stdout.trim(),
-        stderr: evaluation.stderr.trim(),
+        success: result.success,
+        result: result.result,
+        stdout: stdoutChunks.join(''),
+        stderr: stderrChunks.join(''),
       } as EvaluatedModuleResult);
     });
 
@@ -53,8 +56,8 @@ export async function executeIsolated(request: EvaluationRequest): Promise<Evalu
       resolve({
         success: false,
         result: `Evaluation timed out after ${timeout} milliseconds`,
-        stdout: evaluation.stdout,
-        stderr: evaluation.stderr,
+        stdout: stdoutChunks.join(''),
+        stderr: stderrChunks.join(''),
       } as EvaluatedModuleResult);
     }, timeout);
 
