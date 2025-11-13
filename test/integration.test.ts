@@ -239,7 +239,7 @@ describe('Project scoped evaluation', () => {
     expect(result.success).toBe(true);
     expect(result.stderr).toBeFalsy();
     expect(result.result).toBe(null);
-    expect(result.stdout).toBe('hello, world!');
+    expect(result.stdout).toBe('hello, world!\n');
   });
 
   it('should fork the process and return a custom result', async () => {
@@ -255,7 +255,7 @@ describe('Project scoped evaluation', () => {
     const result = await Tidewave.executeIsolated(request);
     expect(result.success).toBe(true);
     expect(result.stderr).toBeFalsy();
-    expect(result.stdout).toBe('hello, world!');
+    expect(result.stdout).toBe('hello, world!\n');
     expect(result.result).toBe(42);
   });
 
@@ -287,7 +287,7 @@ describe('Project scoped evaluation', () => {
     const result = await Tidewave.executeIsolated(request);
     expect(result.success).toBe(true);
     expect(result.stderr).toBeFalsy();
-    expect(result.stdout).toBe('Code is: 42');
+    expect(result.stdout).toBe('Code is: 42\n');
     expect(result.result).toBe(43);
   });
 
