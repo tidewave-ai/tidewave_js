@@ -32,6 +32,8 @@ export async function executeIsolated(request: EvaluationRequest): Promise<Evalu
         const { data, success } = msg;
         evaluation.result = data;
         evaluation.success = success;
+        // Acknowledge the result and tell the child to exit gracefully.
+        child.send({ type: 'finish' });
       }
     });
 
@@ -58,6 +60,6 @@ export async function executeIsolated(request: EvaluationRequest): Promise<Evalu
 
     child.on('exit', () => clearTimeout(timeoutId));
 
-    child.send(request);
+    child.send({ type: 'evaluate', request: request });
   });
 }
