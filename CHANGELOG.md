@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.5.4] - 2025-11-13
+
+* Fix async messages on `project_eval`
+
 ## [0.5.3] - 2025-11-12
 
 * Make sure `instrumentation.ts` is compatible with webpack
