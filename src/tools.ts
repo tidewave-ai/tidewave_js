@@ -42,9 +42,9 @@ const path = await import('node:path');
 `;
 
 export const projectEvalInputSchema = z.object({
-  code: z.string().describe('The JavaScript/TypeScript code to evaluate.'),
+  code: z.string().describe('The JavaScript code to evaluate.'),
   arguments: z
-    .array(z.any())
+    .array(z.unknown())
     .optional()
     .default([])
     .describe(
