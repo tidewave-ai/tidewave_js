@@ -39,14 +39,7 @@ export async function handleInstall(options: InstallOptions): Promise<void> {
 
   console.log(chalk.green(`✅ Detected Next.js ${nextVersion.raw} (v${nextVersion.major})`));
 
-  // Step 2: Install dependencies
-  if (!skipDeps) {
-    await installDependencies(targetDir, dryRun);
-  } else {
-    console.log(chalk.gray('⏭️  Skipping dependency installation'));
-  }
-
-  // Step 3: Create files
+  // Step 2: Create files
   const steps: (() => Promise<void>)[] = [
     (): Promise<void> => createApiHandler(targetDir, dryRun),
     (): Promise<void> => createMiddleware(targetDir, nextVersion, dryRun),
@@ -55,6 +48,11 @@ export async function handleInstall(options: InstallOptions): Promise<void> {
 
   for (const step of steps) {
     await step();
+  }
+
+  // Step 3: Install dependencies
+  if (!skipDeps) {
+    await installDependencies(targetDir, dryRun);
   }
 
   // Summary
@@ -173,10 +171,9 @@ async function installDependencies(dir: string, dryRun: boolean): Promise<void> 
     console.error(chalk.red('\n❌ Failed to install dependencies'));
     console.log(
       chalk.gray(
-        `\nPlease install manually:\n  ${pm} ${devCmds.join(' ')}\n  ${pm} ${depCmds.join(' ')}\n`,
+        `\nPlease install manually:\n  ${pm} ${devCmds.join(' ')}\n  ${pm} ${depCmds.join(' ')}`,
       ),
     );
-    process.exit(1);
   }
 }
 
@@ -216,11 +213,11 @@ export const config = {
     }
 
     const shouldOverwrite = await promptUser(
-      chalk.yellow(`\n⚠️  ${path.relative(dir, handlerPath)} already exists. Overwrite? (Y/n): `),
+      chalk.yellow(`\n⚠️ ${path.relative(dir, handlerPath)} already exists. Overwrite? (Y/n): `),
     );
 
     if (!shouldOverwrite) {
-      console.log(chalk.gray(`⏭️  Skipping: ${path.relative(dir, handlerPath)}`));
+      console.log(chalk.gray(`⏭️ Skipping: ${path.relative(dir, handlerPath)}`));
       return;
     }
   }
@@ -245,7 +242,7 @@ async function createMiddleware(
   const filePath = path.join(dir, fileName);
 
   if (fs.existsSync(filePath)) {
-    console.log(chalk.yellow(`⏭️  ${fileName} already exists`));
+    console.log(chalk.yellow(`⏭️ ${fileName} already exists`));
 
     // Check if Tidewave is already configured
     const content = fs.readFileSync(filePath, 'utf-8');
@@ -330,7 +327,7 @@ async function createInstrumentation(dir: string, dryRun: boolean): Promise<void
     const existingPath = fs.existsSync(rootPath) ? rootPath : srcPath;
     const existingFile = fs.existsSync(rootPath) ? 'instrumentation.ts' : 'src/instrumentation.ts';
 
-    console.log(chalk.yellow(`⏭️  ${existingFile} already exists`));
+    console.log(chalk.yellow(`⏭️ ${existingFile} already exists`));
 
     // Check if Tidewave is already configured
     const content = fs.readFileSync(existingPath, 'utf-8');
