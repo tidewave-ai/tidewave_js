@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.5.5] - 2025-11-25
+
+* Fix missing items element on `project_eval`
+* Allow install to continue even if dependencies cannot be installed
+
 ## [0.5.4] - 2025-11-13
 
 * Fix async messages on `project_eval`
