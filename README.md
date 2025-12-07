@@ -285,8 +285,8 @@ bun run clean            # Clean dist directory
 
 ## Acknowledgements
 
-A thank you to [Zoey](https://github.com/zoedsoupe/) for implementing both Next.js and
-Vite integrations as well as the CLI interface.
+A thank you to [Zoey](https://github.com/zoedsoupe/) for implementing both
+Next.js and Vite integrations as well as the CLI interface.
 
 ## License
 
