@@ -8,12 +8,10 @@ more information.
 This project supports:
 
 - Next.js 15/16
+- Vite with React + Vue
 
-- React + Vite frontends, with either a backend as a service (such as Supabase)
-  or a third-party framework
-
-If you are using React with Django, FastAPI, Flask, Phoenix, or Rails,
-[follow the steps here instead](http://hexdocs.pm/tidewave/react.html).
+If you are using React/Vue with Django, FastAPI, Flask, Phoenix, or Rails,
+[follow the steps here instead](http://hexdocs.pm/tidewave/frontend.html).
 
 This project can also be used through the CLI or as a standalone Model Context
 Protocol (MCP) server for your editors.
@@ -168,11 +166,11 @@ export async function register() {
 
 </details>
 
-### React + Vite
+### Vite
 
-If you are building a front-end application, using a backend as a service, such
-as Supabase, or a non-officially supported web framework, we recommend using our
-React + Vite integration.
+If you are building a frontend application with React or Vue, using a backend as
+a service, such as Supabase, or a non-officially supported web framework, we
+recommend using our Vite integration.
 
 Install it with:
 
@@ -201,12 +199,13 @@ Now make sure
 [Tidewave is installed](https://hexdocs.pm/tidewave/installation.html) and you
 are ready to connect Tidewave to your app.
 
-If you are using Supabase or similar, you can prompt Tidewave to use the
-`supabase` CLI so it has complete access to your database. For non-officially
-supported web frameworks, our React + Vite integration allows Tidewave Web to
-perform changes on the front-end, and the agent will be able to modify your
-backend code as usual, but some functionality (such as accessing logs, doing
-database calls, etc) won't be available.
+Our Vite integration for React and Vue allows Tidewave Web to perform changes on
+the front-end, and the agent will be able to modify your backend code as usual,
+but some functionality (such as accessing logs, doing database calls, etc) won't
+be available. You can also use our
+[Figma Dev Mode](https://hexdocs.pm/tidewave/figma.html) and
+[Supabase](https://hexdocs.pm/tidewave/supabase.html) integration for additional
+features.
 
 ### Configuration
 
