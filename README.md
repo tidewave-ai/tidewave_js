@@ -8,7 +8,7 @@ more information.
 This project supports:
 
 - Next.js 15/16
-- Vite with React + Vue
+- Vite with React/Vue
 
 If you are using React/Vue with Django, FastAPI, Flask, Phoenix, or Rails,
 [follow the steps here instead](http://hexdocs.pm/tidewave/frontend.html).
