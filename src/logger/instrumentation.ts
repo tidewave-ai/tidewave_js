@@ -62,15 +62,19 @@ function patchConsole(): void {
             .map(stripAnsiCodes)
             .join(' ');
 
-          circularBuffer.addLog({
-            timestamp: new Date().toISOString(),
-            severityText: severity,
-            body,
-            attributes: {
-              'log.origin': 'console',
-              'log.method': method,
-            },
-          });
+          const isAllWhitespace = body.match(/^\s+$/);
+
+          if (!isAllWhitespace) {
+            circularBuffer.addLog({
+              timestamp: new Date().toISOString(),
+              severityText: severity,
+              body,
+              attributes: {
+                'log.origin': 'console',
+                'log.method': method,
+              },
+            });
+          }
         } catch {
           // Silently fail to avoid breaking console
         }
