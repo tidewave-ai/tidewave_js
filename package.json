@@ -44,6 +44,11 @@
       "import": "./dist/next-js/instrumentation.js",
       "require": "./dist/next-js/instrumentation.js"
     },
+    "./tanstack": {
+      "types": "./dist/tanstack.d.ts",
+      "import": "./dist/tanstack.js",
+      "require": "./dist/tanstack.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -54,7 +59,7 @@
   ],
   "scripts": {
     "dist": "bun run clean && bun run build:js && bun run build:types",
-    "build:js": "bun build --outdir dist --root src --external typescript --external child_process --external module --external @opentelemetry/api --external @opentelemetry/sdk-logs --external @opentelemetry/sdk-trace-base src/next-js/handler.ts src/next-js/instrumentation.ts src/vite-plugin.ts src/evaluation/eval_worker.ts src/cli/index.ts --target node",
+    "build:js": "bun build --outdir dist --root src --external typescript --external child_process --external module --external @opentelemetry/api --external @opentelemetry/sdk-logs --external @opentelemetry/sdk-trace-base src/next-js/handler.ts src/next-js/instrumentation.ts src/vite-plugin.ts src/tanstack.ts src/evaluation/eval_worker.ts src/cli/index.ts --target node",
     "build:types": "tsc -p tsconfig.declarations.json",
     "dev": "bun run src/cli/index.ts",
     "test": "bun test",

@@ -1,7 +1,6 @@
-/**
- * Tidewave OpenTelemetry processors for Next.js
- *
- * Importing this module will automatically patch console.log to capture console output.
- * You can then add the processors to your OpenTelemetry setup.
- */
-export { TidewaveSpanProcessor, TidewaveLogRecordProcessor } from '../logger/instrumentation';
+import { patchConsole } from '../logger/console-patch';
+
+export { TidewaveSpanProcessor } from '../logger/tidewave-span-processor';
+export { TidewaveLogRecordProcessor } from '../logger/tidewave-log-record-processor';
+
+patchConsole();
