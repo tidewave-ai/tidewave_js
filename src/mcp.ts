@@ -12,7 +12,7 @@ import type {
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { isExtractError, isResolveError } from './core';
 import { Tidewave } from '.';
-import { circularBuffer } from './logger/circular-buffer';
+import { tidewaveLogger } from './logger/tidewave-logger';
 
 const {
   docs: { mcp: docsMcp },
@@ -124,7 +124,7 @@ async function handleGetSourcePath({ reference }: SourceInputSchema): Promise<Ca
 
 async function handleGetLogs(args: GetLogsInputSchema): Promise<CallToolResult> {
   try {
-    const logs = circularBuffer.getLogs({
+    const logs = await tidewaveLogger.getLogs({
       tail: args.tail,
       grep: args.grep,
       level: args.level,

@@ -50,7 +50,8 @@ export async function tidewaveHandler(
 
   if (process.env['NEXT_RUNTIME'] !== 'edge') {
     // Import instrumentation to automatically patch console
-    await import('../logger/instrumentation');
+    const { patchConsole } = await import('../logger/console-patch');
+    patchConsole();
   }
 
   // Set framework and projectName upfront

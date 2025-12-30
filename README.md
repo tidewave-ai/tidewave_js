@@ -207,6 +207,27 @@ be available. You can also use our
 [Supabase](https://hexdocs.pm/tidewave/supabase.html) integration for additional
 features.
 
+### TanStack Start
+
+If you are using TanStack start:
+
+**1. Follow the Vite instructions above**
+
+**2. Create or modify `src/start.ts` file to import Tidewave in development**
+
+```ts
+import { createStart } from '@tanstack/react-start';
+
+// Import Tidewave only in development.
+if (process.env.NODE_ENV === 'development' && typeof window === 'undefined') {
+  import('tidewave/tanstack');
+}
+
+export const startInstance = createStart(() => {
+  return {};
+});
+```
+
 ### Configuration
 
 Next.js' `tidewaveHandler` and Vite's `tidewave` accept the configuration

@@ -1,4 +1,4 @@
-import { circularBuffer } from './circular-buffer';
+import { tidewaveLogger } from './tidewave-logger';
 
 type ConsoleMethods = 'log' | 'info' | 'warn' | 'error' | 'debug';
 
@@ -10,10 +10,10 @@ function stripAnsiCodes(text: string): string {
 }
 
 /**
- * Patch console methods to write directly to the circular buffer.
+ * Patch console methods to write directly to the tidewave logger.
  * This is called automatically when this module is imported.
  */
-function patchConsole(): void {
+export function patchConsole(): void {
   const isBrowser =
     typeof globalThis !== 'undefined' &&
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -65,7 +65,7 @@ function patchConsole(): void {
           const isAllWhitespace = body.match(/^\s+$/);
 
           if (!isAllWhitespace) {
-            circularBuffer.addLog({
+            tidewaveLogger.addLog({
               timestamp: new Date().toISOString(),
               severityText: severity,
               body,
@@ -88,10 +88,3 @@ function patchConsole(): void {
   // @ts-expect-error - Flag to track console patching
   globalThis.__TIDEWAVE_CONSOLE_PATCHED__ = true;
 }
-
-// Patch console at the top level (executed on module import)
-patchConsole();
-
-// Export processors for users to add to their own OpenTelemetry setup
-export { TidewaveSpanProcessor } from './tidewave-span-processor';
-export { TidewaveLogRecordProcessor } from './tidewave-log-record-processor';

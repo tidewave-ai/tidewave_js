@@ -2,8 +2,9 @@ import type { TidewaveConfig } from './core';
 import { configureServer } from './http';
 import { getProjectName } from './core';
 import type { Plugin, ViteDevServer } from 'vite';
-// Import instrumentation to automatically patch console
-import './logger/instrumentation';
+import { patchConsole } from './logger/console-patch';
+
+patchConsole();
 
 const DEFAULT_CONFIG: TidewaveConfig = {
   port: 5173,
