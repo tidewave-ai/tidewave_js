@@ -8,13 +8,14 @@ more information.
 This project supports:
 
 - Next.js 15/16
+- TanStack Start with React
 - Vite with React/Vue
 
 If you are using React/Vue with Django, FastAPI, Flask, Phoenix, or Rails,
 [follow the steps here instead](http://hexdocs.pm/tidewave/frontend.html).
 
-This project can also be used through the CLI or as a standalone Model Context
-Protocol (MCP) server for your editors.
+This project can also be used through the CLI or as
+[a standalone Model Context Protocol server](https://hexdocs.pm/tidewave/mcp.html).
 
 ## Installation
 
@@ -166,6 +167,51 @@ export async function register() {
 
 </details>
 
+### TanStack Start
+
+If you are using TanStack Start with React, install Tidewave with:
+
+```sh
+$ npm install -D tidewave
+# or
+$ yarn add -D tidewave
+# or
+$ pnpm add --save-dev tidewave
+# or
+$ bun add --dev tidewave
+```
+
+Then configure your `vite.config.js` (also works for `.ts` and `.mjs`):
+
+```javascript
+import { defineConfig } from 'vite';
+import tidewave from 'tidewave/vite-plugin';
+
+export default defineConfig({
+  plugins: [tidewave()],
+});
+```
+
+And finally create or modify `src/start.ts` file to import Tidewave in
+development:
+
+```ts
+import { createStart } from '@tanstack/react-start';
+
+// Import Tidewave only in development.
+if (process.env.NODE_ENV === 'development' && typeof window === 'undefined') {
+  import('tidewave/tanstack');
+}
+
+export const startInstance = createStart(() => {
+  return {};
+});
+```
+
+Now make sure
+[Tidewave is installed](https://hexdocs.pm/tidewave/installation.html) and you
+are ready to connect Tidewave to your app.
+
 ### Vite
 
 If you are building a frontend application with React or Vue, using a backend as
@@ -206,27 +252,6 @@ be available. You can also use our
 [Figma Dev Mode](https://hexdocs.pm/tidewave/figma.html) and
 [Supabase](https://hexdocs.pm/tidewave/supabase.html) integration for additional
 features.
-
-### TanStack Start
-
-If you are using TanStack start:
-
-**1. Follow the Vite instructions above**
-
-**2. Create or modify `src/start.ts` file to import Tidewave in development**
-
-```ts
-import { createStart } from '@tanstack/react-start';
-
-// Import Tidewave only in development.
-if (process.env.NODE_ENV === 'development' && typeof window === 'undefined') {
-  import('tidewave/tanstack');
-}
-
-export const startInstance = createStart(() => {
-  return {};
-});
-```
 
 ### Configuration
 

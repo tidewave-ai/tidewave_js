@@ -1,5 +1,10 @@
 # Changelog
 
+## dev
+
+* Tanstack support
+* Write logs and instrumentation to a file so it works across multiple runtimes
+
 ## [0.5.5] - 2025-11-25
 
 * Fix missing items element on `project_eval`
