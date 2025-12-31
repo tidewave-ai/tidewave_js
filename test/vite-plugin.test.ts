@@ -70,8 +70,8 @@ describe('Tidewave Vite Plugin', () => {
 
       const middlewareUse = (mockServer as any)._middlewareUse;
 
-      // Should register 6 middleware: security + decode body + html + config + mcp + shell routes
-      expect(middlewareUse).toHaveBeenCalledTimes(6);
+      // Should register 5 middleware: security + decode body + html + config + mcp routes
+      expect(middlewareUse).toHaveBeenCalledTimes(5);
 
       // Global security middleware
       expect(middlewareUse).toHaveBeenCalledWith('/tidewave', expect.any(Function));
@@ -84,9 +84,6 @@ describe('Tidewave Vite Plugin', () => {
 
       // MCP route
       expect(middlewareUse).toHaveBeenCalledWith('/tidewave/mcp', expect.any(Function));
-
-      // Shell route
-      expect(middlewareUse).toHaveBeenCalledWith('/tidewave/shell', expect.any(Function));
     });
 
     it('should pass config to configureServer', async () => {
@@ -102,7 +99,7 @@ describe('Tidewave Vite Plugin', () => {
 
       // Middleware should be registered (config is passed internally)
       const middlewareUse = (mockServer as any)._middlewareUse;
-      expect(middlewareUse).toHaveBeenCalledTimes(6);
+      expect(middlewareUse).toHaveBeenCalledTimes(5);
     });
   });
 
@@ -116,17 +113,6 @@ describe('Tidewave Vite Plugin', () => {
       const middlewareUse = (mockServer as any)._middlewareUse;
 
       expect(middlewareUse).toHaveBeenCalledWith('/tidewave/mcp', expect.any(Function));
-    });
-
-    it('should register shell route with correct path', async () => {
-      const mockServer = createMockServer();
-      const plugin = tidewave();
-
-      await (plugin.configureServer as any)(mockServer);
-
-      const middlewareUse = (mockServer as any)._middlewareUse;
-
-      expect(middlewareUse).toHaveBeenCalledWith('/tidewave/shell', expect.any(Function));
     });
   });
 
@@ -218,10 +204,6 @@ describe('Tidewave Vite Plugin', () => {
       // Fifth call should be MCP endpoint
       expect(calls[4][0]).toBe('/tidewave/mcp');
       expect(typeof calls[4][1]).toBe('function');
-
-      // Sixth call should be shell endpoint
-      expect(calls[5][0]).toBe('/tidewave/shell');
-      expect(typeof calls[5][1]).toBe('function');
     });
   });
 });

@@ -4,7 +4,6 @@ import connect from 'connect';
 import http from 'node:http';
 import { checkOrigin, checkRemoteIp } from './security';
 import { handleMcp } from './handlers/mcp';
-import { handleShell } from './handlers/shell';
 import { createHandleHtml } from './handlers/html';
 import { createHandleConfig } from './handlers/config';
 import bodyParser from 'body-parser';
@@ -32,7 +31,6 @@ function getHandlers(config: TidewaveConfig): Record<string, Handler> {
     '': createHandleHtml(config),
     config: createHandleConfig(config),
     mcp: handleMcp,
-    shell: handleShell,
   };
 }
 
