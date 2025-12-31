@@ -1,13 +1,16 @@
 {
   "name": "tidewave",
-  "version": "0.5.5",
-  "description": "Tidewave for JavaScript/Next.js",
+  "version": "0.6.0",
+  "description": "Tidewave for JavaScript (Next.js, TanStack, Vite)",
   "keywords": [
     "typescript",
     "documentation",
     "mcp",
     "cli",
-    "tidewave"
+    "tidewave",
+    "next",
+    "vite",
+    "tanstack"
   ],
   "homepage": "https://tidewave.ai",
   "repository": {

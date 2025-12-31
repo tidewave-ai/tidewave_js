@@ -1,6 +1,6 @@
 # Changelog
 
-## dev
+## [0.6.0] - 2025-12-31
 
 * Tanstack support
 * Write logs and instrumentation to a file so it works across multiple runtimes
