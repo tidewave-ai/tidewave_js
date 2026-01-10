@@ -8,9 +8,10 @@ import type {
   ProjectEvalInputSchema,
   SourceInputSchema,
   GetLogsInputSchema,
+  ListExportsInputSchema,
 } from './tools';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
-import { isExtractError, isResolveError } from './core';
+import { isExtractError, isResolveError, isListExportsError } from './core';
 import { Tidewave } from '.';
 import { tidewaveLogger } from './logger/tidewave-logger';
 
@@ -19,6 +20,7 @@ const {
   source: { mcp: sourceMcp },
   eval: { mcp: evalMcp },
   logs: { mcp: logsMcp },
+  listExports: { mcp: listExportsMcp },
 } = tools;
 
 async function handleProjectEvaluation({
@@ -158,6 +160,30 @@ async function handleGetLogs(args: GetLogsInputSchema): Promise<CallToolResult> 
   }
 }
 
+async function handleListExports({ module }: ListExportsInputSchema): Promise<CallToolResult> {
+  const result = await Tidewave.listExports(module);
+
+  if (isListExportsError(result)) {
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Failed to list exports for ${module}: ${result.error.message}`,
+        },
+      ],
+      isError: true,
+    };
+  }
+
+  const { exports } = result;
+  const output = `Exports from ${module} (${exports.length} symbols):\n\n${exports.join('\n')}`;
+
+  return {
+    content: [{ type: 'text', text: output }],
+    isError: false,
+  };
+}
+
 export async function serveMcp(transport: Transport): Promise<void> {
   const server = new McpServer({ name, version });
 
@@ -197,6 +223,15 @@ export async function serveMcp(transport: Transport): Promise<void> {
       handleGetLogs,
     );
   }
+
+  server.registerTool(
+    listExportsMcp.name,
+    {
+      description: listExportsMcp.description,
+      inputSchema: listExportsMcp.inputSchema.shape,
+    },
+    handleListExports,
+  );
 
   await server.connect(transport);
 }

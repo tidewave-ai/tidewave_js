@@ -82,8 +82,13 @@ export interface EvaluatedModuleResult {
   stderr: string;
 }
 
+export interface ListExportsInfo {
+  readonly exports: string[];
+}
+
 export type ResolveResult = ResolvedModule | ResolveError;
 export type ExtractResult = SymbolInfo | ExtractError;
+export type ListExportsResult = ListExportsInfo | ExtractError;
 export type InternalResolveResult = InternalResolvedModule | ResolveError;
 
 export function isError(result: ResolveResult | ExtractResult): boolean {
@@ -97,6 +102,10 @@ export function isResolveError(
 }
 
 export function isExtractError(result: ExtractResult): result is ExtractError {
+  return result != null && 'error' in result;
+}
+
+export function isListExportsError(result: ListExportsResult): result is ExtractError {
   return result != null && 'error' in result;
 }
 
