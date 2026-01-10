@@ -4,6 +4,7 @@ export type DocsInputSchema = z.infer<typeof docsInputSchema>;
 export type SourceInputSchema = z.infer<typeof sourceInputSchema>;
 export type ProjectEvalInputSchema = z.infer<typeof projectEvalInputSchema>;
 export type GetLogsInputSchema = z.infer<typeof getLogsInputSchema>;
+export type ListExportsInputSchema = z.infer<typeof listExportsInputSchema>;
 
 export interface Tool<InputSchema> {
   mcp: {
@@ -25,6 +26,7 @@ export interface Tools {
   source: Tool<typeof sourceInputSchema>;
   eval: Omit<Tool<typeof projectEvalInputSchema>, 'cli'>;
   logs: Omit<Tool<typeof getLogsInputSchema>, 'cli'>;
+  listExports: Tool<typeof listExportsInputSchema>;
 }
 
 const projectEvalDescription = `
@@ -97,6 +99,18 @@ export const getLogsInputSchema = z.object({
   since: z.string().optional().describe('ISO 8601 timestamp - return logs after this time'),
 });
 
+export const listExportsInputSchema = z.object({
+  module: z.string().describe(
+    `Module path to list exports from. Supports local files, dependencies, and subpath exports.
+
+Examples:
+- @expo/ui/swift-ui (dependency subpath)
+- lodash (dependency)
+- ./src/utils.ts (local file)
+- react (dependency)`,
+  ),
+});
+
 export const tools: Tools = {
   docs: {
     mcp: {
@@ -155,6 +169,31 @@ export const tools: Tools = {
       description:
         'Retrieve application logs for debugging. Returns logs excluding Tidewave internal logs. Supports filtering by level, time, and pattern matching.',
       inputSchema: getLogsInputSchema,
+    },
+  },
+  listExports: {
+    mcp: {
+      name: 'list_exports',
+      description:
+        'List all exported symbols from a TypeScript/JavaScript module. Use this to discover available symbols before using get_docs to retrieve detailed documentation. Works for local files, npm dependencies, and subpath exports.',
+      inputSchema: listExportsInputSchema,
+    },
+    cli: {
+      command: 'exports',
+      description: 'List all exports from a module',
+      argument: '<module>',
+      argumentDescription:
+        'Module path to list exports from. Examples: @expo/ui/swift-ui, lodash, ./src/utils.ts',
+      options: {
+        prefix: {
+          flag: '-p, --prefix <path>',
+          desc: 'Path to a custom project path (which contains tsconfig.json/package.json)',
+        },
+        json: {
+          flag: '-j, --json',
+          desc: 'If the output should be in JSON format or not',
+        },
+      },
     },
   },
 } as const;

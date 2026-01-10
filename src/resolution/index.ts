@@ -7,6 +7,7 @@ import type {
   ResolveResult,
   ExtractError,
   InternalResolveResult,
+  ListExportsResult,
 } from '../core';
 import { createExtractError, resolveError, isResolveError, isExtractError } from '../core';
 import { loadTsConfig, resolveModule, resolveNodeBuiltin } from './module-resolver';
@@ -420,6 +421,29 @@ export async function extractSymbol(
       },
     };
   }
+}
+
+// List all exports from a module
+export async function listExports(modulePath: string): Promise<ListExportsResult> {
+  const config = loadTsConfig(process.cwd());
+
+  const resolvedModule = resolveModule(modulePath, config.options);
+  if (isResolveError(resolvedModule)) {
+    return createExtractError('MODULE_NOT_FOUND', `Module '${modulePath}' not found`);
+  }
+
+  const { sourceFile, program } = resolvedModule;
+  const checker = program.getTypeChecker();
+  const moduleSymbol = checker.getSymbolAtLocation(sourceFile);
+
+  if (!moduleSymbol) {
+    return createExtractError('MODULE_NOT_FOUND', `Could not get module symbol for '${modulePath}'`);
+  }
+
+  const exports = checker.getExportsOfModule(moduleSymbol);
+  const exportNames = exports.map((exp: ts.Symbol) => exp.getName()).sort();
+
+  return { exports: exportNames };
 }
 
 // Re-export formatOutput
