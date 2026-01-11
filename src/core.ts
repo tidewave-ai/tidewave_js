@@ -86,10 +86,6 @@ export type ResolveResult = ResolvedModule | ResolveError;
 export type ExtractResult = SymbolInfo | ExtractError;
 export type InternalResolveResult = InternalResolvedModule | ResolveError;
 
-export function isError(result: ResolveResult | ExtractResult): boolean {
-  return result != null && 'success' in result && result.success === false;
-}
-
 export function isResolveError(
   result: ResolveResult | InternalResolveResult,
 ): result is ResolveError {
