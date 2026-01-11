@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { extractSymbol, extractDocs, getSourceLocation, formatOutput } from '../src/resolution';
 import { isExtractError, isResolveError } from '../src/core';
-import type { SymbolInfo } from '../src/core';
+import type { SymbolInfo, ResolvedModule, ResolveError, ExtractError } from '../src/core';
 import path from 'node:path';
 
 describe('TypeScript Extraction', () => {
@@ -16,11 +16,11 @@ describe('TypeScript Extraction', () => {
         symbol: 'createProgram',
       });
 
-      expect(isExtractError(result)).toBe(false);
-      expect((result as any).name).toBe('createProgram');
-      expect((result as any).kind).toBe('function');
-      expect((result as any).location).toContain('.ts');
-      expect((result as any).type).toBeDefined();
+      const symbolInfo = result as SymbolInfo;
+      expect(symbolInfo.name).toBe('createProgram');
+      expect(symbolInfo.kind).toBe('function');
+      expect(symbolInfo.location).toContain('.ts');
+      expect(symbolInfo.type).toBeDefined();
     });
 
     it('should extract interface symbols', async () => {
@@ -29,10 +29,10 @@ describe('TypeScript Extraction', () => {
         symbol: 'CompilerOptions',
       });
 
-      expect(isExtractError(result)).toBe(false);
-      expect(result.name).toBe('CompilerOptions');
-      expect(result.kind).toBe('interface');
-      expect(result.type).toBeDefined();
+      const symbolInfo = result as SymbolInfo;
+      expect(symbolInfo.name).toBe('CompilerOptions');
+      expect(symbolInfo.kind).toBe('interface');
+      expect(symbolInfo.type).toBeDefined();
     });
 
     it('should extract enum symbols', async () => {
@@ -41,10 +41,10 @@ describe('TypeScript Extraction', () => {
         symbol: 'ScriptTarget',
       });
 
-      expect(isExtractError(result)).toBe(false);
-      expect(result.name).toBe('ScriptTarget');
-      expect(result.kind).toBe('enum');
-      expect(result.type).toBeDefined();
+      const symbolInfo = result as SymbolInfo;
+      expect(symbolInfo.name).toBe('ScriptTarget');
+      expect(symbolInfo.kind).toBe('enum');
+      expect(symbolInfo.type).toBeDefined();
     });
 
     it('should extract class symbols', async () => {
@@ -53,9 +53,9 @@ describe('TypeScript Extraction', () => {
         symbol: 'TestClass',
       });
 
-      expect(isExtractError(result)).toBe(false);
-      expect(result.kind).toBe('class');
-      expect(result.name).toBe('TestClass');
+      const symbolInfo = result as SymbolInfo;
+      expect(symbolInfo.kind).toBe('class');
+      expect(symbolInfo.name).toBe('TestClass');
     });
 
     it('should handle class static member access', async () => {
@@ -66,9 +66,9 @@ describe('TypeScript Extraction', () => {
         isStatic: true,
       });
 
-      expect(isExtractError(result)).toBe(false);
-      expect(result.name).toBe('TestClass.VERSION');
-      expect(result.type).toBeDefined();
+      const symbolInfo = result as SymbolInfo;
+      expect(symbolInfo.name).toBe('TestClass.VERSION');
+      expect(symbolInfo.type).toBeDefined();
     });
 
     it('should handle class static method access', async () => {
@@ -79,9 +79,9 @@ describe('TypeScript Extraction', () => {
         isStatic: true,
       });
 
-      expect(isExtractError(result)).toBe(false);
-      expect(result.name).toBe('TestClass.create');
-      expect(result.kind).toBe('method');
+      const symbolInfo = result as SymbolInfo;
+      expect(symbolInfo.name).toBe('TestClass.create');
+      expect(symbolInfo.kind).toBe('method');
     });
 
     it('should handle class instance member access', async () => {
@@ -92,9 +92,9 @@ describe('TypeScript Extraction', () => {
         isStatic: false,
       });
 
-      expect(isExtractError(result)).toBe(false);
-      expect(result.name).toBe('TestClass#greet');
-      expect(result.kind).toBe('method');
+      const symbolInfo = result as SymbolInfo;
+      expect(symbolInfo.name).toBe('TestClass#greet');
+      expect(symbolInfo.kind).toBe('method');
     });
 
     it('should handle enum member access', async () => {
@@ -105,10 +105,10 @@ describe('TypeScript Extraction', () => {
         isStatic: true,
       });
 
-      expect(isExtractError(result)).toBe(false);
-      expect(result.name).toBe('TestEnum.First');
-      expect(result.kind).toBe('enum member');
-      expect(result.type).toBeDefined();
+      const symbolInfo = result as SymbolInfo;
+      expect(symbolInfo.name).toBe('TestEnum.First');
+      expect(symbolInfo.kind).toBe('enum member');
+      expect(symbolInfo.type).toBeDefined();
     });
 
     it('should handle interface member access', async () => {
@@ -119,63 +119,51 @@ describe('TypeScript Extraction', () => {
         isStatic: false,
       });
 
-      expect(isExtractError(result)).toBe(false);
-      expect(result.name).toBe('TestInterface#getData');
-      expect(result.kind).toBe('method');
+      const symbolInfo = result as SymbolInfo;
+      expect(symbolInfo.name).toBe('TestInterface#getData');
+      expect(symbolInfo.kind).toBe('method');
     });
 
     it('should return MODULE_NOT_FOUND for invalid modules', async () => {
-      const result = await extractSymbol({
+      const result = (await extractSymbol({
         module: './non-existent-module-path',
         symbol: 'someSymbol',
-      });
+      })) as ExtractError;
 
-      expect(isExtractError(result)).toBe(true);
-      if (isExtractError(result)) {
-        expect(result.error.code).toBe('MODULE_NOT_FOUND');
-        expect(result.error.message).toContain('./non-existent-module-path');
-      }
+      expect(result.error.code).toBe('MODULE_NOT_FOUND');
+      expect(result.error.message).toContain('./non-existent-module-path');
     });
 
     it('should return SYMBOL_NOT_FOUND for missing symbols', async () => {
-      const result = await extractSymbol({
+      const result = (await extractSymbol({
         module: 'typescript',
         symbol: 'NonExistentSymbolName123',
-      });
+      })) as ExtractError;
 
-      expect(isExtractError(result)).toBe(true);
-      if (isExtractError(result)) {
-        expect(result.error.code).toBe('SYMBOL_NOT_FOUND');
-        expect(result.error.message).toContain('NonExistentSymbolName123');
-      }
+      expect(result.error.code).toBe('SYMBOL_NOT_FOUND');
+      expect(result.error.message).toContain('NonExistentSymbolName123');
     });
 
     it('should return MEMBER_NOT_FOUND for missing members', async () => {
-      const result = await extractSymbol({
+      const result = (await extractSymbol({
         module: 'typescript',
         symbol: 'ScriptTarget',
         member: 'NonExistentMember',
         isStatic: true,
-      });
+      })) as ExtractError;
 
-      expect(isExtractError(result)).toBe(true);
-      if (isExtractError(result)) {
-        expect(result.error.code).toBe('MEMBER_NOT_FOUND');
-        expect(result.error.message).toContain('NonExistentMember');
-      }
+      expect(result.error.code).toBe('MEMBER_NOT_FOUND');
+      expect(result.error.message).toContain('NonExistentMember');
     });
 
     it('should return INVALID_REQUEST when symbol is not provided', async () => {
-      const result = await extractSymbol({
+      const result = (await extractSymbol({
         module: 'typescript',
         symbol: '', // Empty symbol to trigger the error
-      });
+      })) as ExtractError;
 
-      expect(isExtractError(result)).toBe(true);
-      if (isExtractError(result)) {
-        expect(result.error.code).toBe('INVALID_REQUEST');
-        expect(result.error.message).toContain('Symbol name is required');
-      }
+      expect(result.error.code).toBe('INVALID_REQUEST');
+      expect(result.error.message).toContain('Symbol name is required');
     });
 
     it('should handle TypeScript configuration options', async () => {
@@ -184,7 +172,9 @@ describe('TypeScript Extraction', () => {
         symbol: 'createProgram',
       });
 
-      expect(result).toBeDefined();
+      const symbolInfo = result as SymbolInfo;
+      expect(symbolInfo.name).toBe('createProgram');
+      expect(symbolInfo.kind).toBe('function');
     });
 
     it('should handle relative path modules', async () => {
@@ -193,9 +183,9 @@ describe('TypeScript Extraction', () => {
         symbol: 'SymbolInfo',
       });
 
-      expect(isExtractError(result)).toBe(false);
-      expect(result.name).toBe('SymbolInfo');
-      expect(result.kind).toBe('interface');
+      const symbolInfo = result as SymbolInfo;
+      expect(symbolInfo.name).toBe('SymbolInfo');
+      expect(symbolInfo.kind).toBe('interface');
     });
 
     it('should extract documentation comments when available', async () => {
@@ -205,9 +195,9 @@ describe('TypeScript Extraction', () => {
         symbol: 'createProgram',
       });
 
-      expect(isExtractError(result)).toBe(false);
-      expect(result.documentation).toBeDefined();
-      expect(typeof result.documentation).toBe('string');
+      const symbolInfo = result as SymbolInfo;
+      expect(symbolInfo.documentation).toBeDefined();
+      expect(typeof symbolInfo.documentation).toBe('string');
     });
 
     it('should extract JSDoc tags when available', async () => {
@@ -216,9 +206,9 @@ describe('TypeScript Extraction', () => {
         symbol: 'createProgram',
       });
 
-      expect(isExtractError(result)).toBe(false);
-      expect(result.jsDoc).toBeDefined();
-      expect(typeof result.jsDoc).toBe('string');
+      const symbolInfo = result as SymbolInfo;
+      expect(symbolInfo.jsDoc).toBeDefined();
+      expect(typeof symbolInfo.jsDoc).toBe('string');
     });
 
     it('should generate proper signatures for functions', async () => {
@@ -227,29 +217,27 @@ describe('TypeScript Extraction', () => {
         symbol: 'createProgram',
       });
 
-      expect(isExtractError(result)).toBe(false);
-      expect(result.signature).toBeDefined();
-      expect(result.signature).toContain('createProgram');
+      const symbolInfo = result as SymbolInfo;
+      expect(symbolInfo.signature).toBeDefined();
+      expect(symbolInfo.signature).toContain('createProgram');
     });
 
     it('should handle JavaScript files', async () => {
       // This tests the JS handling path in findSymbol with a non-existent JS file
-      const result = await extractSymbol({
+      const result = (await extractSymbol({
         module: './non-existent-file.js',
         symbol: 'extractSymbol',
-      });
+      })) as ExtractError;
 
       // This should error with MODULE_NOT_FOUND since the JS file doesn't exist
       expect(isExtractError(result)).toBe(true);
-      if (isExtractError(result)) {
-        expect(result.error.code).toBe('MODULE_NOT_FOUND');
-      }
+      expect(result.error.code).toBe('MODULE_NOT_FOUND');
     });
   });
 
   describe('extractDocs', () => {
     it('should parse module:symbol format correctly', async () => {
-      const docs = await extractDocs('typescript:createProgram');
+      const docs = (await extractDocs('typescript:createProgram')) as SymbolInfo;
 
       expect(isExtractError(docs)).toBe(false);
       expect(docs.name).toBe('createProgram');
@@ -257,55 +245,45 @@ describe('TypeScript Extraction', () => {
     });
 
     it('should parse class static member format', async () => {
-      const docs = await extractDocs('./test/fixtures/resolution:TestClass.create');
+      const docs = (await extractDocs('./test/fixtures/resolution:TestClass.create')) as SymbolInfo;
 
       expect(isExtractError(docs)).toBe(false);
       expect(docs.name).toBe('TestClass.create');
     });
 
     it('should parse class instance member format', async () => {
-      const docs = await extractDocs('./test/fixtures/resolution:TestClass#greet');
+      const docs = (await extractDocs('./test/fixtures/resolution:TestClass#greet')) as SymbolInfo;
 
       expect(isExtractError(docs)).toBe(false);
       expect(docs.name).toBe('TestClass#greet');
     });
 
     it('should parse enum member format', async () => {
-      const docs = await extractDocs('./test/fixtures/resolution:TestEnum.First');
+      const docs = (await extractDocs('./test/fixtures/resolution:TestEnum.First')) as SymbolInfo;
 
       expect(isExtractError(docs)).toBe(false);
       expect(docs.name).toBe('TestEnum.First');
     });
 
     it('should parse interface member format', async () => {
-      const docs = await extractDocs('./test/fixtures/resolution:TestInterface#getData');
-
-      expect(isExtractError(docs)).toBe(false);
+      const docs = (await extractDocs(
+        './test/fixtures/resolution:TestInterface#getData',
+      )) as SymbolInfo;
       expect(docs.name).toBe('TestInterface#getData');
     });
 
     it('should return error for invalid format', async () => {
-      const docs = await extractDocs('invalid-format-without-colon');
+      const docs = (await extractDocs('invalid-format-without-colon')) as ExtractError;
 
       expect(isExtractError(docs)).toBe(true);
-      if (isExtractError(docs)) {
-        expect(docs.error.code).toBe('INVALID_REQUEST');
-      }
+      expect(docs.error.code).toBe('INVALID_REQUEST');
     });
 
     it('should return error for module not found', async () => {
-      const docs = await extractDocs('non-existent-module:someSymbol');
+      const docs = (await extractDocs('non-existent-module:someSymbol')) as ExtractError;
 
       expect(isExtractError(docs)).toBe(true);
-      if (isExtractError(docs)) {
-        expect(docs.error.code).toBe('MODULE_NOT_FOUND');
-      }
-    });
-
-    it('should accept extractor options', async () => {
-      const docs = await extractDocs('typescript:createProgram');
-
-      expect(docs === null || typeof docs === 'object').toBe(true);
+      expect(docs.error.code).toBe('MODULE_NOT_FOUND');
     });
   });
 
@@ -313,98 +291,94 @@ describe('TypeScript Extraction', () => {
     it('should resolve built-in module paths', async () => {
       const sourcePath = await getSourceLocation('typescript');
 
-      expect(isResolveError(sourcePath)).toBe(false);
-      expect(sourcePath.path).toMatch(/typescript/);
-      expect(sourcePath.path).toMatch(/\.d\.ts$/);
+      const resolved = sourcePath as ResolvedModule;
+      expect(resolved.path).toMatch(/typescript/);
+      expect(resolved.path).toMatch(/\.d\.ts$/);
     });
 
     it('should resolve relative paths', async () => {
       const sourcePath = await getSourceLocation('./src/core');
 
-      expect(isResolveError(sourcePath)).toBe(false);
-      expect(sourcePath.path).toContain('src/core');
+      const resolved = sourcePath as ResolvedModule;
+      expect(resolved.path).toContain('src/core');
     });
 
     it('should return relative paths when inside project', async () => {
       const sourcePath = await getSourceLocation('./src/index');
 
-      expect(isResolveError(sourcePath)).toBe(false);
-      if (!sourcePath.path.startsWith('/')) {
-        expect(sourcePath.path).toMatch(/^src/);
-      }
+      const resolved = sourcePath as ResolvedModule;
+      expect(resolved.path).toMatch(/^src/);
     });
 
     it('should return absolute paths for node_modules', async () => {
       const sourcePath = await getSourceLocation('typescript');
 
-      expect(isResolveError(sourcePath)).toBe(false);
-      expect(path.isAbsolute(sourcePath.path) || sourcePath.path.includes('node_modules')).toBe(
-        true,
-      );
+      const resolved = sourcePath as ResolvedModule;
+      expect(path.isAbsolute(resolved.path) || resolved.path.includes('node_modules')).toBe(true);
     });
 
     it('should return error for non-existent modules', async () => {
       const sourcePath = await getSourceLocation('non-existent-module-name-12345');
 
-      expect(isResolveError(sourcePath)).toBe(true);
-      expect(sourcePath.error.code).toBe('MODULE_NOT_FOUND');
+      const resolveError = sourcePath as ResolveError;
+      expect(resolveError.error.code).toBe('MODULE_NOT_FOUND');
     });
 
     it('should accept TypeScript config options', async () => {
       const sourcePath = await getSourceLocation('typescript');
 
-      expect(isResolveError(sourcePath)).toBe(false);
-      expect(typeof sourcePath.path).toBe('string');
+      const resolved = sourcePath as ResolvedModule;
+      expect(resolved.path).toContain('.d.ts');
+      expect(resolved.path).toMatch(/:\d+:\d+$/);
     });
 
     // New tests for symbol location resolution
     it('should resolve symbol locations', async () => {
       const sourcePath = await getSourceLocation('typescript:createProgram');
 
-      expect(isResolveError(sourcePath)).toBe(false);
-      expect(sourcePath.path).toContain('.d.ts');
-      // Symbol locations include line and column numbers
-      expect(sourcePath.path).toMatch(/:\d+:\d+$/);
+      const resolved = sourcePath as ResolvedModule;
+      expect(resolved.path).toContain('.d.ts');
     });
 
     it('should resolve interface symbol locations', async () => {
       const sourcePath = await getSourceLocation('typescript:CompilerOptions');
 
-      expect(isResolveError(sourcePath)).toBe(false);
-      expect(sourcePath.path).toContain('.d.ts');
-      expect(sourcePath.path).toMatch(/:\d+:\d+$/);
+      const resolved = sourcePath as ResolvedModule;
+      expect(resolved.path).toContain('.d.ts');
+      expect(resolved.path).toMatch(/:\d+:\d+$/);
     });
 
     it('should resolve local symbol locations', async () => {
       const sourcePath = await getSourceLocation('./src/core:SymbolInfo');
 
-      expect(isResolveError(sourcePath)).toBe(false);
-      expect(sourcePath.path).toContain('src/core');
-      expect(sourcePath.path).toMatch(/:\d+:\d+$/);
+      const resolved = sourcePath as ResolvedModule;
+      expect(resolved.path).toContain('src/core');
+      expect(resolved.path).toMatch(/:\d+:\d+$/);
     });
 
     it('should resolve class static member locations', async () => {
       const sourcePath = await getSourceLocation('./test/fixtures/resolution:TestClass.create');
 
-      expect(isResolveError(sourcePath)).toBe(false);
-      expect(sourcePath.path).toContain('fixtures');
-      expect(sourcePath.path).toMatch(/:\d+:\d+$/);
+      const resolved = sourcePath as ResolvedModule;
+      expect(resolved.path).toContain('fixtures');
+      expect(resolved.path).toMatch(/:\d+:\d+$/);
     });
 
     it('should resolve class instance member locations', async () => {
       const sourcePath = await getSourceLocation('./test/fixtures/resolution:TestClass#greet');
 
       expect(isResolveError(sourcePath)).toBe(false);
-      expect(sourcePath.path).toContain('fixtures');
-      expect(sourcePath.path).toMatch(/:\d+:\d+$/);
+      const resolved = sourcePath as ResolvedModule;
+      expect(resolved.path).toContain('fixtures');
+      expect(resolved.path).toMatch(/:\d+:\d+$/);
     });
 
     it('should resolve enum member locations', async () => {
       const sourcePath = await getSourceLocation('./test/fixtures/resolution:TestEnum.First');
 
-      expect(isResolveError(sourcePath)).toBe(false);
-      expect(sourcePath.path).toContain('fixtures');
-      expect(sourcePath.path).toMatch(/:\d+:\d+$/);
+      const resolved = sourcePath as ResolvedModule;
+      expect(resolved.path).toContain('fixtures');
+      expect(resolved.path).toMatch(/:\d+:\d+$/);
     });
 
     it('should resolve interface member locations', async () => {
@@ -412,41 +386,40 @@ describe('TypeScript Extraction', () => {
         './test/fixtures/resolution:TestInterface#getData',
       );
 
-      expect(isResolveError(sourcePath)).toBe(false);
-      expect(sourcePath.path).toContain('fixtures');
-      expect(sourcePath.path).toMatch(/:\d+:\d+$/);
+      const resolved = sourcePath as ResolvedModule;
+      expect(resolved.path).toContain('fixtures');
+      expect(resolved.path).toMatch(/:\d+:\d+$/);
     });
 
     it('should return error for non-existent symbols', async () => {
       const sourcePath = await getSourceLocation('typescript:NonExistentSymbol123');
 
-      expect(isResolveError(sourcePath)).toBe(true);
-      expect(sourcePath.error.code).toBe('MODULE_NOT_FOUND');
-      expect(sourcePath.error.message).toContain('NonExistentSymbol123');
+      const resolveError = sourcePath as ResolveError;
+      expect(resolveError.error.code).toBe('MODULE_NOT_FOUND');
+      expect(resolveError.error.message).toContain('NonExistentSymbol123');
     });
 
     it('should return error for invalid symbol format', async () => {
       const sourcePath = await getSourceLocation('invalid-format-without-colon');
 
-      // This should still work as it treats it as a module name
-      expect(isResolveError(sourcePath)).toBe(true);
-      expect(sourcePath.error.code).toBe('MODULE_NOT_FOUND');
+      const resolveError = sourcePath as ResolveError;
+      expect(resolveError.error.code).toBe('MODULE_NOT_FOUND');
     });
 
     it('should handle node builtin symbols', async () => {
       const sourcePath = await getSourceLocation('node:Math');
 
-      expect(isResolveError(sourcePath)).toBe(false);
-      expect(sourcePath.path).toBeDefined();
-      expect(sourcePath.format).toBe('typescript');
+      const resolved = sourcePath as ResolvedModule;
+      expect(resolved.path).toBeDefined();
+      expect(resolved.format).toBe('typescript');
     });
 
     it('should handle node builtin static members', async () => {
       const sourcePath = await getSourceLocation('node:Math.max');
 
-      expect(isResolveError(sourcePath)).toBe(false);
-      expect(sourcePath.path).toBeDefined();
-      expect(sourcePath.format).toBe('typescript');
+      const resolved = sourcePath as ResolvedModule;
+      expect(resolved.path).toBeDefined();
+      expect(resolved.format).toBe('typescript');
     });
   });
 
@@ -558,23 +531,21 @@ describe('TypeScript Extraction', () => {
   describe('error handling', () => {
     it('should handle TypeScript compiler errors gracefully', async () => {
       // Test with a malformed module path that might cause TS errors
-      const result = await extractSymbol({
+      const result = (await extractSymbol({
         module: '///invalid-path///',
         symbol: 'test',
-      });
+      })) as ExtractError;
 
       expect(isExtractError(result)).toBe(true);
-      if (isExtractError(result)) {
-        expect(['MODULE_NOT_FOUND', 'PARSE_ERROR'].includes(result.error.code)).toBe(true);
-      }
+      expect(['MODULE_NOT_FOUND', 'PARSE_ERROR'].includes(result.error.code)).toBe(true);
     });
 
     it('should handle extraction errors and return PARSE_ERROR', async () => {
       // This might trigger the catch block in extractSymbol
-      const result = await extractSymbol({
+      const result = (await extractSymbol({
         module: '',
         symbol: 'test',
-      });
+      })) as ExtractError;
 
       expect(isExtractError(result)).toBe(true);
     });
