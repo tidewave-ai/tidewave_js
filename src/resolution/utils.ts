@@ -69,6 +69,7 @@ export function getSymbolKind(symbol: ts.Symbol): string {
   if (flags & ts.SymbolFlags.Variable) return 'variable';
   if (flags & ts.SymbolFlags.Property) return 'property';
   if (flags & ts.SymbolFlags.Method) return 'method';
+  if (flags & ts.SymbolFlags.EnumMember) return 'enum member';
   if (flags & ts.SymbolFlags.Enum) return 'enum';
   if (flags & ts.SymbolFlags.Module) return 'module';
 
