@@ -134,7 +134,10 @@ export async function extractDocs(modulePath: string): Promise<ExtractResult> {
             ts.isEnumDeclaration(exportSymbol.valueDeclaration))
         ) {
           targetSymbol = exportSymbol;
-        } else if (exportSymbol.flags & (ts.SymbolFlags.Interface | ts.SymbolFlags.TypeAlias | ts.SymbolFlags.Enum)) {
+        } else if (
+          exportSymbol.flags &
+          (ts.SymbolFlags.Interface | ts.SymbolFlags.TypeAlias | ts.SymbolFlags.Enum)
+        ) {
           targetSymbol = exportSymbol;
         } else {
           targetSymbol = findSymbolInJavaScriptFile(sourceFile, checker, symbol);

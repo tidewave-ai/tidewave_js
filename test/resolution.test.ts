@@ -408,7 +408,9 @@ describe('TypeScript Extraction', () => {
     });
 
     it('should resolve interface member locations', async () => {
-      const sourcePath = await getSourceLocation('./test/fixtures/resolution:TestInterface#getData');
+      const sourcePath = await getSourceLocation(
+        './test/fixtures/resolution:TestInterface#getData',
+      );
 
       expect(isResolveError(sourcePath)).toBe(false);
       expect(sourcePath.path).toContain('fixtures');
