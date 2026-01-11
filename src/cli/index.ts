@@ -5,7 +5,7 @@ import { program } from 'commander';
 import chalk from 'chalk';
 import { tools } from '../tools';
 import { Tidewave } from '../index';
-import { isExtractError, isResolveError } from '../core';
+import { isExtractError, isResolveError, isExportsError } from '../core';
 
 import { name, version } from '../../package.json';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
@@ -61,6 +61,28 @@ async function handleGetSourcePath(
   console.log(sourceResult.path);
 }
 
+async function handleGetExports(
+  modulePath: string,
+  options: { prefix?: string; json?: boolean },
+): Promise<void> {
+  if (options.prefix) chdir(options.prefix);
+
+  const result = await Tidewave.getExports(modulePath);
+
+  if (isExportsError(result)) {
+    console.error(chalk.red(`Error: ${result.error.message}`));
+    process.exit(1);
+  }
+
+  if (options.json) {
+    console.log(JSON.stringify(result, null, 2));
+  } else {
+    console.log(chalk.bold(`Exports from ${modulePath} (${result.exports.length} symbols):\n`));
+    const exportLines = result.exports.map(exp => `${exp.name}:${exp.line}`);
+    console.log(exportLines.join('\n'));
+  }
+}
+
 interface McpOptions {
   prefix?: string;
 }
@@ -77,6 +99,7 @@ async function handleMcp(options: McpOptions): Promise<void> {
 const {
   docs: { cli: docsCli },
   source: { cli: sourceCli },
+  getExports: { cli: getExportsCli },
 } = tools;
 
 program
@@ -105,7 +128,14 @@ program
   .description(sourceCli.description)
   .argument(sourceCli.argument, sourceCli.argumentDescription)
   .option(sourceCli.options.prefix!.flag, sourceCli.options.prefix!.desc)
-
   .action(handleGetSourcePath);
+
+program
+  .command(getExportsCli.command)
+  .description(getExportsCli.description)
+  .argument(getExportsCli.argument, getExportsCli.argumentDescription)
+  .option(getExportsCli.options.prefix!.flag, getExportsCli.options.prefix!.desc)
+  .option(getExportsCli.options.json!.flag, getExportsCli.options.json!.desc)
+  .action(handleGetExports);
 
 program.parse(process.argv);

@@ -8,9 +8,10 @@ import type {
   ProjectEvalInputSchema,
   SourceInputSchema,
   GetLogsInputSchema,
+  GetExportsInputSchema,
 } from './tools';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
-import { isExtractError, isResolveError } from './core';
+import { isExtractError, isResolveError, isExportsError } from './core';
 import { Tidewave } from '.';
 import { tidewaveLogger } from './logger/tidewave-logger';
 
@@ -19,6 +20,7 @@ const {
   source: { mcp: sourceMcp },
   eval: { mcp: evalMcp },
   logs: { mcp: logsMcp },
+  getExports: { mcp: getExportsMcp },
 } = tools;
 
 async function handleProjectEvaluation({
@@ -158,6 +160,31 @@ async function handleGetLogs(args: GetLogsInputSchema): Promise<CallToolResult> 
   }
 }
 
+async function handleGetExports({ module }: GetExportsInputSchema): Promise<CallToolResult> {
+  const result = await Tidewave.getExports(module);
+
+  if (isExportsError(result)) {
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Failed to get exports for ${module}: ${result.error.message}`,
+        },
+      ],
+      isError: true,
+    };
+  }
+
+  const { exports } = result;
+  const exportLines = exports.map(exp => `${exp.name} (line ${exp.line})`);
+  const output = `Exports from ${module} (${exports.length} symbols):\n\n${exportLines.join('\n')}`;
+
+  return {
+    content: [{ type: 'text', text: output }],
+    isError: false,
+  };
+}
+
 export async function serveMcp(transport: Transport): Promise<void> {
   const server = new McpServer({ name, version });
 
@@ -197,6 +224,15 @@ export async function serveMcp(transport: Transport): Promise<void> {
       handleGetLogs,
     );
   }
+
+  server.registerTool(
+    getExportsMcp.name,
+    {
+      description: getExportsMcp.description,
+      inputSchema: getExportsMcp.inputSchema.shape,
+    },
+    handleGetExports,
+  );
 
   await server.connect(transport);
 }

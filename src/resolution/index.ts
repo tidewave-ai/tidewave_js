@@ -7,6 +7,7 @@ import type {
   ResolveResult,
   ExtractError,
   InternalResolveResult,
+  GetExportsResult,
 } from '../core';
 import { createExtractError, resolveError, isResolveError, isExtractError } from '../core';
 import { loadTsConfig, resolveModule, resolveNodeBuiltin } from './module-resolver';
@@ -420,6 +421,47 @@ export async function extractSymbol(
       },
     };
   }
+}
+
+// Helper to get line number for an export symbol
+function getExportLine(symbol: ts.Symbol, sourceFile: ts.SourceFile): number {
+  const decl = symbol.valueDeclaration ?? symbol.declarations?.[0];
+  if (decl) {
+    const { line } = sourceFile.getLineAndCharacterOfPosition(decl.getStart());
+    return line + 1; // 1-indexed
+  }
+  return 0;
+}
+
+// Get all exports from a module with line numbers
+export async function getExports(modulePath: string): Promise<GetExportsResult> {
+  const config = loadTsConfig(process.cwd());
+
+  const resolvedModule = resolveModule(modulePath, config.options);
+  if (isResolveError(resolvedModule)) {
+    return createExtractError('MODULE_NOT_FOUND', `Module '${modulePath}' not found`);
+  }
+
+  const { sourceFile, program } = resolvedModule;
+  const checker = program.getTypeChecker();
+  const moduleSymbol = checker.getSymbolAtLocation(sourceFile);
+
+  if (!moduleSymbol) {
+    return createExtractError(
+      'MODULE_NOT_FOUND',
+      `Could not get module symbol for '${modulePath}'`,
+    );
+  }
+
+  const moduleExports = checker.getExportsOfModule(moduleSymbol);
+  const exportInfos = moduleExports
+    .map((exp: ts.Symbol) => ({
+      name: exp.getName(),
+      line: getExportLine(exp, sourceFile),
+    }))
+    .sort((a, b) => a.line - b.line);
+
+  return { exports: exportInfos };
 }
 
 // Re-export formatOutput

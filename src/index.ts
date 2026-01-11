@@ -1,11 +1,12 @@
 // src/index.ts
-import { extractDocs, getSourceLocation, formatOutput } from './resolution';
+import { extractDocs, getSourceLocation, formatOutput, getExports } from './resolution';
 import type { EvaluatedModuleResult, EvaluationRequest } from './core';
 
 export const Tidewave = {
   extractDocs,
   getSourceLocation,
   formatOutput,
+  getExports,
   async executeIsolated(request: EvaluationRequest): Promise<EvaluatedModuleResult> {
     // Dynamic import to avoid bundling child_process.fork
     const { executeIsolated } = await import('./evaluation/code_executor');

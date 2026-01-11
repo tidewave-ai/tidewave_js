@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { Tidewave } from '../src/index';
-import { isExtractError, isResolveError, type EvaluationRequest } from '../src/core';
+import {
+  isExtractError,
+  isResolveError,
+  isExportsError,
+  type EvaluationRequest,
+  type GetExportsInfo,
+} from '../src/core';
 
 describe('Integration Tests', () => {
   describe('JavaScript Files', () => {
@@ -224,6 +230,39 @@ describe('Integration Tests', () => {
         expect(formatted).toContain('processItems');
       }
     });
+  });
+});
+
+describe('Get Exports', () => {
+  it('should list all exports with line numbers', async () => {
+    const { exports } = (await Tidewave.getExports(
+      './test/fixtures/exports-sample.ts',
+    )) as GetExportsInfo;
+
+    // Assert each export individually, in order by line number
+    expect(exports[0]).toEqual({ name: 'CONSTANT_STRING', line: 2 });
+    expect(exports[1]).toEqual({ name: 'CONSTANT_NUMBER', line: 3 });
+    expect(exports[2]).toEqual({ name: 'mutableVariable', line: 6 });
+    expect(exports[3]).toEqual({ name: 'namedFunction', line: 9 });
+    expect(exports[4]).toEqual({ name: 'asyncFunction', line: 10 });
+    expect(exports[5]).toEqual({ name: 'genericFunction', line: 11 });
+    expect(exports[6]).toEqual({ name: 'arrowFunction', line: 16 });
+    expect(exports[7]).toEqual({ name: 'SimpleClass', line: 19 });
+    expect(exports[8]).toEqual({ name: 'AbstractClass', line: 20 });
+    expect(exports[9]).toEqual({ name: 'SimpleInterface', line: 25 });
+    expect(exports[10]).toEqual({ name: 'SimpleType', line: 30 });
+    expect(exports[11]).toEqual({ name: 'UnionType', line: 31 });
+    expect(exports[12]).toEqual({ name: 'GenericType', line: 32 });
+    expect(exports[13]).toEqual({ name: 'SimpleEnum', line: 35 });
+    expect(exports[14]).toEqual({ name: 'ConstEnum', line: 40 });
+    expect(exports[15]).toEqual({ name: 'MyNamespace', line: 47 });
+    expect(exports.length).toBe(16);
+  });
+
+  it('should handle non-existent module', async () => {
+    const result = await Tidewave.getExports('non-existent-module');
+
+    expect(isExportsError(result)).toBe(true);
   });
 });
 

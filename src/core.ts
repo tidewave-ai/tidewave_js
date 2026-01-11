@@ -82,8 +82,18 @@ export interface EvaluatedModuleResult {
   stderr: string;
 }
 
+export interface ExportInfo {
+  readonly name: string;
+  readonly line: number;
+}
+
+export interface GetExportsInfo {
+  readonly exports: ExportInfo[];
+}
+
 export type ResolveResult = ResolvedModule | ResolveError;
 export type ExtractResult = SymbolInfo | ExtractError;
+export type GetExportsResult = GetExportsInfo | ExtractError;
 export type InternalResolveResult = InternalResolvedModule | ResolveError;
 
 export function isError(result: ResolveResult | ExtractResult): boolean {
@@ -97,6 +107,10 @@ export function isResolveError(
 }
 
 export function isExtractError(result: ExtractResult): result is ExtractError {
+  return result != null && 'error' in result;
+}
+
+export function isExportsError(result: GetExportsResult): result is ExtractError {
   return result != null && 'error' in result;
 }
 
