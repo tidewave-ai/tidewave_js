@@ -1,176 +1,156 @@
 import { describe, it, expect } from 'vitest';
 import { Tidewave } from '../src/index';
 import {
+  isExportsError,
   isExtractError,
   isResolveError,
-  isExportsError,
   type EvaluationRequest,
   type GetExportsInfo,
+  type ResolvedModule,
+  type SymbolInfo,
 } from '../src/core';
 
 describe('Integration Tests', () => {
   describe('JavaScript Files', () => {
     it('should extract function from CommonJS export', async () => {
-      const result = await Tidewave.extractDocs('./test/fixtures/sample.js:greetUser');
+      const result = (await Tidewave.extractDocs(
+        './test/fixtures/sample.js:greetUser',
+      )) as SymbolInfo;
 
-      expect(isExtractError(result)).toBe(false);
-      if (!isExtractError(result)) {
-        expect(result.name).toBe('greetUser');
-        expect(result.kind).toBe('function');
-        expect(result.documentation).toContain('A sample function for testing');
-        expect(result.jsDoc).toContain('@param name');
-        expect(result.jsDoc).toContain('@returns A greeting message');
-        expect(result.location).toContain('sample.js');
-      }
+      expect(result.name).toBe('greetUser');
+      expect(result.kind).toBe('function');
+      expect(result.documentation).toContain('A sample function for testing');
+      expect(result.jsDoc).toContain('@param name');
+      expect(result.jsDoc).toContain('@returns A greeting message');
+      expect(result.location).toContain('sample.js');
     });
 
     it('should extract class from CommonJS export', async () => {
-      const result = await Tidewave.extractDocs('./test/fixtures/sample.js:TestClass');
+      const result = (await Tidewave.extractDocs(
+        './test/fixtures/sample.js:TestClass',
+      )) as SymbolInfo;
 
-      expect(isExtractError(result)).toBe(false);
-      if (!isExtractError(result)) {
-        expect(result.name).toBe('TestClass');
-        expect(result.kind).toBe('class');
-        expect(result.documentation).toContain('A sample class for testing');
-        expect(result.location).toContain('sample.js');
-      }
+      expect(result.name).toBe('TestClass');
+      expect(result.kind).toBe('class');
+      expect(result.documentation).toContain('A sample class for testing');
+      expect(result.location).toContain('sample.js');
     });
 
     it('should extract instance method from JavaScript class', async () => {
-      const result = await Tidewave.extractDocs('./test/fixtures/sample.js:TestClass#getValue');
+      const result = (await Tidewave.extractDocs(
+        './test/fixtures/sample.js:TestClass#getValue',
+      )) as SymbolInfo;
 
-      expect(isExtractError(result)).toBe(false);
-      if (!isExtractError(result)) {
-        expect(result.name).toBe('TestClass#getValue');
-        expect(result.kind).toBe('method');
-        expect(result.documentation).toContain('Get the value');
-        expect(result.jsDoc).toContain('@returns The current value');
-      }
+      expect(result.name).toBe('TestClass#getValue');
+      expect(result.kind).toBe('method');
+      expect(result.documentation).toContain('Get the value');
+      expect(result.jsDoc).toContain('@returns The current value');
     });
 
     it('should extract static method from JavaScript class', async () => {
-      const result = await Tidewave.extractDocs('./test/fixtures/sample.js:TestClass.create');
+      const result = (await Tidewave.extractDocs(
+        './test/fixtures/sample.js:TestClass.create',
+      )) as SymbolInfo;
 
-      expect(isExtractError(result)).toBe(false);
-      if (!isExtractError(result)) {
-        expect(result.name).toBe('TestClass.create');
-        expect(result.kind).toBe('method');
-        expect(result.documentation).toContain('Static factory method');
-        expect(result.jsDoc).toContain('@returns New instance');
-      }
+      expect(result.name).toBe('TestClass.create');
+      expect(result.kind).toBe('method');
+      expect(result.documentation).toContain('Static factory method');
+      expect(result.jsDoc).toContain('@returns New instance');
     });
   });
 
   describe('TypeScript Files', () => {
     it('should extract interface from TypeScript export', async () => {
-      const result = await Tidewave.extractDocs('./test/fixtures/sample.ts:User');
+      const result = (await Tidewave.extractDocs('./test/fixtures/sample.ts:User')) as SymbolInfo;
 
-      expect(isExtractError(result)).toBe(false);
-      if (!isExtractError(result)) {
-        expect(result.name).toBe('User');
-        expect(result.kind).toBe('interface');
-        expect(result.documentation).toContain('A sample TypeScript interface');
-        expect(result.location).toContain('sample.ts');
-      }
+      expect(result.name).toBe('User');
+      expect(result.kind).toBe('interface');
+      expect(result.documentation).toContain('A sample TypeScript interface');
+      expect(result.location).toContain('sample.ts');
     });
 
     it('should extract class from TypeScript export', async () => {
-      const result = await Tidewave.extractDocs('./test/fixtures/sample.ts:UserManager');
+      const result = (await Tidewave.extractDocs(
+        './test/fixtures/sample.ts:UserManager',
+      )) as SymbolInfo;
 
-      expect(isExtractError(result)).toBe(false);
-      if (!isExtractError(result)) {
-        expect(result.name).toBe('UserManager');
-        expect(result.kind).toBe('class');
-        expect(result.documentation).toContain('A sample TypeScript class');
-      }
+      expect(result.name).toBe('UserManager');
+      expect(result.kind).toBe('class');
+      expect(result.documentation).toContain('A sample TypeScript class');
     });
 
     it('should extract instance method from TypeScript class', async () => {
-      const result = await Tidewave.extractDocs('./test/fixtures/sample.ts:UserManager#addUser');
+      const result = (await Tidewave.extractDocs(
+        './test/fixtures/sample.ts:UserManager#addUser',
+      )) as SymbolInfo;
 
-      expect(isExtractError(result)).toBe(false);
-      if (!isExtractError(result)) {
-        expect(result.name).toBe('UserManager#addUser');
-        expect(result.kind).toBe('method');
-        expect(result.documentation).toContain('Add a user');
-      }
+      expect(result.name).toBe('UserManager#addUser');
+      expect(result.kind).toBe('method');
+      expect(result.documentation).toContain('Add a user');
     });
 
     it('should extract static method from TypeScript class', async () => {
-      const result = await Tidewave.extractDocs('./test/fixtures/sample.ts:UserManager.create');
+      const result = (await Tidewave.extractDocs(
+        './test/fixtures/sample.ts:UserManager.create',
+      )) as SymbolInfo;
 
-      expect(isExtractError(result)).toBe(false);
-      if (!isExtractError(result)) {
-        expect(result.name).toBe('UserManager.create');
-        expect(result.kind).toBe('method');
-        expect(result.documentation).toContain('Static factory method');
-      }
+      expect(result.name).toBe('UserManager.create');
+      expect(result.kind).toBe('method');
+      expect(result.documentation).toContain('Static factory method');
     });
 
     it('should extract generic function', async () => {
-      const result = await Tidewave.extractDocs('./test/fixtures/sample.ts:processItems');
+      const result = (await Tidewave.extractDocs(
+        './test/fixtures/sample.ts:processItems',
+      )) as SymbolInfo;
 
-      expect(isExtractError(result)).toBe(false);
-      if (!isExtractError(result)) {
-        expect(result.name).toBe('processItems');
-        expect(result.kind).toBe('function');
-        expect(result.documentation).toContain('Sample utility function');
-        expect(result.signature).toContain('processItems');
-      }
+      expect(result.name).toBe('processItems');
+      expect(result.kind).toBe('function');
+      expect(result.documentation).toContain('Sample utility function');
+      expect(result.signature).toContain('processItems');
     });
   });
 
   describe('Source Path Resolution', () => {
     it('should resolve JavaScript file path', async () => {
-      const sourcePath = await Tidewave.getSourceLocation('./test/fixtures/sample.js');
+      const sourcePath = (await Tidewave.getSourceLocation(
+        './test/fixtures/sample.js',
+      )) as ResolvedModule;
 
-      expect(isResolveError(sourcePath)).toBe(false);
-      if (!isResolveError(sourcePath)) {
-        expect(sourcePath.path).toContain('test/fixtures/sample.js');
-      }
+      expect(sourcePath.path).toContain('test/fixtures/sample.js');
     });
 
     it('should resolve TypeScript file path', async () => {
-      const sourcePath = await Tidewave.getSourceLocation('./test/fixtures/sample.ts');
+      const sourcePath = (await Tidewave.getSourceLocation(
+        './test/fixtures/sample.ts',
+      )) as ResolvedModule;
 
-      expect(isResolveError(sourcePath)).toBe(false);
-      if (!isResolveError(sourcePath)) {
-        expect(sourcePath.path).toContain('test/fixtures/sample.ts');
-      }
+      expect(sourcePath.path).toContain('test/fixtures/sample.ts');
     });
 
     it('should resolve node_modules dependency', async () => {
-      const sourcePath = await Tidewave.getSourceLocation('typescript');
+      const sourcePath = (await Tidewave.getSourceLocation('typescript')) as ResolvedModule;
 
-      expect(isResolveError(sourcePath)).toBe(false);
-      if (!isResolveError(sourcePath)) {
-        expect(sourcePath.path).toMatch(/typescript.*\.d\.ts$/);
-      }
+      expect(sourcePath.path).toMatch(/typescript.*\.d\.ts$/);
     });
   });
 
   describe('Builtin Modules', () => {
     it('should extract Math global', async () => {
-      const result = await Tidewave.extractDocs('node:Math');
+      const result = (await Tidewave.extractDocs('node:Math')) as SymbolInfo;
 
-      expect(isExtractError(result)).toBe(false);
-      if (!isExtractError(result)) {
-        expect(result.name).toBe('Math');
-        expect(result.kind).toBe('interface');
-        expect(result.documentation).toContain('mathematics functionality');
-      }
+      expect(result.name).toBe('Math');
+      expect(result.kind).toBe('interface');
+      expect(result.documentation).toContain('mathematics functionality');
     });
 
     it('should extract Math.max static method', async () => {
-      const result = await Tidewave.extractDocs('node:Math.max');
+      const result = (await Tidewave.extractDocs('node:Math.max')) as SymbolInfo;
 
-      expect(isExtractError(result)).toBe(false);
-      if (!isExtractError(result)) {
-        expect(result.name).toBe('Math.max');
-        expect(result.kind).toBe('method');
-        expect(result.documentation).toContain('Returns the larger of a set');
-        expect(result.signature).toContain('(...values: number[]): number');
-      }
+      expect(result.name).toBe('Math.max');
+      expect(result.kind).toBe('method');
+      expect(result.documentation).toContain('Returns the larger of a set');
+      expect(result.signature).toContain('(...values: number[]): number');
     });
   });
 
@@ -204,31 +184,25 @@ describe('Integration Tests', () => {
 
   describe('Output Formatting', () => {
     it('should format symbol info correctly', async () => {
-      const result = await Tidewave.extractDocs('./test/fixtures/sample.ts:User');
+      const result = (await Tidewave.extractDocs('./test/fixtures/sample.ts:User')) as SymbolInfo;
 
-      expect(isExtractError(result)).toBe(false);
-      if (!isExtractError(result)) {
-        const formatted = Tidewave.formatOutput(result);
-
-        expect(formatted).toContain('User');
-        expect(formatted).toContain('Kind: interface');
-        expect(formatted).toContain('Location:');
-        expect(formatted).toContain('Type:');
-        expect(formatted).toContain('Documentation:');
-      }
+      const formatted = Tidewave.formatOutput(result);
+      expect(formatted).toContain('User');
+      expect(formatted).toContain('Kind: interface');
+      expect(formatted).toContain('Location:');
+      expect(formatted).toContain('Type:');
+      expect(formatted).toContain('Documentation:');
     });
 
     it('should format function with signature', async () => {
-      const result = await Tidewave.extractDocs('./test/fixtures/sample.ts:processItems');
+      const result = (await Tidewave.extractDocs(
+        './test/fixtures/sample.ts:processItems',
+      )) as SymbolInfo;
 
-      expect(isExtractError(result)).toBe(false);
-      if (!isExtractError(result)) {
-        const formatted = Tidewave.formatOutput(result);
-
-        expect(formatted).toContain('processItems');
-        expect(formatted).toContain('Signature:');
-        expect(formatted).toContain('processItems');
-      }
+      const formatted = Tidewave.formatOutput(result);
+      expect(formatted).toContain('processItems');
+      expect(formatted).toContain('Signature:');
+      expect(formatted).toContain('processItems');
     });
   });
 });
