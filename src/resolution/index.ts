@@ -125,15 +125,16 @@ export async function extractDocs(modulePath: string): Promise<ExtractResult> {
 
       if (exportSymbol) {
         // Check if the export symbol has a meaningful valueDeclaration
-        // OR if it's a type-only symbol like interface/type alias
+        // OR if it's a type-only symbol like interface/type alias/enum
         if (
           exportSymbol.valueDeclaration &&
           (ts.isFunctionDeclaration(exportSymbol.valueDeclaration) ||
             ts.isClassDeclaration(exportSymbol.valueDeclaration) ||
-            ts.isVariableDeclaration(exportSymbol.valueDeclaration))
+            ts.isVariableDeclaration(exportSymbol.valueDeclaration) ||
+            ts.isEnumDeclaration(exportSymbol.valueDeclaration))
         ) {
           targetSymbol = exportSymbol;
-        } else if (exportSymbol.flags & (ts.SymbolFlags.Interface | ts.SymbolFlags.TypeAlias)) {
+        } else if (exportSymbol.flags & (ts.SymbolFlags.Interface | ts.SymbolFlags.TypeAlias | ts.SymbolFlags.Enum)) {
           targetSymbol = exportSymbol;
         } else {
           targetSymbol = findSymbolInJavaScriptFile(sourceFile, checker, symbol);

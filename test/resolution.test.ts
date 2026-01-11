@@ -49,37 +49,78 @@ describe('TypeScript Extraction', () => {
 
     it('should extract class symbols', async () => {
       const result = await extractSymbol({
-        module: 'src/core/types',
+        module: './test/fixtures/resolution',
         symbol: 'TestClass',
       });
 
       expect(isExtractError(result)).toBe(false);
       expect(result.kind).toBe('class');
+      expect(result.name).toBe('TestClass');
     });
 
-    it('should handle static member access', async () => {
+    it('should handle class static member access', async () => {
       const result = await extractSymbol({
-        module: 'typescript',
-        symbol: 'ScriptTarget',
-        member: 'ES2020',
+        module: './test/fixtures/resolution',
+        symbol: 'TestClass',
+        member: 'VERSION',
         isStatic: true,
       });
 
       expect(isExtractError(result)).toBe(false);
-      expect(result.name).toBe('ScriptTarget.ES2020');
+      expect(result.name).toBe('TestClass.VERSION');
       expect(result.type).toBeDefined();
     });
 
-    it('should handle instance member access', async () => {
+    it('should handle class static method access', async () => {
       const result = await extractSymbol({
-        module: 'typescript',
-        symbol: 'Program',
-        member: 'getTypeChecker',
+        module: './test/fixtures/resolution',
+        symbol: 'TestClass',
+        member: 'create',
+        isStatic: true,
+      });
+
+      expect(isExtractError(result)).toBe(false);
+      expect(result.name).toBe('TestClass.create');
+      expect(result.kind).toBe('method');
+    });
+
+    it('should handle class instance member access', async () => {
+      const result = await extractSymbol({
+        module: './test/fixtures/resolution',
+        symbol: 'TestClass',
+        member: 'greet',
         isStatic: false,
       });
 
       expect(isExtractError(result)).toBe(false);
-      expect(result.name).toBe('Program#getTypeChecker');
+      expect(result.name).toBe('TestClass#greet');
+      expect(result.kind).toBe('method');
+    });
+
+    it('should handle enum member access', async () => {
+      const result = await extractSymbol({
+        module: './test/fixtures/resolution',
+        symbol: 'TestEnum',
+        member: 'First',
+        isStatic: true,
+      });
+
+      expect(isExtractError(result)).toBe(false);
+      expect(result.name).toBe('TestEnum.First');
+      expect(result.kind).toBe('enum member');
+      expect(result.type).toBeDefined();
+    });
+
+    it('should handle interface member access', async () => {
+      const result = await extractSymbol({
+        module: './test/fixtures/resolution',
+        symbol: 'TestInterface',
+        member: 'getData',
+        isStatic: false,
+      });
+
+      expect(isExtractError(result)).toBe(false);
+      expect(result.name).toBe('TestInterface#getData');
       expect(result.kind).toBe('method');
     });
 
@@ -215,18 +256,32 @@ describe('TypeScript Extraction', () => {
       expect(docs.kind).toBeDefined();
     });
 
-    it('should parse static member format', async () => {
-      const docs = await extractDocs('typescript:ScriptTarget.ES2020');
+    it('should parse class static member format', async () => {
+      const docs = await extractDocs('./test/fixtures/resolution:TestClass.create');
 
       expect(isExtractError(docs)).toBe(false);
-      expect(docs.name).toBe('ScriptTarget.ES2020');
+      expect(docs.name).toBe('TestClass.create');
     });
 
-    it('should parse instance member format', async () => {
-      const docs = await extractDocs('typescript:Program#getTypeChecker');
+    it('should parse class instance member format', async () => {
+      const docs = await extractDocs('./test/fixtures/resolution:TestClass#greet');
 
       expect(isExtractError(docs)).toBe(false);
-      expect(docs.name).toBe('Program#getTypeChecker');
+      expect(docs.name).toBe('TestClass#greet');
+    });
+
+    it('should parse enum member format', async () => {
+      const docs = await extractDocs('./test/fixtures/resolution:TestEnum.First');
+
+      expect(isExtractError(docs)).toBe(false);
+      expect(docs.name).toBe('TestEnum.First');
+    });
+
+    it('should parse interface member format', async () => {
+      const docs = await extractDocs('./test/fixtures/resolution:TestInterface#getData');
+
+      expect(isExtractError(docs)).toBe(false);
+      expect(docs.name).toBe('TestInterface#getData');
     });
 
     it('should return error for invalid format', async () => {
@@ -328,19 +383,35 @@ describe('TypeScript Extraction', () => {
       expect(sourcePath.path).toMatch(/:\d+:\d+$/);
     });
 
-    it('should resolve static member locations', async () => {
-      const sourcePath = await getSourceLocation('typescript:ScriptTarget.ES2020');
+    it('should resolve class static member locations', async () => {
+      const sourcePath = await getSourceLocation('./test/fixtures/resolution:TestClass.create');
 
       expect(isResolveError(sourcePath)).toBe(false);
-      expect(sourcePath.path).toContain('.d.ts');
+      expect(sourcePath.path).toContain('fixtures');
       expect(sourcePath.path).toMatch(/:\d+:\d+$/);
     });
 
-    it('should resolve instance member locations', async () => {
-      const sourcePath = await getSourceLocation('typescript:Program#getTypeChecker');
+    it('should resolve class instance member locations', async () => {
+      const sourcePath = await getSourceLocation('./test/fixtures/resolution:TestClass#greet');
 
       expect(isResolveError(sourcePath)).toBe(false);
-      expect(sourcePath.path).toContain('.d.ts');
+      expect(sourcePath.path).toContain('fixtures');
+      expect(sourcePath.path).toMatch(/:\d+:\d+$/);
+    });
+
+    it('should resolve enum member locations', async () => {
+      const sourcePath = await getSourceLocation('./test/fixtures/resolution:TestEnum.First');
+
+      expect(isResolveError(sourcePath)).toBe(false);
+      expect(sourcePath.path).toContain('fixtures');
+      expect(sourcePath.path).toMatch(/:\d+:\d+$/);
+    });
+
+    it('should resolve interface member locations', async () => {
+      const sourcePath = await getSourceLocation('./test/fixtures/resolution:TestInterface#getData');
+
+      expect(isResolveError(sourcePath)).toBe(false);
+      expect(sourcePath.path).toContain('fixtures');
       expect(sourcePath.path).toMatch(/:\d+:\d+$/);
     });
 

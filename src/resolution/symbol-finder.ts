@@ -135,7 +135,15 @@ export function getSymbolInfo(
     return createExtractError('TYPE_ERROR', `Symbol '${symbol.getName()}' has no declarations`);
   }
   const targetDeclaration = declaration || symbol.declarations![0]!;
-  const type = checker.getTypeOfSymbolAtLocation(symbol, targetDeclaration);
+
+  // For interfaces and type aliases, use getDeclaredTypeOfSymbol to get the actual type with members
+  let type: ts.Type;
+  if (symbol.flags & (ts.SymbolFlags.Interface | ts.SymbolFlags.TypeAlias)) {
+    type = checker.getDeclaredTypeOfSymbol(symbol);
+  } else {
+    type = checker.getTypeOfSymbolAtLocation(symbol, targetDeclaration);
+  }
+
   const symbolName = symbol.getName();
 
   let targetSymbol = symbol;
@@ -145,7 +153,7 @@ export function getSymbolInfo(
   // Handle member access like
   if (member) {
     if (isStatic) {
-      // Static member: look in the constructor/class itself
+      // Static member: look in the constructor/class itself or enum values
       const staticMembers = checker.getPropertiesOfType(type);
       const staticMember = staticMembers.find(s => s.getName() === member);
       if (staticMember) {
@@ -158,15 +166,40 @@ export function getSymbolInfo(
       } else {
         return createExtractError(
           'MEMBER_NOT_FOUND',
-          `Static member '${member}' not found on '${symbolName}'`,
+          `Static member '${member}' not found on '${symbolName}'. Available: ${staticMembers
+            .map(m => m.getName())
+            .join(', ')}`,
         );
       }
     } else {
       // Instance member: look in the instance type
       let instanceType: ts.Type | undefined;
 
-      // Check if this is a class symbol
-      if (symbol.flags & ts.SymbolFlags.Class) {
+      // Check if this is an interface symbol
+      if (symbol.flags & ts.SymbolFlags.Interface) {
+        // For interfaces, the type itself contains the properties
+        instanceType = type;
+        const instanceMembers = checker.getPropertiesOfType(instanceType);
+        const instanceMember = instanceMembers.find(s => s.getName() === member);
+
+        if (instanceMember) {
+          targetSymbol = instanceMember;
+          const memberDecl = instanceMember.valueDeclaration || instanceMember.declarations?.[0];
+          if (memberDecl) {
+            targetType = checker.getTypeOfSymbolAtLocation(instanceMember, memberDecl);
+          } else {
+            targetType = checker.getTypeOfSymbol(instanceMember);
+          }
+          name = `${symbolName}#${member}`;
+        } else {
+          return createExtractError(
+            'MEMBER_NOT_FOUND',
+            `Instance member '${member}' not found on interface '${symbolName}'. Available: ${instanceMembers
+              .map(m => m.getName())
+              .join(', ')}`,
+          );
+        }
+      } else if (symbol.flags & ts.SymbolFlags.Class) {
         // For classes, get the instance type directly
         instanceType = checker.getTypeOfSymbolAtLocation(symbol, symbol.valueDeclaration!);
 
