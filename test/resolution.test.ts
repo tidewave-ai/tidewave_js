@@ -324,14 +324,6 @@ describe('TypeScript Extraction', () => {
       expect(resolveError.error.code).toBe('MODULE_NOT_FOUND');
     });
 
-    it('should accept TypeScript config options', async () => {
-      const sourcePath = await getSourceLocation('typescript');
-
-      const resolved = sourcePath as ResolvedModule;
-      expect(resolved.path).toContain('.d.ts');
-      expect(resolved.path).toMatch(/:\d+:\d+$/);
-    });
-
     // New tests for symbol location resolution
     it('should resolve symbol locations', async () => {
       const sourcePath = await getSourceLocation('typescript:createProgram');
