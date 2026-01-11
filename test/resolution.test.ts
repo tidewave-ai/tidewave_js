@@ -16,14 +16,11 @@ describe('TypeScript Extraction', () => {
         symbol: 'createProgram',
       });
 
-      if (isExtractError(result)) {
-        expect(result.error.code).toMatch(/MODULE_NOT_FOUND|SYMBOL_NOT_FOUND/);
-      } else {
-        expect(result.name).toBe('createProgram');
-        expect(result.kind).toBe('function');
-        expect(result.location).toContain('.ts');
-        expect(result.type).toBeDefined();
-      }
+      expect(isExtractError(result)).toBe(false);
+      expect((result as any).name).toBe('createProgram');
+      expect((result as any).kind).toBe('function');
+      expect((result as any).location).toContain('.ts');
+      expect((result as any).type).toBeDefined();
     });
 
     it('should extract interface symbols', async () => {
@@ -32,13 +29,10 @@ describe('TypeScript Extraction', () => {
         symbol: 'CompilerOptions',
       });
 
-      if (isExtractError(result)) {
-        expect(result.error.code).toMatch(/MODULE_NOT_FOUND|SYMBOL_NOT_FOUND/);
-      } else {
-        expect(result.name).toBe('CompilerOptions');
-        expect(result.kind).toBe('interface');
-        expect(result.type).toBeDefined();
-      }
+      expect(isExtractError(result)).toBe(false);
+      expect(result.name).toBe('CompilerOptions');
+      expect(result.kind).toBe('interface');
+      expect(result.type).toBeDefined();
     });
 
     it('should extract enum symbols', async () => {
@@ -47,13 +41,10 @@ describe('TypeScript Extraction', () => {
         symbol: 'ScriptTarget',
       });
 
-      if (isExtractError(result)) {
-        expect(result.error.code).toMatch(/MODULE_NOT_FOUND|SYMBOL_NOT_FOUND/);
-      } else {
-        expect(result.name).toBe('ScriptTarget');
-        expect(result.kind).toBe('enum');
-        expect(result.type).toBeDefined();
-      }
+      expect(isExtractError(result)).toBe(false);
+      expect(result.name).toBe('ScriptTarget');
+      expect(result.kind).toBe('enum');
+      expect(result.type).toBeDefined();
     });
 
     it('should extract class symbols', async () => {
@@ -62,8 +53,8 @@ describe('TypeScript Extraction', () => {
         symbol: 'TestClass',
       });
 
-      // This will likely fail since we don't have a TestClass, but it tests the flow
-      expect(isExtractError(result) || result.kind === 'class').toBe(true);
+      expect(isExtractError(result)).toBe(false);
+      expect(result.kind).toBe('class');
     });
 
     it('should handle static member access', async () => {
@@ -74,14 +65,9 @@ describe('TypeScript Extraction', () => {
         isStatic: true,
       });
 
-      if (isExtractError(result)) {
-        expect(['MODULE_NOT_FOUND', 'SYMBOL_NOT_FOUND', 'MEMBER_NOT_FOUND']).toContain(
-          result.error.code,
-        );
-      } else {
-        expect(result.name).toBe('ScriptTarget.ES2020');
-        expect(result.type).toBeDefined();
-      }
+      expect(isExtractError(result)).toBe(false);
+      expect(result.name).toBe('ScriptTarget.ES2020');
+      expect(result.type).toBeDefined();
     });
 
     it('should handle instance member access', async () => {
@@ -92,17 +78,9 @@ describe('TypeScript Extraction', () => {
         isStatic: false,
       });
 
-      if (isExtractError(result)) {
-        expect([
-          'MODULE_NOT_FOUND',
-          'SYMBOL_NOT_FOUND',
-          'MEMBER_NOT_FOUND',
-          'TYPE_ERROR',
-        ]).toContain(result.error.code);
-      } else {
-        expect(result.name).toBe('Program#getTypeChecker');
-        expect(result.kind).toBe('method');
-      }
+      expect(isExtractError(result)).toBe(false);
+      expect(result.name).toBe('Program#getTypeChecker');
+      expect(result.kind).toBe('method');
     });
 
     it('should return MODULE_NOT_FOUND for invalid modules', async () => {
@@ -139,6 +117,7 @@ describe('TypeScript Extraction', () => {
         isStatic: true,
       });
 
+      expect(isExtractError(result)).toBe(true);
       if (isExtractError(result)) {
         expect(result.error.code).toBe('MEMBER_NOT_FOUND');
         expect(result.error.message).toContain('NonExistentMember');
@@ -173,10 +152,9 @@ describe('TypeScript Extraction', () => {
         symbol: 'SymbolInfo',
       });
 
-      if (!isExtractError(result)) {
-        expect(result.name).toBe('SymbolInfo');
-        expect(result.kind).toBe('interface');
-      }
+      expect(isExtractError(result)).toBe(false);
+      expect(result.name).toBe('SymbolInfo');
+      expect(result.kind).toBe('interface');
     });
 
     it('should extract documentation comments when available', async () => {
@@ -186,10 +164,9 @@ describe('TypeScript Extraction', () => {
         symbol: 'createProgram',
       });
 
-      if (!isExtractError(result)) {
-        expect(result.documentation).toBeDefined();
-        expect(typeof result.documentation).toBe('string');
-      }
+      expect(isExtractError(result)).toBe(false);
+      expect(result.documentation).toBeDefined();
+      expect(typeof result.documentation).toBe('string');
     });
 
     it('should extract JSDoc tags when available', async () => {
@@ -198,10 +175,9 @@ describe('TypeScript Extraction', () => {
         symbol: 'createProgram',
       });
 
-      if (!isExtractError(result)) {
-        expect(result.jsDoc).toBeDefined();
-        expect(typeof result.jsDoc).toBe('string');
-      }
+      expect(isExtractError(result)).toBe(false);
+      expect(result.jsDoc).toBeDefined();
+      expect(typeof result.jsDoc).toBe('string');
     });
 
     it('should generate proper signatures for functions', async () => {
@@ -210,10 +186,9 @@ describe('TypeScript Extraction', () => {
         symbol: 'createProgram',
       });
 
-      if (!isExtractError(result)) {
-        expect(result.signature).toBeDefined();
-        expect(result.signature).toContain('createProgram');
-      }
+      expect(isExtractError(result)).toBe(false);
+      expect(result.signature).toBeDefined();
+      expect(result.signature).toContain('createProgram');
     });
 
     it('should handle JavaScript files', async () => {
@@ -235,26 +210,23 @@ describe('TypeScript Extraction', () => {
     it('should parse module:symbol format correctly', async () => {
       const docs = await extractDocs('typescript:createProgram');
 
-      if (!isExtractError(docs)) {
-        expect(docs.name).toBe('createProgram');
-        expect(docs.kind).toBeDefined();
-      }
+      expect(isExtractError(docs)).toBe(false);
+      expect(docs.name).toBe('createProgram');
+      expect(docs.kind).toBeDefined();
     });
 
     it('should parse static member format', async () => {
       const docs = await extractDocs('typescript:ScriptTarget.ES2020');
 
-      if (!isExtractError(docs)) {
-        expect(docs.name).toBe('ScriptTarget.ES2020');
-      }
+      expect(isExtractError(docs)).toBe(false);
+      expect(docs.name).toBe('ScriptTarget.ES2020');
     });
 
     it('should parse instance member format', async () => {
       const docs = await extractDocs('typescript:Program#getTypeChecker');
 
-      if (!isExtractError(docs)) {
-        expect(docs.name).toBe('Program#getTypeChecker');
-      }
+      expect(isExtractError(docs)).toBe(false);
+      expect(docs.name).toBe('Program#getTypeChecker');
     });
 
     it('should return error for invalid format', async () => {
@@ -286,24 +258,23 @@ describe('TypeScript Extraction', () => {
     it('should resolve built-in module paths', async () => {
       const sourcePath = await getSourceLocation('typescript');
 
-      if (!isResolveError(sourcePath)) {
-        expect(sourcePath.path).toMatch(/typescript/);
-        expect(sourcePath.path).toMatch(/\.d\.ts$/);
-      }
+      expect(isResolveError(sourcePath)).toBe(false);
+      expect(sourcePath.path).toMatch(/typescript/);
+      expect(sourcePath.path).toMatch(/\.d\.ts$/);
     });
 
     it('should resolve relative paths', async () => {
       const sourcePath = await getSourceLocation('./src/core');
 
-      if (!isResolveError(sourcePath)) {
-        expect(sourcePath.path).toContain('src/core');
-      }
+      expect(isResolveError(sourcePath)).toBe(false);
+      expect(sourcePath.path).toContain('src/core');
     });
 
     it('should return relative paths when inside project', async () => {
       const sourcePath = await getSourceLocation('./src/index');
 
-      if (!isResolveError(sourcePath) && !sourcePath.path.startsWith('/')) {
+      expect(isResolveError(sourcePath)).toBe(false);
+      if (!sourcePath.path.startsWith('/')) {
         expect(sourcePath.path).toMatch(/^src/);
       }
     });
@@ -311,83 +282,74 @@ describe('TypeScript Extraction', () => {
     it('should return absolute paths for node_modules', async () => {
       const sourcePath = await getSourceLocation('typescript');
 
-      if (!isResolveError(sourcePath)) {
-        expect(path.isAbsolute(sourcePath.path) || sourcePath.path.includes('node_modules')).toBe(
-          true,
-        );
-      }
+      expect(isResolveError(sourcePath)).toBe(false);
+      expect(path.isAbsolute(sourcePath.path) || sourcePath.path.includes('node_modules')).toBe(
+        true,
+      );
     });
 
     it('should return error for non-existent modules', async () => {
       const sourcePath = await getSourceLocation('non-existent-module-name-12345');
 
       expect(isResolveError(sourcePath)).toBe(true);
-      if (isResolveError(sourcePath)) {
-        expect(sourcePath.error.code).toBe('MODULE_NOT_FOUND');
-      }
+      expect(sourcePath.error.code).toBe('MODULE_NOT_FOUND');
     });
 
     it('should accept TypeScript config options', async () => {
       const sourcePath = await getSourceLocation('typescript');
 
-      expect(isResolveError(sourcePath) || typeof sourcePath.path === 'string').toBe(true);
+      expect(isResolveError(sourcePath)).toBe(false);
+      expect(typeof sourcePath.path).toBe('string');
     });
 
     // New tests for symbol location resolution
     it('should resolve symbol locations', async () => {
       const sourcePath = await getSourceLocation('typescript:createProgram');
 
-      if (!isResolveError(sourcePath)) {
-        expect(sourcePath.path).toContain('.d.ts');
-        // Symbol locations include line and column numbers
-        expect(sourcePath.path).toMatch(/:\d+:\d+$/);
-      }
+      expect(isResolveError(sourcePath)).toBe(false);
+      expect(sourcePath.path).toContain('.d.ts');
+      // Symbol locations include line and column numbers
+      expect(sourcePath.path).toMatch(/:\d+:\d+$/);
     });
 
     it('should resolve interface symbol locations', async () => {
       const sourcePath = await getSourceLocation('typescript:CompilerOptions');
 
-      if (!isResolveError(sourcePath)) {
-        expect(sourcePath.path).toContain('.d.ts');
-        expect(sourcePath.path).toMatch(/:\d+:\d+$/);
-      }
+      expect(isResolveError(sourcePath)).toBe(false);
+      expect(sourcePath.path).toContain('.d.ts');
+      expect(sourcePath.path).toMatch(/:\d+:\d+$/);
     });
 
     it('should resolve local symbol locations', async () => {
       const sourcePath = await getSourceLocation('./src/core:SymbolInfo');
 
-      if (!isResolveError(sourcePath)) {
-        expect(sourcePath.path).toContain('src/core');
-        expect(sourcePath.path).toMatch(/:\d+:\d+$/);
-      }
+      expect(isResolveError(sourcePath)).toBe(false);
+      expect(sourcePath.path).toContain('src/core');
+      expect(sourcePath.path).toMatch(/:\d+:\d+$/);
     });
 
     it('should resolve static member locations', async () => {
       const sourcePath = await getSourceLocation('typescript:ScriptTarget.ES2020');
 
-      if (!isResolveError(sourcePath)) {
-        expect(sourcePath.path).toContain('.d.ts');
-        expect(sourcePath.path).toMatch(/:\d+:\d+$/);
-      }
+      expect(isResolveError(sourcePath)).toBe(false);
+      expect(sourcePath.path).toContain('.d.ts');
+      expect(sourcePath.path).toMatch(/:\d+:\d+$/);
     });
 
     it('should resolve instance member locations', async () => {
       const sourcePath = await getSourceLocation('typescript:Program#getTypeChecker');
 
-      if (!isResolveError(sourcePath)) {
-        expect(sourcePath.path).toContain('.d.ts');
-        expect(sourcePath.path).toMatch(/:\d+:\d+$/);
-      }
+      expect(isResolveError(sourcePath)).toBe(false);
+      expect(sourcePath.path).toContain('.d.ts');
+      expect(sourcePath.path).toMatch(/:\d+:\d+$/);
     });
 
     it('should return error for non-existent symbols', async () => {
       const sourcePath = await getSourceLocation('typescript:NonExistentSymbol123');
 
       expect(isResolveError(sourcePath)).toBe(true);
-      if (isResolveError(sourcePath)) {
-        expect(sourcePath.error.code).toBe('MODULE_NOT_FOUND');
-        expect(sourcePath.error.message).toContain('NonExistentSymbol123');
-      }
+      expect(sourcePath.error.code).toBe('MODULE_NOT_FOUND');
+      expect(sourcePath.error.message).toContain('NonExistentSymbol123');
     });
 
     it('should return error for invalid symbol format', async () => {
@@ -395,27 +357,23 @@ describe('TypeScript Extraction', () => {
 
       // This should still work as it treats it as a module name
       expect(isResolveError(sourcePath)).toBe(true);
-      if (isResolveError(sourcePath)) {
-        expect(sourcePath.error.code).toBe('MODULE_NOT_FOUND');
-      }
+      expect(sourcePath.error.code).toBe('MODULE_NOT_FOUND');
     });
 
     it('should handle node builtin symbols', async () => {
       const sourcePath = await getSourceLocation('node:Math');
 
-      if (!isResolveError(sourcePath)) {
-        expect(sourcePath.path).toBeDefined();
-        expect(sourcePath.format).toBe('typescript');
-      }
+      expect(isResolveError(sourcePath)).toBe(false);
+      expect(sourcePath.path).toBeDefined();
+      expect(sourcePath.format).toBe('typescript');
     });
 
     it('should handle node builtin static members', async () => {
       const sourcePath = await getSourceLocation('node:Math.max');
 
-      if (!isResolveError(sourcePath)) {
-        expect(sourcePath.path).toBeDefined();
-        expect(sourcePath.format).toBe('typescript');
-      }
+      expect(isResolveError(sourcePath)).toBe(false);
+      expect(sourcePath.path).toBeDefined();
+      expect(sourcePath.format).toBe('typescript');
     });
   });
 
