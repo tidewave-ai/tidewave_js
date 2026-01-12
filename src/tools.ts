@@ -28,7 +28,8 @@ export interface Tools {
 }
 
 const projectEvalDescription = `
-Evaluates JavaScript/TypeScript code in the context of the project.
+Evaluates JavaScript/TypeScript code within your project's build tool
+(or server for full-stack applications).
 
 The current NodeJS version is: ${process.version}
 
@@ -37,7 +38,7 @@ including to test the behaviour of a function or to debug
 something. The tool also returns anything written to standard
 output. DO NOT use shell tools to evaluate JavaScript/TypeScript code.
 
-Imports are allowed only as the form of dynamic imports with async/await, e.g.:
+Imports are allowed only as the form of dynamic imports with async/await:
 const path = await import('node:path');
 `;
 
@@ -153,7 +154,7 @@ export const tools: Tools = {
     mcp: {
       name: 'get_logs',
       description:
-        'Retrieve application logs for debugging. Returns logs excluding Tidewave internal logs. Supports filtering by level, time, and pattern matching.',
+        "Retrieve application logs within your project's build tool (or server for full-stack applications). Supports filtering by level, time, and pattern matching.",
       inputSchema: getLogsInputSchema,
     },
   },

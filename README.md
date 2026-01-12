@@ -263,6 +263,21 @@ options below:
   accessed from another trusted machine
 - `team`: enable Tidewave Web for teams
 
+## Available tools
+
+* `get_docs` - get the documentation for a given module/namespace or a
+  class/interface/enum/type in that namespace. It consults the exact
+  versions used by the project, ensuring you always get correct information
+
+* `get_source_location` - get the source location for a given module/namespace
+  or a class/interface/enum/type in that namespace, so an agent can directly
+  read the source skipping search
+
+* `get_logs` - reads console log written by the server
+
+* `project_eval` - evaluates code within the runtime itself, giving the agent
+  access to dependencies, server code, and all in-memory data
+
 ## CLI
 
 Tidewave.js also comes with a CLI for developers who want to use it as a
