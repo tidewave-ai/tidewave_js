@@ -184,9 +184,9 @@ function formatFileInfo(info: FileInfo): string {
   output.push('');
 
   for (const exp of info.exports) {
-    output.push(`  ${exp.name} (${exp.kind}) - line ${exp.line}`);
+    output.push(`${exp.name} (${exp.kind}) - line ${exp.line}`);
     if (exp.documentation) {
-      output.push(`    ${exp.documentation}`);
+      output.push(exp.documentation);
     }
   }
 
