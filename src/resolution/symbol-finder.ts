@@ -1,5 +1,5 @@
 import ts from 'typescript';
-import type { ExtractResult } from '../core';
+import type { SymbolInfo, ExtractError } from '../core';
 import { createExtractError } from '../core';
 import { getLocation, getDocumentation, getJSDoc, getSymbolKind } from './utils';
 import { getSignature, getTypeString } from './formatters';
@@ -128,7 +128,7 @@ export function getSymbolInfo(
   symbol: ts.Symbol,
   member?: string,
   isStatic?: boolean,
-): ExtractResult {
+): SymbolInfo | ExtractError {
   // For symbols without valueDeclaration (like interfaces), use the first declaration
   const declaration = symbol.valueDeclaration || (symbol.declarations && symbol.declarations[0]);
   if (!declaration && (!symbol.declarations || symbol.declarations.length === 0)) {

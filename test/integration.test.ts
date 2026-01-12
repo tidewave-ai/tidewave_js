@@ -3,9 +3,11 @@ import { Tidewave } from '../src/index';
 import {
   isExtractError,
   isResolveError,
+  isFileInfo,
   type EvaluationRequest,
   type ResolvedModule,
   type SymbolInfo,
+  type FileInfo,
 } from '../src/core';
 
 describe('Integration Tests', () => {
@@ -290,5 +292,103 @@ describe('Project scoped evaluation', () => {
     expect(result.stdout).toContain('{"a":1}');
     expect(result.stdout).toContain('Global length: true');
     expect(result.result).toContain(process.cwd());
+  });
+});
+
+describe('File-level Documentation', () => {
+  it('should extract file overview and list all symbols', async () => {
+    const result = (await Tidewave.extractDocs(
+      './test/fixtures/file-overview-sample.ts',
+    )) as FileInfo;
+
+    // Check file path
+    expect(result.path).toContain('test/fixtures/file-overview-sample.ts');
+
+    // Check overview
+    expect(result.overview).toBeDefined();
+    expect(result.overview).toContain('Sample module demonstrating file-level documentation');
+    expect(result.overview).toContain(
+      'This module contains utility functions for common operations',
+    );
+
+    // Check exports count
+    expect(result.exportCount).toBe(7);
+    expect(result.exports.length).toBe(7);
+
+    // Check each export in order (sorted by line number)
+    expect(result.exports[0]).toEqual({
+      name: 'greet',
+      kind: 'function',
+      line: 14,
+      documentation: 'Greets a person with a personalized message',
+    });
+
+    expect(result.exports[1]).toEqual({
+      name: 'add',
+      kind: 'function',
+      line: 21,
+      documentation: 'Adds two numbers together',
+    });
+
+    expect(result.exports[2]).toEqual({
+      name: 'VERSION',
+      kind: 'variable',
+      line: 26,
+      documentation: undefined,
+    });
+
+    expect(result.exports[3]).toEqual({
+      name: 'Config',
+      kind: 'interface',
+      line: 31,
+      documentation: 'Configuration interface for the service',
+    });
+
+    expect(result.exports[4]).toEqual({
+      name: 'User',
+      kind: 'type',
+      line: 39,
+      documentation: 'User type alias',
+    });
+
+    expect(result.exports[5]).toEqual({
+      name: 'Status',
+      kind: 'enum',
+      line: 47,
+      documentation: 'Status enumeration',
+    });
+
+    expect(result.exports[6]).toEqual({
+      name: 'Calculator',
+      kind: 'class',
+      line: 56,
+      documentation: 'A simple class for demonstration',
+    });
+  });
+
+  it('should handle file without overview', async () => {
+    const result = (await Tidewave.extractDocs('./test/fixtures/sample.ts')) as FileInfo;
+    expect(result.overview).toBeUndefined();
+    expect(result.exports.length).toBeGreaterThan(0);
+  });
+
+  it('should handle empty file path error', async () => {
+    const result = await Tidewave.extractDocs('');
+
+    if (isExtractError(result)) {
+      expect(result.error.code).toBe('INVALID_REQUEST');
+    } else {
+      throw 'expected ExtractError';
+    }
+  });
+
+  it('should handle path with colon but no symbol', async () => {
+    const result = await Tidewave.extractDocs('./test/fixtures/file-overview-sample.ts:');
+
+    if (isExtractError(result)) {
+      expect(result.error.code).toBe('INVALID_REQUEST');
+    } else {
+      throw 'expected ExtractError';
+    }
   });
 });

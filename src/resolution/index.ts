@@ -7,17 +7,23 @@ import type {
   ResolveResult,
   ExtractError,
   InternalResolveResult,
+  ExportSummary,
 } from '../core';
 import { createExtractError, resolveError, isResolveError, isExtractError } from '../core';
 import { loadTsConfig, resolveModule, resolveNodeBuiltin } from './module-resolver';
 import { findSymbolInJavaScriptFile, getSymbolInfo } from './symbol-finder';
-import { formatOutput } from './formatters';
+import { getSymbolKind, getFileOverview } from './utils';
 
 // Parse module path into extraction request
 function parseModulePath(modulePath: string): ExtractionRequest | ExtractError {
+  // Handle empty or invalid paths
+  if (!modulePath || modulePath.trim() === '') {
+    return createExtractError('INVALID_REQUEST', 'Module path is required');
+  }
+
   // Handle node: prefix specially
   let module: string;
-  let symbolPath: string;
+  let symbolPath: string | undefined;
 
   if (modulePath.startsWith('node:')) {
     // For node:Math -> module='node:Math', symbol='Math'
@@ -27,16 +33,31 @@ function parseModulePath(modulePath: string): ExtractionRequest | ExtractError {
     module = `node:${baseSymbol}`; // 'node:Math'
     symbolPath = nodeSymbol; // 'Math' or 'Math.min'
   } else {
-    // Regular module:symbol format
-    const [mod, symPath] = modulePath.split(':');
-    if (!mod || !symPath) {
-      return createExtractError(
-        'INVALID_REQUEST',
-        `Invalid format. Expected 'module:symbol', got '${modulePath}'`,
-      );
+    // Regular module[:symbol] format
+    const colonIndex = modulePath.indexOf(':');
+
+    if (colonIndex === -1) {
+      // No colon found - file-level request
+      module = modulePath;
+      symbolPath = undefined;
+    } else if (colonIndex === 0) {
+      // Only colon at start
+      return createExtractError('INVALID_REQUEST', 'Module path is required before ":"');
+    } else {
+      // Split on first colon
+      module = modulePath.substring(0, colonIndex);
+      symbolPath = modulePath.substring(colonIndex + 1);
+
+      // If symbol part is empty after colon, return error
+      if (!symbolPath || symbolPath.trim() === '') {
+        return createExtractError('INVALID_REQUEST', 'Symbol name is required after ":"');
+      }
     }
-    module = mod;
-    symbolPath = symPath;
+  }
+
+  // If no symbol path, return file-level request
+  if (!symbolPath) {
+    return { module, symbol: undefined, member: undefined, isStatic: false };
   }
 
   // Check for instance member (Constructor#instanceMember)
@@ -64,6 +85,51 @@ function parseModulePath(modulePath: string): ExtractionRequest | ExtractError {
   }
 
   return { module, symbol: symbolPath, member: undefined, isStatic: false };
+}
+
+// Get all exported symbols with their summaries
+function getExportSummaries(
+  moduleSymbol: ts.Symbol | undefined,
+  sourceFile: ts.SourceFile,
+  checker: ts.TypeChecker,
+): ExportSummary[] {
+  if (!moduleSymbol) {
+    return [];
+  }
+
+  try {
+    const exports = checker.getExportsOfModule(moduleSymbol);
+    const summaries: ExportSummary[] = [];
+
+    for (const exp of exports) {
+      const name = exp.getName();
+      const kind = getSymbolKind(exp);
+
+      // Get line number from declaration
+      const decl = exp.valueDeclaration ?? exp.declarations?.[0];
+      let line = 0;
+      if (decl) {
+        const pos = sourceFile.getLineAndCharacterOfPosition(decl.getStart());
+        line = pos.line + 1; // 1-indexed
+      }
+
+      // Get brief documentation (first line)
+      const fullDoc = ts.displayPartsToString(exp.getDocumentationComment(checker));
+      const briefDoc = fullDoc.split('\n')[0]?.trim();
+
+      summaries.push({
+        name,
+        kind,
+        line,
+        documentation: briefDoc || undefined,
+      });
+    }
+
+    // Sort by line number
+    return summaries.sort((a, b) => a.line - b.line);
+  } catch {
+    return [];
+  }
 }
 
 // Extract documentation for a module:symbol path
@@ -95,6 +161,28 @@ export async function extractDocs(modulePath: string): Promise<ExtractResult> {
 
   const { sourceFile, program } = resolvedModule;
   const checker = program.getTypeChecker();
+
+  // Handle file-level request (no symbol specified)
+  if (symbol === undefined) {
+    const overview = getFileOverview(sourceFile);
+    const moduleSymbol = checker.getSymbolAtLocation(sourceFile);
+    const exports = getExportSummaries(moduleSymbol, sourceFile, checker);
+
+    // Format path as relative (consistent with SymbolInfo.location)
+    let relativePath = sourceFile.fileName;
+    const cwd = process.cwd();
+    if (relativePath.startsWith(cwd)) {
+      relativePath = path.relative(cwd, relativePath);
+    }
+
+    return {
+      path: relativePath,
+      overview,
+      exportCount: exports.length,
+      exports,
+    };
+  }
+
   let targetSymbol: ts.Symbol | undefined;
 
   if (isGlobalModule) {
@@ -196,6 +284,20 @@ export async function getSourceLocation(reference: string): Promise<ResolveResul
     }
 
     const { module, symbol, member, isStatic } = parseResult;
+
+    // In this branch, we know reference contains ':', so symbol should be defined
+    // If symbol is undefined here, it means parseModulePath returned successfully for a file-level request
+    // which shouldn't happen in this code path
+    if (!symbol) {
+      return {
+        success: false,
+        error: {
+          code: 'INVALID_SPECIFIER',
+          message: 'Symbol reference required for source location lookup',
+        },
+      };
+    }
+
     const config = loadTsConfig(options.prefix);
 
     // Try to resolve as a regular module first
@@ -365,6 +467,8 @@ export async function extractSymbol(
       };
     }
 
+    // After the check above, we know symbol is defined
+    const symbol = request.symbol;
     const config = loadTsConfig(options.prefix);
 
     // Resolve module with dedicated program
@@ -388,13 +492,13 @@ export async function extractSymbol(
     if (moduleSymbol) {
       // TypeScript module with proper exports
       const exports = checker.getExportsOfModule(moduleSymbol);
-      targetSymbol = exports.find((exp: ts.Symbol) => exp.getName() === request.symbol);
+      targetSymbol = exports.find((exp: ts.Symbol) => exp.getName() === symbol);
 
       if (!targetSymbol) {
         return {
           error: {
             code: 'SYMBOL_NOT_FOUND',
-            message: `Symbol '${request.symbol}' not found in module '${request.module}'. Available exports: ${exports
+            message: `Symbol '${symbol}' not found in module '${request.module}'. Available exports: ${exports
               .map((e: ts.Symbol) => e.getName())
               .join(', ')}`,
           },
@@ -402,13 +506,13 @@ export async function extractSymbol(
       }
     } else {
       // JavaScript file - look for symbols in statements
-      targetSymbol = findSymbolInJavaScriptFile(sourceFile, checker, request.symbol);
+      targetSymbol = findSymbolInJavaScriptFile(sourceFile, checker, symbol);
 
       if (!targetSymbol) {
         return {
           error: {
             code: 'SYMBOL_NOT_FOUND',
-            message: `Symbol '${request.symbol}' not found in JavaScript module '${request.module}'`,
+            message: `Symbol '${symbol}' not found in JavaScript module '${request.module}'`,
           },
         };
       }
@@ -426,5 +530,5 @@ export async function extractSymbol(
   }
 }
 
-// Re-export formatOutput
-export { formatOutput };
+// Re-export formatters
+export { formatOutput } from './formatters';
