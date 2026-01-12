@@ -1,5 +1,6 @@
 import ts from 'typescript';
 import type { SymbolInfo, FileInfo } from '../core';
+import { isFileInfo } from '../core';
 
 // Get signature
 export function getSignature(checker: ts.TypeChecker, symbol: ts.Symbol, type: ts.Type): string {
@@ -195,7 +196,7 @@ function formatFileInfo(info: FileInfo): string {
 
 // Format output dispatcher - handles both SymbolInfo and FileInfo
 export function formatOutput(info: SymbolInfo | FileInfo): string {
-  if ('exports' in info) {
+  if (isFileInfo(info)) {
     return formatFileInfo(info);
   }
   return formatSymbolInfo(info);
