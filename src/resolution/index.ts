@@ -468,7 +468,7 @@ export async function extractSymbol(
     }
 
     // After the check above, we know symbol is defined
-    const symbol = request.symbol;
+    const { symbol } = request;
     const config = loadTsConfig(options.prefix);
 
     // Resolve module with dedicated program
