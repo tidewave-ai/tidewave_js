@@ -65,9 +65,10 @@ export const projectEvalInputSchema = z.object({
     .describe('Whether to return the result as JSON or not (string)'),
 });
 
-const referenceDescription = `Module path in format 'module:symbol[#method|.method]'. Supports local files, dependencies, and Node.js builtins.
+const referenceDescription = `Module/file path, optionally with symbol in format 'module[:symbol[#method|.method]]'. Supports local files, dependencies, and Node.js builtins.
 
 Module reference format:
+- module                - List all symbols in the module (file-level documentation)
 - module:symbol         - Extract a top-level symbol
 - module:Class#method   - Extract an instance method
 - module:Class.method   - Extract a static method
@@ -75,6 +76,8 @@ Module reference format:
 - node:Class.method     - Extract a global/builtin static method
 
 Examples:
+- src/types.ts (list all symbols in file)
+- lodash (list all symbols in dependency)
 - src/types.ts:SymbolInfo (local file symbol)
 - lodash:isEmpty (dependency function)
 - react:Component#render (instance method)
@@ -102,8 +105,26 @@ export const tools: Tools = {
   docs: {
     mcp: {
       name: 'get_docs',
-      description:
-        'Extract TypeScript/JavaScript documentation and type information for symbols, classes, functions, and methods. This works for modules in the current project, as well as dependencies, and builtin node modules',
+      description: `Extract TypeScript/JavaScript documentation and type information. Works for modules in the current project, dependencies, and builtin node modules.
+
+Reference format determines what is returned:
+
+• "module" - Returns file overview and lists all exported symbols with their kinds, line numbers, and brief documentation. Use this to discover what's available in a module.
+
+• "module:symbol" - Returns detailed documentation for a specific top-level symbol including its type signature, full documentation, JSDoc tags, and source location.
+
+• "module:Class.staticMethod" - Returns detailed documentation for a static method or property of a class or object.
+
+• "module:Class#instanceMethod" - Returns detailed documentation for an instance method or property of a class.
+
+Examples:
+- "src/types.ts" → Lists all exported symbols in the file
+- "lodash" → Lists all symbols exported from lodash
+- "src/types.ts:SymbolInfo" → Full docs for SymbolInfo interface
+- "react:Component#render" → Docs for React Component's render method
+- "node:Math.max" → Docs for Math.max static method
+
+Start with module-only references to explore, then drill into specific symbols for detailed information.`,
       inputSchema: docsInputSchema,
     },
     cli: {

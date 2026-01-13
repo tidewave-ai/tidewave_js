@@ -27,7 +27,7 @@ export interface InternalResolvedModule {
 
 export interface ExtractionRequest {
   readonly module: string;
-  readonly symbol: string;
+  readonly symbol?: string;
   readonly member?: string;
   readonly isStatic?: boolean;
 }
@@ -40,6 +40,20 @@ export interface SymbolInfo {
   readonly signature?: string;
   readonly location: string;
   readonly jsDoc?: string;
+}
+
+export interface ExportSummary {
+  readonly name: string;
+  readonly kind: string;
+  readonly line: number;
+  readonly documentation?: string;
+}
+
+export interface FileInfo {
+  readonly path: string;
+  readonly overview?: string;
+  readonly exportCount: number;
+  readonly exports: ExportSummary[];
 }
 
 export interface ExtractorOptions {
@@ -83,7 +97,7 @@ export interface EvaluatedModuleResult {
 }
 
 export type ResolveResult = ResolvedModule | ResolveError;
-export type ExtractResult = SymbolInfo | ExtractError;
+export type ExtractResult = SymbolInfo | FileInfo | ExtractError;
 export type InternalResolveResult = InternalResolvedModule | ResolveError;
 
 export function isResolveError(
@@ -94,6 +108,10 @@ export function isResolveError(
 
 export function isExtractError(result: ExtractResult): result is ExtractError {
   return result != null && 'error' in result;
+}
+
+export function isFileInfo(result: ExtractResult): result is FileInfo {
+  return result != null && 'exports' in result && Array.isArray((result as FileInfo).exports);
 }
 
 export function resolveError(

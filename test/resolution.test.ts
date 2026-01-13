@@ -272,8 +272,8 @@ describe('TypeScript Extraction', () => {
       expect(docs.name).toBe('TestInterface#getData');
     });
 
-    it('should return error for invalid format', async () => {
-      const docs = (await extractDocs('invalid-format-without-colon')) as ExtractError;
+    it('should return error for invalid format (empty symbol after colon)', async () => {
+      const docs = (await extractDocs('some-module:')) as ExtractError;
 
       expect(isExtractError(docs)).toBe(true);
       expect(docs.error.code).toBe('INVALID_REQUEST');

@@ -79,7 +79,9 @@ async function handleGetDocs({ reference }: DocsInputSchema): Promise<CallToolRe
     };
   }
 
-  if (!docs.documentation) {
+  // Handle both FileInfo and SymbolInfo
+  // For SymbolInfo, check if documentation is available
+  if ('documentation' in docs && !docs.documentation) {
     return {
       content: [
         {

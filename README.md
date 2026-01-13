@@ -317,6 +317,7 @@ Here are some examples:
 
 ```bash
 # Local TypeScript/JavaScript files
+npx tidewave docs ./src/utils
 npx tidewave docs ./src/utils:formatDate
 npx tidewave docs ./components:Button#onClick
 

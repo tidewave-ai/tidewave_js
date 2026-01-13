@@ -91,3 +91,39 @@ export function getSymbolKind(symbol: ts.Symbol): string {
 
   return 'unknown';
 }
+
+// Get file overview from @fileoverview or @file JSDoc tags
+export function getFileOverview(sourceFile: ts.SourceFile): string | undefined {
+  // Get leading comments from the source file (before first statement)
+  const leadingComments = ts.getLeadingCommentRanges(sourceFile.text, 0);
+
+  if (!leadingComments || leadingComments.length === 0) {
+    return undefined;
+  }
+
+  // Extract text and parse JSDoc
+  for (const comment of leadingComments) {
+    const commentText = sourceFile.text.slice(comment.pos, comment.end);
+
+    // Parse @fileoverview or @file tags
+    const fileoverviewMatch = commentText.match(/@fileoverview\s+([\s\S]*?)(?=@\w+|$)/);
+    const fileMatch = commentText.match(/@file\s+([\s\S]*?)(?=@\w+|$)/);
+    const match = fileoverviewMatch || fileMatch;
+
+    if (match && match[1]) {
+      // Clean up the matched text: remove leading asterisks and whitespace
+      const overviewText = match[1]
+        .split('\n')
+        .map(line => line.replace(/^\s*\*\s?/, '').trim())
+        .filter(line => line.length > 0)
+        .join('\n')
+        .trim();
+
+      if (overviewText) {
+        return overviewText;
+      }
+    }
+  }
+
+  return undefined;
+}

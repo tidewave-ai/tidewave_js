@@ -1,5 +1,6 @@
 import ts from 'typescript';
-import type { SymbolInfo } from '../core';
+import type { SymbolInfo, FileInfo } from '../core';
+import { isFileInfo } from '../core';
 
 // Get signature
 export function getSignature(checker: ts.TypeChecker, symbol: ts.Symbol, type: ts.Type): string {
@@ -134,8 +135,8 @@ export function getTypeString(checker: ts.TypeChecker, symbol: ts.Symbol, type: 
   return defaultTypeString;
 }
 
-// Format output for display
-export function formatOutput(info: SymbolInfo): string {
+// Format symbol info for display
+function formatSymbolInfo(info: SymbolInfo): string {
   const output: string[] = [];
 
   output.push(`\n${info.name}`);
@@ -165,4 +166,38 @@ export function formatOutput(info: SymbolInfo): string {
   output.push(info.type);
 
   return output.join('\n');
+}
+
+// Format file info for display
+function formatFileInfo(info: FileInfo): string {
+  const output: string[] = [];
+
+  output.push(`\nFile: ${info.path}`);
+  output.push('');
+
+  if (info.overview) {
+    output.push('Overview:');
+    output.push(info.overview);
+    output.push('');
+  }
+
+  output.push(`Symbols (${info.exportCount} total):`);
+  output.push('');
+
+  for (const exp of info.exports) {
+    output.push(`${exp.name} (${exp.kind}) - line ${exp.line}`);
+    if (exp.documentation) {
+      output.push(exp.documentation);
+    }
+  }
+
+  return output.join('\n');
+}
+
+// Format output dispatcher - handles both SymbolInfo and FileInfo
+export function formatOutput(info: SymbolInfo | FileInfo): string {
+  if (isFileInfo(info)) {
+    return formatFileInfo(info);
+  }
+  return formatSymbolInfo(info);
 }
