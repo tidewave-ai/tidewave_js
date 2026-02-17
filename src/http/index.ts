@@ -1,7 +1,6 @@
 import type { ServerResponse } from 'http';
 import type { IncomingMessage, NextFunction, Server } from 'connect';
 import connect from 'connect';
-import http from 'node:http';
 import { checkOrigin, checkRemoteIp } from './security';
 import { handleMcp } from './handlers/mcp';
 import { createHandleHtml } from './handlers/html';
@@ -16,12 +15,8 @@ export type Response = ServerResponse<IncomingMessage>;
 export type NextFn = NextFunction;
 
 export const ENDPOINT = '/tidewave' as const;
-const DEFAULT_PORT = 5001 as const;
 const DEFAULT_OPTIONS: TidewaveConfig = {
   allowRemoteAccess: false,
-  allowedOrigins: [],
-  port: 5001,
-  host: 'localhost',
 } as const;
 
 export type Handler = (req: Request, res: Response, next: NextFn) => Promise<void>;
@@ -49,10 +44,6 @@ export function configureServer(
   }
 
   return server;
-}
-
-export function serve(server: Server, config: TidewaveConfig = DEFAULT_OPTIONS): void {
-  http.createServer(server).listen(config.port || DEFAULT_PORT);
 }
 
 export function checkSecurity(config: TidewaveConfig) {
