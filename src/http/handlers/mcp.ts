@@ -1,9 +1,14 @@
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { methodNotAllowed, type Request, type Response, type NextFn } from '..';
+import { methodNotAllowed, originNotAllowed, type Request, type Response, type NextFn } from '..';
 import { serveMcp } from '../../mcp';
 
 export async function handleMcp(req: Request, res: Response, next: NextFn): Promise<void> {
   try {
+    if (req.headers.origin) {
+      originNotAllowed(res);
+      return;
+    }
+
     if (req.method !== 'POST') {
       methodNotAllowed(res);
       return;

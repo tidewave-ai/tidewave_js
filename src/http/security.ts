@@ -44,30 +44,3 @@ export function isLocalIp(ip?: string): boolean {
 
   return false;
 }
-
-export function checkOrigin(req: Request, res: Response, _config: TidewaveConfig): boolean {
-  const { origin } = req.headers;
-  const url = req.url || '/';
-  const [pathname] = url.split('?');
-
-  // GET / (root HTML page) allows any origin
-  if (
-    pathname === '/' ||
-    pathname === '' ||
-    pathname === '/tidewave' ||
-    pathname === '/tidewave/'
-  ) {
-    return true;
-  }
-
-  // No origin header means non-browser request (e.g. Claude Code, Cursor)
-  if (!origin) return true;
-
-  // /config and /mcp refuse if origin header is set
-  const message =
-    'For security reasons, Tidewave does not accept requests with an origin header for this endpoint.';
-  console.warn(message);
-  res.statusCode = 403;
-  res.end(message);
-  return false;
-}

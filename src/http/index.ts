@@ -1,7 +1,7 @@
 import type { ServerResponse } from 'http';
 import type { IncomingMessage, NextFunction, Server } from 'connect';
 import connect from 'connect';
-import { checkOrigin, checkRemoteIp } from './security';
+import { checkRemoteIp } from './security';
 import { handleMcp } from './handlers/mcp';
 import { createHandleHtml } from './handlers/html';
 import { createHandleConfig } from './handlers/config';
@@ -49,7 +49,6 @@ export function configureServer(
 export function checkSecurity(config: TidewaveConfig) {
   return (req: Request, res: Response, next: NextFn): void => {
     if (!checkRemoteIp(req, res, config)) return;
-    if (!checkOrigin(req, res, config)) return;
     next();
   };
 }
@@ -58,7 +57,14 @@ export function methodNotAllowed(res: Response): void {
   res.statusCode = 405;
   res.setHeader('Allow', 'POST');
   res.end();
-  return;
+}
+
+export function originNotAllowed(res: Response): void {
+  const message =
+    'For security reasons, Tidewave does not accept requests with an origin header for this endpoint.';
+  console.warn(message);
+  res.statusCode = 403;
+  res.end(message);
 }
 
 // Export for use by framework integrations
