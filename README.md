@@ -258,9 +258,11 @@ features.
 Next.js' `tidewaveHandler` and Vite's `tidewave` accept the configuration
 options below:
 
-- `allow_remote_access:` allow remote connections when true (default false).
-  Enable this only if you trust your network and you want Tidewave MCP to be
-  accessed from another trusted machine
+- `allow_remote_access:` Tidewave only allows requests from localhost by
+  default, even if your server listens on other interfaces, for security
+  purposes. Read
+  [our security guidelines for more information and when to allow remote access](https://hexdocs.pm/tidewave/security.html)
+  (if you know what you are doing)
 - `team`: enable Tidewave Web for teams
 
 ## Available tools
