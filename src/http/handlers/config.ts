@@ -1,9 +1,14 @@
-import type { Request, Response, NextFn, Handler } from '../index';
+import { originNotAllowed, type Request, type Response, type NextFn, type Handler } from '../index';
 import type { TidewaveConfig } from '../../core';
 import { default as tidewavePackage } from '../../../package.json' with { type: 'json' };
 
 export function createHandleConfig(config: TidewaveConfig): Handler {
-  return async function handleConfig(_req: Request, res: Response, next: NextFn): Promise<void> {
+  return async function handleConfig(req: Request, res: Response, next: NextFn): Promise<void> {
+    if (req.headers.origin) {
+      originNotAllowed(res);
+      return;
+    }
+
     try {
       const tidewaveConfig = {
         project_name: config.projectName || 'app',

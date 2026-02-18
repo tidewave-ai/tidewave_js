@@ -39,7 +39,6 @@ describe('Tidewave Vite Plugin', () => {
     it('should create plugin with custom config', () => {
       const config: TidewaveConfig = {
         allowRemoteAccess: true,
-        allowedOrigins: ['https://example.com'],
       };
 
       const plugin = tidewave(config);
@@ -89,7 +88,6 @@ describe('Tidewave Vite Plugin', () => {
     it('should pass config to configureServer', async () => {
       const config: TidewaveConfig = {
         allowRemoteAccess: false,
-        allowedOrigins: ['https://custom.com'],
       };
 
       const mockServer = createMockServer();
@@ -122,22 +120,9 @@ describe('Tidewave Vite Plugin', () => {
       expect(() => tidewave({ allowRemoteAccess: false })).not.toThrow();
     });
 
-    it('should accept valid allowedOrigins arrays', () => {
-      const origins = [
-        'https://example.com',
-        'http://localhost:3000',
-        '//sub.domain.com',
-        'https://*.example.com',
-      ];
-
-      expect(() => tidewave({ allowedOrigins: origins })).not.toThrow();
-      expect(() => tidewave({ allowedOrigins: [] })).not.toThrow();
-    });
-
     it('should accept combined configuration options', () => {
       const config: TidewaveConfig = {
         allowRemoteAccess: true,
-        allowedOrigins: ['https://trusted.com', 'http://localhost:8080'],
       };
 
       expect(() => tidewave(config)).not.toThrow();

@@ -68,12 +68,6 @@ export async function tidewaveHandler(
       return res.status(404).json({ message: 'This route only works when accessed at /tidewave' });
     }
 
-    if (origin) {
-      const [hostname, port] = origin.split(':');
-      config.host = hostname ? hostname : config.host;
-      config.port = port ? Number(port) : config.port;
-    }
-
     const next: () => void = () => {};
     const securityMiddleware = checkSecurity(config);
     await connectWrapper(securityMiddleware)(req, res, next);

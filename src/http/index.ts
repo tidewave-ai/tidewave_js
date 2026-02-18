@@ -1,8 +1,7 @@
 import type { ServerResponse } from 'http';
 import type { IncomingMessage, NextFunction, Server } from 'connect';
 import connect from 'connect';
-import http from 'node:http';
-import { checkOrigin, checkRemoteIp } from './security';
+import { checkRemoteIp } from './security';
 import { handleMcp } from './handlers/mcp';
 import { createHandleHtml } from './handlers/html';
 import { createHandleConfig } from './handlers/config';
@@ -16,12 +15,8 @@ export type Response = ServerResponse<IncomingMessage>;
 export type NextFn = NextFunction;
 
 export const ENDPOINT = '/tidewave' as const;
-const DEFAULT_PORT = 5001 as const;
 const DEFAULT_OPTIONS: TidewaveConfig = {
   allowRemoteAccess: false,
-  allowedOrigins: [],
-  port: 5001,
-  host: 'localhost',
 } as const;
 
 export type Handler = (req: Request, res: Response, next: NextFn) => Promise<void>;
@@ -51,14 +46,9 @@ export function configureServer(
   return server;
 }
 
-export function serve(server: Server, config: TidewaveConfig = DEFAULT_OPTIONS): void {
-  http.createServer(server).listen(config.port || DEFAULT_PORT);
-}
-
 export function checkSecurity(config: TidewaveConfig) {
   return (req: Request, res: Response, next: NextFn): void => {
     if (!checkRemoteIp(req, res, config)) return;
-    if (!checkOrigin(req, res, config)) return;
     next();
   };
 }
@@ -67,7 +57,14 @@ export function methodNotAllowed(res: Response): void {
   res.statusCode = 405;
   res.setHeader('Allow', 'POST');
   res.end();
-  return;
+}
+
+export function originNotAllowed(res: Response): void {
+  const message =
+    'For security reasons, Tidewave does not accept requests with an origin header for this endpoint.';
+  console.warn(message);
+  res.statusCode = 403;
+  res.end(message);
 }
 
 // Export for use by framework integrations
