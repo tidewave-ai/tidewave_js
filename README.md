@@ -37,7 +37,7 @@ And you are almost there! Now make sure
 [Tidewave is installed](https://hexdocs.pm/tidewave/installation.html) and you
 are ready to connect Tidewave to your app.
 
-In case the command abovees do not work, you can toggle the manual installation
+In case the command above do not work, you can toggle the manual installation
 instructions below
 
 <details>
