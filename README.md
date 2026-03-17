@@ -10,6 +10,7 @@ This project supports:
 - Next.js 15/16
 - TanStack Start with React
 - Vite with React/Vue (which includes Astro, VitePress, etc)
+- Rsbuild/Rspack with React
 
 If you are using React/Vue with Django, FastAPI, Flask, Phoenix, or Rails,
 [follow the steps here instead](http://hexdocs.pm/tidewave/frontend.html).
@@ -253,10 +254,41 @@ be available. You can also use our
 [Supabase](https://hexdocs.pm/tidewave/supabase.html) integration for additional
 features.
 
+### Rsbuild / Rspack
+
+If you are using [Rsbuild](https://rsbuild.dev/) or
+[Rspack](https://rspack.dev/) as your build tool, install Tidewave with:
+
+```sh
+$ npm install -D tidewave
+# or
+$ yarn add -D tidewave
+# or
+$ pnpm add --save-dev tidewave
+# or
+$ bun add --dev tidewave
+```
+
+Then configure your `rsbuild.config.ts` (also works for `.js` and `.mjs`):
+
+```typescript
+import { defineConfig } from '@rsbuild/core';
+import { pluginReact } from '@rsbuild/plugin-react';
+import tidewave from 'tidewave/rsbuild-plugin';
+
+export default defineConfig({
+  plugins: [pluginReact(), tidewave()],
+});
+```
+
+Now make sure
+[Tidewave is installed](https://hexdocs.pm/tidewave/installation.html) and you
+are ready to connect Tidewave to your app.
+
 ### Configuration
 
-Next.js' `tidewaveHandler` and Vite's `tidewave` accept the configuration
-options below:
+Next.js' `tidewaveHandler`, Vite's `tidewave`, and Rsbuild's `tidewave` accept
+the configuration options below:
 
 - `allow_remote_access:` Tidewave only allows requests from localhost by
   default, even if your server listens on other interfaces, for security
