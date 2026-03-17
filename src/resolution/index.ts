@@ -212,9 +212,10 @@ export async function extractDocs(modulePath: string): Promise<ExtractResult> {
       const exportSymbol = exports.find((exp: ts.Symbol) => exp.getName() === symbol);
 
       if (exportSymbol) {
-        // Check if the export symbol has a meaningful valueDeclaration
-        // OR if it's a type-only symbol like interface/type alias/enum
-        if (
+        // Resolve re-exported (aliased) symbols to their original declaration
+        if (exportSymbol.flags & ts.SymbolFlags.Alias) {
+          targetSymbol = checker.getAliasedSymbol(exportSymbol);
+        } else if (
           exportSymbol.valueDeclaration &&
           (ts.isFunctionDeclaration(exportSymbol.valueDeclaration) ||
             ts.isClassDeclaration(exportSymbol.valueDeclaration) ||
