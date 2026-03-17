@@ -289,9 +289,7 @@ describe('TypeScript Extraction', () => {
 
   describe('re-exported (aliased) symbols', () => {
     it('should extract docs for a re-exported function', async () => {
-      const docs = (await extractDocs(
-        './test/fixtures/reexport-barrel:add',
-      )) as SymbolInfo;
+      const docs = (await extractDocs('./test/fixtures/reexport-barrel:add')) as SymbolInfo;
 
       expect(isExtractError(docs)).toBe(false);
       expect(docs.name).toBe('add');
@@ -300,9 +298,7 @@ describe('TypeScript Extraction', () => {
     });
 
     it('should extract docs for a re-exported class', async () => {
-      const docs = (await extractDocs(
-        './test/fixtures/reexport-barrel:Counter',
-      )) as SymbolInfo;
+      const docs = (await extractDocs('./test/fixtures/reexport-barrel:Counter')) as SymbolInfo;
 
       expect(isExtractError(docs)).toBe(false);
       expect(docs.name).toBe('Counter');
@@ -321,9 +317,7 @@ describe('TypeScript Extraction', () => {
     });
 
     it('should extract docs for a re-exported enum', async () => {
-      const docs = (await extractDocs(
-        './test/fixtures/reexport-barrel:Status',
-      )) as SymbolInfo;
+      const docs = (await extractDocs('./test/fixtures/reexport-barrel:Status')) as SymbolInfo;
 
       expect(isExtractError(docs)).toBe(false);
       expect(docs.name).toBe('Status');
@@ -331,9 +325,7 @@ describe('TypeScript Extraction', () => {
     });
 
     it('should extract docs for a re-exported interface', async () => {
-      const docs = (await extractDocs(
-        './test/fixtures/reexport-barrel:Result',
-      )) as SymbolInfo;
+      const docs = (await extractDocs('./test/fixtures/reexport-barrel:Result')) as SymbolInfo;
 
       expect(isExtractError(docs)).toBe(false);
       expect(docs.name).toBe('Result');
