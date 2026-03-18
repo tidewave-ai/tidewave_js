@@ -287,6 +287,61 @@ describe('TypeScript Extraction', () => {
     });
   });
 
+  describe('re-exported (aliased) symbols', () => {
+    it('should extract docs for a re-exported function', async () => {
+      const docs = (await extractDocs('./test/fixtures/reexport-barrel:add')) as SymbolInfo;
+
+      expect(isExtractError(docs)).toBe(false);
+      expect(docs.name).toBe('add');
+      expect(docs.kind).toBe('function');
+      expect(docs.documentation).toContain('Adds two numbers');
+    });
+
+    it('should extract docs for a re-exported class', async () => {
+      const docs = (await extractDocs('./test/fixtures/reexport-barrel:Counter')) as SymbolInfo;
+
+      expect(isExtractError(docs)).toBe(false);
+      expect(docs.name).toBe('Counter');
+      expect(docs.kind).toBe('class');
+      expect(docs.documentation).toContain('simple counter class');
+    });
+
+    it('should extract docs for a re-exported class instance member', async () => {
+      const docs = (await extractDocs(
+        './test/fixtures/reexport-barrel:Counter#increment',
+      )) as SymbolInfo;
+
+      expect(isExtractError(docs)).toBe(false);
+      expect(docs.name).toBe('Counter#increment');
+      expect(docs.kind).toBe('method');
+    });
+
+    it('should extract docs for a re-exported enum', async () => {
+      const docs = (await extractDocs('./test/fixtures/reexport-barrel:Status')) as SymbolInfo;
+
+      expect(isExtractError(docs)).toBe(false);
+      expect(docs.name).toBe('Status');
+      expect(docs.kind).toBe('enum');
+    });
+
+    it('should extract docs for a re-exported interface', async () => {
+      const docs = (await extractDocs('./test/fixtures/reexport-barrel:Result')) as SymbolInfo;
+
+      expect(isExtractError(docs)).toBe(false);
+      expect(docs.name).toBe('Result');
+      expect(docs.kind).toBe('interface');
+    });
+
+    it('should return SYMBOL_NOT_FOUND for non-existent re-export', async () => {
+      const docs = (await extractDocs(
+        './test/fixtures/reexport-barrel:NonExistent',
+      )) as ExtractError;
+
+      expect(isExtractError(docs)).toBe(true);
+      expect(docs.error.code).toBe('SYMBOL_NOT_FOUND');
+    });
+  });
+
   describe('getSourceLocation', () => {
     it('should resolve built-in module paths', async () => {
       const sourcePath = await getSourceLocation('typescript');
