@@ -154,7 +154,7 @@ describe('Tidewave Rsbuild Plugin', () => {
 
       // Should unshift a Connect app (which is a function)
       expect(unshift).toHaveBeenCalledTimes(1);
-      expect(typeof unshift.mock.calls[0][0]).toBe('function');
+      expect(typeof unshift.mock.calls[0]?.[0]).toBe('function');
     });
   });
 
