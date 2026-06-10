@@ -25,5 +25,10 @@ async function tidewaveServer(
   config.framework = 'vite';
   config.projectName = config.projectName || (await getProjectName('vite_app'));
 
-  configureServer(server.middlewares, config);
+  configureServer(server.middlewares, config, {
+    getLocalPort: () => {
+      const address = server.httpServer?.address();
+      return typeof address === 'object' && address !== null ? address.port : undefined;
+    },
+  });
 }

@@ -15,6 +15,9 @@ const createMockServer = (host = 'localhost', port = 5173): MockViteDevServer =>
     config: {
       server: { host, port },
     } as any,
+    httpServer: {
+      address: vi.fn(() => ({ address: '127.0.0.1', family: 'IPv4', port: 4321 })),
+    } as any,
     middlewares: {
       use: middlewareUse,
     } as any,
@@ -98,6 +101,37 @@ describe('Tidewave Vite Plugin', () => {
       // Middleware should be registered (config is passed internally)
       const middlewareUse = (mockServer as any)._middlewareUse;
       expect(middlewareUse).toHaveBeenCalledTimes(5);
+    });
+
+    it('should use the actual Vite server port in config responses', async () => {
+      const mockServer = createMockServer('localhost', 5173);
+      const plugin = tidewave();
+
+      await (plugin.configureServer as any)(mockServer);
+
+      const configHandler = (mockServer as any)._middlewareUse.mock.calls[3][1];
+      const req = {
+        socket: { remoteAddress: '127.0.0.1' },
+        headers: {
+          host: 'localhost:5173',
+          origin: 'http://localhost:9999',
+        },
+      };
+      const res = {
+        statusCode: 200,
+        setHeader: vi.fn(),
+        end: vi.fn(),
+        headersSent: false,
+      };
+
+      await configHandler(req, res, vi.fn());
+
+      expect(res.statusCode).toBe(200);
+      expect(res.setHeader).toHaveBeenCalledWith('Access-Control-Allow-Origin', '*');
+      expect(JSON.parse(res.end.mock.calls[0]![0])).toMatchObject({
+        framework_type: 'vite',
+        local_port: 4321,
+      });
     });
   });
 

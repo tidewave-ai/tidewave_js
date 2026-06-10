@@ -4,7 +4,7 @@ import connect from 'connect';
 import { checkRemoteIp } from './security';
 import { handleMcp } from './handlers/mcp';
 import { createHandleHtml } from './handlers/html';
-import { createHandleConfig } from './handlers/config';
+import { createHandleConfig, type LocalPortGetter } from './handlers/config';
 import bodyParser from 'body-parser';
 import type { TidewaveConfig } from '../core';
 
@@ -21,10 +21,17 @@ const DEFAULT_OPTIONS: TidewaveConfig = {
 
 export type Handler = (req: Request, res: Response, next: NextFn) => Promise<void>;
 
-function getHandlers(config: TidewaveConfig): Record<string, Handler> {
+export interface HandlerOptions {
+  getLocalPort?: LocalPortGetter;
+}
+
+function getHandlers(
+  config: TidewaveConfig,
+  options: HandlerOptions = {},
+): Record<string, Handler> {
   return {
     '': createHandleHtml(config),
-    config: createHandleConfig(config),
+    config: createHandleConfig(config, options.getLocalPort),
     mcp: handleMcp,
   };
 }
@@ -32,13 +39,14 @@ function getHandlers(config: TidewaveConfig): Record<string, Handler> {
 export function configureServer(
   server: Server = connect(),
   config: TidewaveConfig = DEFAULT_OPTIONS,
+  options: HandlerOptions = {},
 ): Server {
   const securityChecker = checkSecurity(config);
 
   server.use(`${ENDPOINT}`, securityChecker);
   server.use(`${ENDPOINT}`, bodyParser.json());
 
-  const handlers = getHandlers(config);
+  const handlers = getHandlers(config, options);
   for (const [path, handler] of Object.entries(handlers)) {
     server.use(ENDPOINT + '/' + path, handler);
   }

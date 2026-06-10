@@ -3,6 +3,7 @@ import { checkSecurity, type Request, type Response } from '../http';
 import bodyParser from 'body-parser';
 import type { TidewaveConfig } from '../core';
 import { getProjectName } from '../core';
+import type { AddressInfo } from 'node:net';
 
 const DEFAULT_CONFIG: TidewaveConfig = {};
 
@@ -35,6 +36,18 @@ function connectWrapper<Req extends Request, Res extends Response>(
     new Promise<void>((resolve, reject) => {
       fn(req, res, err => (err ? reject(err) : resolve()));
     }).then(next);
+}
+
+function isAddressInfo(address: ReturnType<Request['socket']['address']>): address is AddressInfo {
+  return typeof address === 'object' && address !== null && 'port' in address;
+}
+
+export function getRequestLocalPort(request: Request): number | undefined {
+  const address = request.socket.address();
+
+  if (isAddressInfo(address)) return address.port;
+
+  return request.socket.localPort;
 }
 
 export async function tidewaveHandler(
@@ -74,7 +87,9 @@ export async function tidewaveHandler(
     await connectWrapper(bodyParser.json())(req, res, next);
 
     const { getHandlers } = await import('../http');
-    const handlers = getHandlers(config);
+    const handlers = getHandlers(config, {
+      getLocalPort: getRequestLocalPort,
+    });
 
     const handler = handlers[endpoint || ''];
     if (handler) return await connectWrapper(handler)(req, res, next);

@@ -68,16 +68,28 @@ describe('HTTP Utilities', () => {
   });
 
   describe('handleConfig', () => {
-    it('should return 403 if origin header is set', async () => {
-      const req = createMockRequest({ origin: 'http://localhost:4000' });
-      const { res, mockEnd } = createMockResponse();
+    it('should allow origin header and return CORS config', async () => {
+      const req = createMockRequest({ origin: 'http://localhost:4001' });
+      const { res, mockEnd, mockSetHeader } = createMockResponse();
       const next = vi.fn();
 
-      const handler = createHandleConfig({});
+      const handler = createHandleConfig(
+        {
+          framework: 'vite',
+          projectName: 'test_app',
+        },
+        () => 5173,
+      );
       await handler(req as Request, res as Response, next);
 
-      expect(res.statusCode).toBe(403);
-      expect(mockEnd).toHaveBeenCalledWith(expect.stringContaining('origin'));
+      expect(res.statusCode).toBe(200);
+      expect(mockSetHeader).toHaveBeenCalledWith('Content-Type', 'application/json');
+      expect(mockSetHeader).toHaveBeenCalledWith('Access-Control-Allow-Origin', '*');
+      expect(JSON.parse(mockEnd.mock.calls[0]![0])).toMatchObject({
+        project_name: 'test_app',
+        framework_type: 'vite',
+        local_port: 5173,
+      });
     });
   });
 });
