@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.7.0] - 2026-06-14
+
+* Support namespaces/files in `get_docs` tool and make it return a list of exports
+* Support re-exports in `get_docs` lookups
+* Improve out-of-the-box experience for remote access (which remains opt-in)
+
 ## [0.6.0] - 2025-12-31
 
 * Tanstack support
