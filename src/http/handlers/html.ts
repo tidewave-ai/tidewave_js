@@ -6,7 +6,7 @@ export function createHandleHtml(config: TidewaveConfig): Handler {
     const url = req.url || '/';
     const [pathname] = url.split('?');
 
-    // vite middleware strips the url, but next.js does not, so we check all three
+    // Different connect-style middleware stacks may strip different URL prefixes.
     if (pathname !== '' && pathname !== '/' && pathname !== '/tidewave') {
       return next();
     }

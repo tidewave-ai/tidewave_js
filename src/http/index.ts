@@ -1,6 +1,5 @@
 import type { ServerResponse } from 'http';
 import type { IncomingMessage, NextFunction, Server } from 'connect';
-import connect from 'connect';
 import { checkRemoteIp } from './security';
 import { handleMcp } from './handlers/mcp';
 import { createHandleHtml } from './handlers/html';
@@ -37,7 +36,7 @@ function getHandlers(
 }
 
 export function configureServer(
-  server: Server = connect(),
+  server: Server,
   config: TidewaveConfig = DEFAULT_OPTIONS,
   options: HandlerOptions = {},
 ): Server {
@@ -54,7 +53,7 @@ export function configureServer(
   return server;
 }
 
-export function checkSecurity(config: TidewaveConfig) {
+function checkSecurity(config: TidewaveConfig) {
   return (req: Request, res: Response, next: NextFn): void => {
     if (!checkRemoteIp(req, res, config)) return;
     next();
@@ -74,6 +73,3 @@ export function originNotAllowed(res: Response): void {
   res.statusCode = 403;
   res.end(message);
 }
-
-// Export for use by framework integrations
-export { getHandlers };
