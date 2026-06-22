@@ -1,21 +1,25 @@
-import { type Request, type Response, type NextFn, type Handler } from '../index';
 import type { TidewaveConfig } from '../../core';
+import type { TidewaveHandler, TidewaveNext, TidewaveRequest, TidewaveResponse } from '../types';
 import { default as tidewavePackage } from '../../../package.json' with { type: 'json' };
 
-export type LocalPortGetter = (req: Request) => number | undefined;
+export type LocalPortGetter = () => number | undefined;
 
 export function createHandleConfig(
   config: TidewaveConfig,
   getLocalPort?: LocalPortGetter,
-): Handler {
-  return async function handleConfig(req: Request, res: Response, next: NextFn): Promise<void> {
+): TidewaveHandler {
+  return async function handleConfig(
+    _req: TidewaveRequest,
+    res: TidewaveResponse,
+    next: TidewaveNext,
+  ): Promise<void> {
     try {
       const tidewaveConfig = {
         project_name: config.projectName || 'app',
         framework_type: config.framework || 'unknown',
         tidewave_version: tidewavePackage.version,
         team: config.team || {},
-        local_port: getLocalPort?.(req),
+        local_port: getLocalPort?.(),
       };
 
       res.statusCode = 200;

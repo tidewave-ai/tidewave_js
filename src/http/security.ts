@@ -1,21 +1,30 @@
 import type { TidewaveConfig } from '../core';
-import type { Request, Response } from './index';
+import type { TidewaveRequest, TidewaveResponse } from './types';
 
-function fetchRemoteIp(req: Request): string | null {
+function fetchRemoteIp(req: TidewaveRequest): string | null {
   const remote = req.socket.remoteAddress;
 
   if (remote) return remote;
 
-  const ip = (req.headers['x-real-ip'] && req.headers['x-forwarded-for']) || null;
+  const realIp = firstHeaderValue(req.headers['x-real-ip']);
+  if (realIp) return realIp;
 
-  if (Array.isArray(ip)) {
-    return ip.join();
-  }
+  const forwardedFor = firstHeaderValue(req.headers['x-forwarded-for']);
+  if (forwardedFor) return forwardedFor.split(',')[0]?.trim() || null;
 
-  return ip;
+  return null;
 }
 
-export function checkRemoteIp(req: Request, res: Response, config: TidewaveConfig): boolean {
+function firstHeaderValue(value: string | string[] | undefined): string | null {
+  if (Array.isArray(value)) return value[0] || null;
+  return value || null;
+}
+
+export function checkRemoteIp(
+  req: TidewaveRequest,
+  res: TidewaveResponse,
+  config: TidewaveConfig,
+): boolean {
   const ip = fetchRemoteIp(req);
 
   if (!ip) return false;

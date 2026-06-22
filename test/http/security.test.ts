@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { checkRemoteIp, isLocalIp } from '../../src/http/security';
-import type { Request, Response } from '../../src/http';
+import type { TidewaveRequest, TidewaveResponse } from '../../src/http/types';
 import type { TidewaveConfig } from '../../src/core';
 
 // Mock request/response helpers
-const createMockRequest = (remoteAddress = '127.0.0.1'): Partial<Request> => ({
+const createMockRequest = (remoteAddress = '127.0.0.1'): Partial<TidewaveRequest> => ({
   socket: { remoteAddress } as any,
   headers: {},
 });
@@ -20,7 +20,7 @@ const createMockResponse = () => {
       setHeader: mockSetHeader,
       headersSent: false,
       destroyed: false,
-    } as Partial<Response>,
+    } as Partial<TidewaveResponse>,
     mockEnd,
     mockSetHeader,
   };
@@ -70,7 +70,7 @@ describe('HTTP Security', () => {
       const { res } = createMockResponse();
       const config: TidewaveConfig = {};
 
-      const result = checkRemoteIp(req as Request, res as Response, config);
+      const result = checkRemoteIp(req as TidewaveRequest, res as TidewaveResponse, config);
 
       expect(result).toBe(true);
       expect(res.statusCode).toBe(200);
@@ -81,7 +81,7 @@ describe('HTTP Security', () => {
       const { res, mockEnd } = createMockResponse();
       const config: TidewaveConfig = {};
 
-      const result = checkRemoteIp(req as Request, res as Response, config);
+      const result = checkRemoteIp(req as TidewaveRequest, res as TidewaveResponse, config);
 
       expect(result).toBe(false);
       expect(res.statusCode).toBe(403);
@@ -93,7 +93,7 @@ describe('HTTP Security', () => {
       const { res } = createMockResponse();
       const config: TidewaveConfig = { allowRemoteAccess: true };
 
-      const result = checkRemoteIp(req as Request, res as Response, config);
+      const result = checkRemoteIp(req as TidewaveRequest, res as TidewaveResponse, config);
 
       expect(result).toBe(true);
       expect(res.statusCode).toBe(200);
