@@ -1,14 +1,13 @@
 {
   "name": "tidewave",
   "version": "0.7.0",
-  "description": "Tidewave for JavaScript (Next.js, TanStack, Vite)",
+  "description": "Tidewave for JavaScript (TanStack, Vite)",
   "keywords": [
     "typescript",
     "documentation",
     "mcp",
     "cli",
     "tidewave",
-    "next",
     "vite",
     "tanstack"
   ],
@@ -37,16 +36,6 @@
       "import": "./dist/vite-plugin.js",
       "require": "./dist/vite-plugin.js"
     },
-    "./next-js/handler": {
-      "types": "./dist/next-js/handler.d.ts",
-      "import": "./dist/next-js/handler.js",
-      "require": "./dist/next-js/handler.js"
-    },
-    "./next-js/instrumentation": {
-      "types": "./dist/next-js/instrumentation.d.ts",
-      "import": "./dist/next-js/instrumentation.js",
-      "require": "./dist/next-js/instrumentation.js"
-    },
     "./tanstack": {
       "types": "./dist/tanstack.d.ts",
       "import": "./dist/tanstack.js",
@@ -62,7 +51,7 @@
   ],
   "scripts": {
     "dist": "bun run clean && bun run build:js && bun run build:types",
-    "build:js": "bun build --outdir dist --root src --external typescript --external child_process --external module --external @opentelemetry/api --external @opentelemetry/sdk-logs --external @opentelemetry/sdk-trace-base src/next-js/handler.ts src/next-js/instrumentation.ts src/vite-plugin.ts src/tanstack.ts src/evaluation/eval_worker.ts src/cli/index.ts --target node",
+    "build:js": "bun build --outdir dist --root src --external typescript --external child_process --external module src/vite-plugin.ts src/tanstack.ts src/evaluation/eval_worker.ts src/cli/index.ts --target node",
     "build:types": "tsc -p tsconfig.declarations.json",
     "dev": "bun run src/cli/index.ts",
     "test": "bun test",
@@ -82,23 +71,18 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.16.0",
-    "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/sdk-logs": "^0.206.0",
-    "@opentelemetry/sdk-trace-base": "^2.1.0",
     "@types/body-parser": "^1.19.6",
     "@types/bun": "latest",
     "@types/connect": "^3.4.38",
     "@types/node": "^22.10.1",
     "@typescript-eslint/eslint-plugin": "^8.18.0",
     "@typescript-eslint/parser": "^8.18.0",
-    "@vercel/otel": "^2.0.1",
     "@vitest/ui": "^3.2.4",
     "bun-types": "latest",
     "chalk": "^5.3.0",
     "commander": "^12.1.0",
     "eslint": "^9.16.0",
     "globals": "^15.14.0",
-    "next": "^15.5.3",
     "prettier": "^3.4.2",
     "vite": "^7.1.5",
     "vitest": "^4.1.8"

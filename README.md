@@ -7,7 +7,6 @@ more information.
 
 This project supports:
 
-- Next.js 15/16
 - TanStack Start with React
 - Vite with React/Vue (which includes Astro, VitePress, etc)
 
@@ -18,154 +17,6 @@ This project can also be used through the CLI or as
 [a standalone Model Context Protocol server](https://hexdocs.pm/tidewave/mcp.html).
 
 ## Installation
-
-### Next.js
-
-If you are using Next.js, install Tidewave with:
-
-```sh
-$ npx tidewave install
-# or
-$ yarn dlx tidewave install
-# or
-$ pnpm dlx tidewave install
-# or
-$ bunx tidewave install
-```
-
-And you are almost there! Now make sure
-[Tidewave is installed](https://hexdocs.pm/tidewave/installation.html) and you
-are ready to connect Tidewave to your app.
-
-In case the command above do not work, you can toggle the manual installation
-instructions below
-
-<details>
-<summary>Show manual installation steps</summary><br />
-
-**1. Add Tidewave as a dependency**
-
-```sh
-$ npm install -D tidewave
-# or
-$ yarn add -D tidewave
-# or
-$ pnpm add --save-dev tidewave
-# or
-$ bun add --dev tidewave
-```
-
-**2. Create `pages/api/tidewave.ts`**
-
-Then create `pages/api/tidewave.ts` with:
-
-```typescript
-import type { NextApiRequest, NextApiResponse } from 'next';
-
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse,
-) {
-  if (process.env.NODE_ENV === 'development') {
-    const { tidewaveHandler } = await import('tidewave/next-js/handler');
-    const handler = await tidewaveHandler();
-    return handler(req, res);
-  } else {
-    res.status(404).end();
-  }
-}
-
-export const config = {
-  runtime: 'nodejs',
-  api: {
-    bodyParser: false, // Tidewave already parses the body internally
-  },
-};
-```
-
-**3. Create the proxy.ts or middleware.ts**
-
-If you are using Next.js 16+, then create (or modify) `proxy.ts` with:
-
-```typescript
-import { NextRequest, NextResponse } from 'next/server';
-
-export function proxy(req: NextRequest): NextResponse {
-  if (req.nextUrl.pathname.startsWith('/tidewave')) {
-    return NextResponse.rewrite(new URL('/api/tidewave', req.url));
-  }
-
-  // Here you could add your own logic or different middlewares.
-  return NextResponse.next();
-}
-```
-
-For Next.js 15+ and earlier, create (or modify) `middleware.ts` with:
-
-```typescript
-import { NextRequest, NextResponse } from 'next/server';
-
-export function middleware(req: NextRequest): NextResponse {
-  if (req.nextUrl.pathname.startsWith('/tidewave')) {
-    return NextResponse.rewrite(new URL('/api/tidewave', req.url));
-  }
-
-  // Here you could add your own logic or different middlewares.
-  return NextResponse.next();
-}
-
-export const config = {
-  matcher: ['/tidewave/:path*'],
-};
-```
-
-**4. Create instrumentation.ts**
-
-Finally, we expose your application's spans, events, and logs to Tidewave MCP.
-First install the NodeSDK:
-
-```sh
-npm install @opentelemetry/sdk-node
-npm install -D @opentelemetry/sdk-trace-base @opentelemetry/sdk-logs
-```
-
-And then create (or modify) a custom `instrumentation.ts` file in the root
-directory of the project (or inside `src` folder if using one):
-
-```typescript
-// instrumentation.ts
-import type { SpanProcessor } from '@opentelemetry/sdk-trace-base';
-import type { LogRecordProcessor } from '@opentelemetry/sdk-logs';
-
-export async function register() {
-  if (process.env.NEXT_RUNTIME === 'nodejs') {
-    const { NodeSDK } = await import('@opentelemetry/sdk-node');
-
-    // Add your app own processes here existing configuration
-    const sdkConfig: {
-      spanProcessors: SpanProcessor[];
-      logRecordProcessors: LogRecordProcessor[];
-    } = {
-      spanProcessors: [],
-      logRecordProcessors: [],
-    };
-
-    // Conditionally add Tidewave processors in development
-    if (process.env.NODE_ENV === 'development') {
-      const { TidewaveSpanProcessor, TidewaveLogRecordProcessor } =
-        await import('tidewave/next-js/instrumentation');
-
-      sdkConfig.spanProcessors.push(new TidewaveSpanProcessor());
-      sdkConfig.logRecordProcessors.push(new TidewaveLogRecordProcessor());
-    }
-
-    const sdk = new NodeSDK(sdkConfig);
-    sdk.start();
-  }
-}
-```
-
-</details>
 
 ### TanStack Start
 
@@ -255,8 +106,7 @@ features.
 
 ### Configuration
 
-Next.js' `tidewaveHandler` and Vite's `tidewave` accept the configuration
-options below:
+Vite's `tidewave` accepts the configuration options below:
 
 - `allow_remote_access:` Tidewave only allows requests from localhost by
   default, even if your server listens on other interfaces, for security
@@ -348,8 +198,8 @@ bun run clean            # Clean dist directory
 
 ## Acknowledgements
 
-A thank you to [Zoey](https://github.com/zoedsoupe/) for implementing both
-Next.js and Vite integrations as well as the CLI interface.
+A thank you to [Zoey](https://github.com/zoedsoupe/) for implementing the Vite
+integration as well as the CLI interface.
 
 ## License
 
