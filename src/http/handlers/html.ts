@@ -1,12 +1,17 @@
-import type { Request, Response, NextFn, Handler } from '../index';
 import type { TidewaveConfig } from '../../core';
-export function createHandleHtml(config: TidewaveConfig): Handler {
-  return async function handleHtml(req: Request, res: Response, next: NextFn): Promise<void> {
+import type { TidewaveHandler, TidewaveNext, TidewaveRequest, TidewaveResponse } from '../types';
+
+export function createHandleHtml(config: TidewaveConfig): TidewaveHandler {
+  return async function handleHtml(
+    req: TidewaveRequest,
+    res: TidewaveResponse,
+    next: TidewaveNext,
+  ): Promise<void> {
     // Only handle exact /tidewave path, not sub-paths
     const url = req.url || '/';
     const [pathname] = url.split('?');
 
-    // vite middleware strips the url, but next.js does not, so we check all three
+    // Different connect-style middleware stacks may strip different URL prefixes.
     if (pathname !== '' && pathname !== '/' && pathname !== '/tidewave') {
       return next();
     }

@@ -1,7 +1,0 @@
-{
-  "name": "test-next16",
-  "version": "1.0.0",
-  "dependencies": {
-    "next": "^16.0.0"
-  }
-}
