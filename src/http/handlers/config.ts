@@ -20,6 +20,7 @@ export function createHandleConfig(
         tidewave_version: tidewavePackage.version,
         team: config.team || {},
         local_port: getLocalPort?.(),
+        tmp_dir: config.tmpDir || 'tmp',
       };
 
       res.statusCode = 200;

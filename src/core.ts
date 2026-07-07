@@ -146,6 +146,7 @@ export interface TidewaveConfig {
   allowRemoteAccess?: boolean;
   projectName?: string;
   framework?: string;
+  tmpDir?: string;
   team?: {
     id?: string;
     token?: string;

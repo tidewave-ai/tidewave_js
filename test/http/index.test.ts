@@ -68,6 +68,7 @@ describe('HTTP Utilities', () => {
         {
           framework: 'vite',
           projectName: 'test_app',
+          tmpDir: 'custom-tmp',
         },
         () => 5173,
       );
@@ -80,6 +81,7 @@ describe('HTTP Utilities', () => {
         project_name: 'test_app',
         framework_type: 'vite',
         local_port: 5173,
+        tmp_dir: 'custom-tmp',
       });
     });
   });
