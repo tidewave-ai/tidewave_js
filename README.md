@@ -117,6 +117,9 @@ Vite's `tidewave` accepts the configuration options below:
   server host, or `localhost` when Vite uses its implicit host. Ports are
   ignored, so `http://localhost:5173` and `http://localhost:4000` both allow
   `localhost`
+- `tmpDir`: temporary directory Tidewave uses for screenshots and recordings.
+  Defaults to `tmp`, storing files under `tmp/tidewave/screenshots` and
+  `tmp/tidewave/recordings`
 - `team`: enable Tidewave Web for teams
 
 ## Available tools
