@@ -24,6 +24,7 @@ async function tidewaveServer(
   // Set framework and projectName upfront
   config.framework = 'vite';
   config.projectName = config.projectName || (await getProjectName('vite_app'));
+  config.allowedOrigins = config.allowedOrigins || defaultAllowedOrigins(server);
 
   configureServer(server.middlewares, config, {
     getLocalPort: () => {
@@ -31,4 +32,13 @@ async function tidewaveServer(
       return typeof address === 'object' && address !== null ? address.port : undefined;
     },
   });
+}
+
+function defaultAllowedOrigins(server: ViteDevServer): string[] {
+  const { host } = server.config.server;
+  if (typeof host === 'string') return [host];
+
+  // The host can be undefined, in which case the default is localhost,
+  // see https://vite.dev/config/server-options#server-host.
+  return ['localhost'];
 }

@@ -8,7 +8,10 @@ interface MockViteDevServer extends Partial<ViteDevServer> {
   _middlewareUse: ReturnType<typeof vi.fn>;
 }
 
-const createMockServer = (host = 'localhost', port = 5173): MockViteDevServer => {
+const createMockServer = (
+  host: string | boolean | undefined = 'localhost',
+  port = 5173,
+): MockViteDevServer => {
   const middlewareUse = vi.fn();
 
   return {
@@ -135,6 +138,38 @@ describe('Tidewave Vite Plugin', () => {
         framework_type: 'vite',
         local_port: 4321,
       });
+    });
+
+    it('should configure upload origins from the Vite host', async () => {
+      const config: TidewaveConfig = {};
+      const mockServer = createMockServer('app.example.test', 5173);
+      const plugin = tidewave(config);
+
+      await (plugin.configureServer as any)(mockServer);
+
+      expect(config.allowedOrigins).toEqual(['app.example.test']);
+    });
+
+    it('should use localhost for upload origins when Vite host is implicit', async () => {
+      const config: TidewaveConfig = {};
+      const mockServer = createMockServer(undefined, 5173);
+      const plugin = tidewave(config);
+
+      await (plugin.configureServer as any)(mockServer);
+
+      expect(config.allowedOrigins).toEqual(['localhost']);
+    });
+
+    it('should preserve explicitly configured upload origins', async () => {
+      const config: TidewaveConfig = {
+        allowedOrigins: ['custom.example.test'],
+      };
+      const mockServer = createMockServer('app.example.test', 5173);
+      const plugin = tidewave(config);
+
+      await (plugin.configureServer as any)(mockServer);
+
+      expect(config.allowedOrigins).toEqual(['custom.example.test']);
     });
   });
 

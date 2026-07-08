@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { TidewaveRequest, TidewaveResponse } from '../../src/http/types';
 import { handleMcp } from '../../src/http/handlers/mcp';
 import { createHandleConfig } from '../../src/http/handlers/config';
+import { createHandleHtml } from '../../src/http/handlers/html';
 
 // Mock request/response helpers
 const createMockRequest = (headers: Record<string, string> = {}): Partial<TidewaveRequest> => ({
@@ -55,6 +56,22 @@ describe('HTTP Utilities', () => {
       expect(res.statusCode).toBe(405);
       expect(mockSetHeader).toHaveBeenCalledWith('Allow', 'POST');
       expect(mockEnd).toHaveBeenCalled();
+    });
+  });
+
+  describe('handleHtml', () => {
+    it('should allow arbitrary origin headers for the root page', async () => {
+      const req = { ...createMockRequest({ origin: 'http://example.com' }), url: '/' };
+      const { res, mockEnd, mockSetHeader } = createMockResponse();
+      const next = vi.fn();
+
+      const handler = createHandleHtml({});
+      await handler(req as TidewaveRequest, res as TidewaveResponse, next);
+
+      expect(res.statusCode).toBe(200);
+      expect(mockSetHeader).toHaveBeenCalledWith('Content-Type', 'text/html');
+      expect(mockEnd).toHaveBeenCalledWith(expect.stringContaining('<html>'));
+      expect(next).not.toHaveBeenCalled();
     });
   });
 

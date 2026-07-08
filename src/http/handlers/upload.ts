@@ -36,7 +36,7 @@ export function createHandleUpload(config: TidewaveConfig): TidewaveHandler {
         return;
       }
 
-      if (!requireSameOrigin(req, res)) return;
+      if (!requireSameOrigin(req, res, config)) return;
       if (uploadTooLarge(req)) {
         badRequest(res);
         return;
@@ -88,11 +88,15 @@ export function createHandleUpload(config: TidewaveConfig): TidewaveHandler {
   };
 }
 
-function requireSameOrigin(req: TidewaveRequest, res: TidewaveResponse): boolean {
+function requireSameOrigin(
+  req: TidewaveRequest,
+  res: TidewaveResponse,
+  config: TidewaveConfig,
+): boolean {
   const origin = firstHeaderValue(req.headers.origin);
   if (!origin) return true;
 
-  if (sameOrigin(req, origin)) return true;
+  if (allowedOriginHosts(config).includes(originHost(origin))) return true;
 
   console.warn(INVALID_UPLOAD_ORIGIN);
   res.statusCode = 403;
@@ -100,24 +104,40 @@ function requireSameOrigin(req: TidewaveRequest, res: TidewaveResponse): boolean
   return false;
 }
 
-function sameOrigin(req: TidewaveRequest, origin: string): boolean {
-  const host = firstHeaderValue(req.headers.host);
-  if (!host) return false;
-
+function originHost(origin: string): string {
   try {
-    return stripPort(new URL(origin).host).toLowerCase() === stripPort(host).toLowerCase();
+    return new URL(origin).hostname.toLowerCase();
   } catch {
-    return false;
+    return '';
   }
 }
 
-function stripPort(host: string): string {
-  if (host.startsWith('[')) {
-    const end = host.indexOf(']');
-    return end === -1 ? host : host.slice(1, end);
+function allowedOriginHosts(config: TidewaveConfig): string[] {
+  // Do not derive this from the request Host header. Host is client-controlled,
+  // while configured origin hosts avoid accepting DNS rebinding requests.
+  return (config.allowedOrigins || []).map(originOrHostToHost).filter(host => host.length > 0);
+}
+
+function originOrHostToHost(originOrHost: string): string {
+  if (originOrHost.startsWith('//')) {
+    return originHost(`http:${originOrHost}`);
   }
 
-  return host.split(':')[0] || host;
+  if (/^[A-Za-z][A-Za-z0-9+.-]*:\/\//.test(originOrHost)) {
+    return originHost(originOrHost);
+  }
+
+  if (originOrHost.startsWith('[')) {
+    const end = originOrHost.indexOf(']');
+    return end === -1 ? originOrHost.toLowerCase() : originOrHost.slice(1, end).toLowerCase();
+  }
+
+  try {
+    const parsed = new URL(`http://${originOrHost}`);
+    return parsed.hostname.toLowerCase();
+  } catch {
+    return originOrHost.toLowerCase();
+  }
 }
 
 function uploadTooLarge(req: TidewaveRequest): boolean {

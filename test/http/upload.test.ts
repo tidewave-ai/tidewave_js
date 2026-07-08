@@ -94,7 +94,7 @@ describe('upload endpoint', () => {
   });
 
   it('accepts valid screenshots from the same origin', async () => {
-    const handler = createHandleUpload({ tmpDir: tmpDirPath });
+    const handler = createHandleUpload({ tmpDir: tmpDirPath, allowedOrigins: ['example.test'] });
     const { res, mockEnd, mockSetHeader } = createMockResponse();
     const next = vi.fn();
 
@@ -111,6 +111,29 @@ describe('upload endpoint', () => {
     expect(JSON.parse(mockEnd.mock.calls[0]![0])).toEqual({ status: 'ok', path: expectedPath });
     expect(await readFile(expectedPath)).toEqual(validPng);
     expect(next).not.toHaveBeenCalled();
+  });
+
+  it('accepts uploads from configured hosts even when the port differs', async () => {
+    const handler = createHandleUpload({
+      tmpDir: tmpDirPath,
+      allowedOrigins: ['http://localhost:4000'],
+    });
+    const { res, mockEnd } = createMockResponse();
+
+    await handler(
+      multipartUploadRequest({
+        origin: 'http://localhost:5173',
+        host: 'evil.test:3000',
+      }),
+      res as TidewaveResponse,
+      vi.fn(),
+    );
+
+    const expectedPath = path.join(tmpDirPath, 'tidewave', 'screenshots', 'capture.png');
+
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(mockEnd.mock.calls[0]![0])).toEqual({ status: 'ok', path: expectedPath });
+    expect(await readFile(expectedPath)).toEqual(validPng);
   });
 
   it('accepts valid recordings without an origin header', async () => {
@@ -186,7 +209,7 @@ describe('upload endpoint', () => {
   });
 
   it('rejects cross-origin upload requests', async () => {
-    const handler = createHandleUpload({ tmpDir: tmpDirPath });
+    const handler = createHandleUpload({ tmpDir: tmpDirPath, allowedOrigins: ['example.test'] });
     const { res, mockEnd } = createMockResponse();
 
     await handler(
