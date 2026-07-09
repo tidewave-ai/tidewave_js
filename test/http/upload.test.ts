@@ -94,7 +94,7 @@ describe('upload endpoint', () => {
   });
 
   it('accepts valid screenshots from the same origin', async () => {
-    const handler = createHandleUpload({ tmpDir: tmpDirPath, allowedOrigins: ['example.test'] });
+    const handler = createHandleUpload({ tmpDir: tmpDirPath, allowedOrigins: ['//example.test'] });
     const { res, mockEnd, mockSetHeader } = createMockResponse();
     const next = vi.fn();
 
@@ -113,10 +113,10 @@ describe('upload endpoint', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  it('accepts uploads from configured hosts even when the port differs', async () => {
+  it('accepts uploads from the same host as an allowed port-less origin', async () => {
     const handler = createHandleUpload({
       tmpDir: tmpDirPath,
-      allowedOrigins: ['http://localhost:4000'],
+      allowedOrigins: ['//localhost'],
     });
     const { res, mockEnd } = createMockResponse();
 
@@ -134,6 +134,22 @@ describe('upload endpoint', () => {
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(mockEnd.mock.calls[0]![0])).toEqual({ status: 'ok', path: expectedPath });
     expect(await readFile(expectedPath)).toEqual(validPng);
+  });
+
+  it('accepts uploads from a wildcard origin', async () => {
+    const handler = createHandleUpload({
+      tmpDir: tmpDirPath,
+      allowedOrigins: ['//*.example.test'],
+    });
+    const { res } = createMockResponse();
+
+    await handler(
+      multipartUploadRequest({ origin: 'http://control.example.test' }),
+      res as TidewaveResponse,
+      vi.fn(),
+    );
+
+    expect(res.statusCode).toBe(200);
   });
 
   it('accepts valid recordings without an origin header', async () => {
@@ -209,7 +225,7 @@ describe('upload endpoint', () => {
   });
 
   it('rejects cross-origin upload requests', async () => {
-    const handler = createHandleUpload({ tmpDir: tmpDirPath, allowedOrigins: ['example.test'] });
+    const handler = createHandleUpload({ tmpDir: tmpDirPath, allowedOrigins: ['//example.test'] });
     const { res, mockEnd } = createMockResponse();
 
     await handler(
@@ -223,7 +239,57 @@ describe('upload endpoint', () => {
 
     expect(res.statusCode).toBe(403);
     expect(mockEnd).toHaveBeenCalledWith(
-      "For security reasons, this page only allows connections from the application's own origin.",
+      expect.stringContaining(
+        'Tidewave only accepts requests from the same origin your web app is running on',
+      ),
     );
+    expect(mockEnd).toHaveBeenCalledWith(
+      expect.stringContaining('`allowedOrigins: ["http://evil.test:3000"]`'),
+    );
+  });
+
+  it('rejects uploads from an allowed host when the allowed origin pins another port', async () => {
+    const handler = createHandleUpload({
+      tmpDir: tmpDirPath,
+      allowedOrigins: ['http://localhost:4000'],
+    });
+    const { res } = createMockResponse();
+
+    await handler(
+      multipartUploadRequest({ origin: 'http://localhost:5173' }),
+      res as TidewaveResponse,
+      vi.fn(),
+    );
+
+    expect(res.statusCode).toBe(403);
+  });
+
+  it('rejects uploads when the allowed origin configuration is invalid', async () => {
+    const handler = createHandleUpload({
+      tmpDir: tmpDirPath,
+      allowedOrigins: ['invalid-origin'],
+    });
+    const { res } = createMockResponse();
+
+    await handler(
+      multipartUploadRequest({ origin: 'http://app.example.test' }),
+      res as TidewaveResponse,
+      vi.fn(),
+    );
+
+    expect(res.statusCode).toBe(403);
+  });
+
+  it('rejects uploads when no allowed origins are configured and an origin is present', async () => {
+    const handler = createHandleUpload({ tmpDir: tmpDirPath });
+    const { res } = createMockResponse();
+
+    await handler(
+      multipartUploadRequest({ origin: 'http://app.example.test' }),
+      res as TidewaveResponse,
+      vi.fn(),
+    );
+
+    expect(res.statusCode).toBe(403);
   });
 });

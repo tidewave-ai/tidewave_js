@@ -3,14 +3,13 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import type { TidewaveConfig } from '../../core';
 import type { TidewaveHandler, TidewaveNext, TidewaveRequest, TidewaveResponse } from '../types';
 import { magicByteType } from '../magic-bytes';
+import { checkOrigin } from '../security';
 
 const MAX_UPLOAD_SIZE = 200_000_000;
 const ALLOWED_UPLOAD_CONTENT_TYPES = ['image/png', 'image/jpeg', 'video/webm'] as const;
 const ALLOWED_UPLOAD_TYPES = ['screenshot', 'recording'] as const;
 const ALLOWED_UPLOAD_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webm'] as const;
 const INVALID_UPLOAD = 'Bad Request: missing or invalid file parameter';
-const INVALID_UPLOAD_ORIGIN =
-  "For security reasons, this page only allows connections from the application's own origin.";
 
 class InvalidUploadError extends Error {}
 
@@ -36,7 +35,7 @@ export function createHandleUpload(config: TidewaveConfig): TidewaveHandler {
         return;
       }
 
-      if (!requireSameOrigin(req, res, config)) return;
+      if (!checkOrigin(req, res, config)) return;
       if (uploadTooLarge(req)) {
         badRequest(res);
         return;
@@ -86,58 +85,6 @@ export function createHandleUpload(config: TidewaveConfig): TidewaveHandler {
       next(err);
     }
   };
-}
-
-function requireSameOrigin(
-  req: TidewaveRequest,
-  res: TidewaveResponse,
-  config: TidewaveConfig,
-): boolean {
-  const origin = firstHeaderValue(req.headers.origin);
-  if (!origin) return true;
-
-  if (allowedOriginHosts(config).includes(originHost(origin))) return true;
-
-  console.warn(INVALID_UPLOAD_ORIGIN);
-  res.statusCode = 403;
-  res.end(INVALID_UPLOAD_ORIGIN);
-  return false;
-}
-
-function originHost(origin: string): string {
-  try {
-    return new URL(origin).hostname.toLowerCase();
-  } catch {
-    return '';
-  }
-}
-
-function allowedOriginHosts(config: TidewaveConfig): string[] {
-  // Do not derive this from the request Host header. Host is client-controlled,
-  // while configured origin hosts avoid accepting DNS rebinding requests.
-  return (config.allowedOrigins || []).map(originOrHostToHost).filter(host => host.length > 0);
-}
-
-function originOrHostToHost(originOrHost: string): string {
-  if (originOrHost.startsWith('//')) {
-    return originHost(`http:${originOrHost}`);
-  }
-
-  if (/^[A-Za-z][A-Za-z0-9+.-]*:\/\//.test(originOrHost)) {
-    return originHost(originOrHost);
-  }
-
-  if (originOrHost.startsWith('[')) {
-    const end = originOrHost.indexOf(']');
-    return end === -1 ? originOrHost.toLowerCase() : originOrHost.slice(1, end).toLowerCase();
-  }
-
-  try {
-    const parsed = new URL(`http://${originOrHost}`);
-    return parsed.hostname.toLowerCase();
-  } catch {
-    return originOrHost.toLowerCase();
-  }
 }
 
 function uploadTooLarge(req: TidewaveRequest): boolean {

@@ -142,6 +142,8 @@ export function createExtractError(
 }
 
 export interface TidewaveConfig {
+  port?: number;
+  host?: string;
   clientUrl?: string;
   allowRemoteAccess?: boolean;
   allowedOrigins?: string[];
