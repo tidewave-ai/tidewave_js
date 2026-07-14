@@ -108,11 +108,19 @@ features.
 
 Vite's `tidewave` accepts the configuration options below:
 
-- `allow_remote_access:` Tidewave only allows requests from localhost by
-  default, even if your server listens on other interfaces, for security
-  purposes. Read
+- `allowRemoteAccess`: Tidewave only allows requests from localhost by default,
+  even if your server listens on other interfaces, for security purposes. Read
   [our security guidelines for more information and when to allow remote access](https://hexdocs.pm/tidewave/security.html)
   (if you know what you are doing)
+- `allowedOrigins`: a list of values matched against the `Origin` header to
+  prevent cross origin and DNS rebinding attacks. Each value must be a string of
+  shape `[scheme:]//host[:port]`, where both scheme and port are optional. The
+  host may also start with `*`. Example: `["//localhost:8000", "//*.test"]`. By
+  default, Tidewave allows Vite's configured server host and port, using
+  `localhost` when Vite uses its implicit host
+- `tmpDir`: temporary directory Tidewave uses for screenshots and recordings.
+  Defaults to `tmp`, storing files under `tmp/tidewave/screenshots` and
+  `tmp/tidewave/recordings`
 - `team`: enable Tidewave Web for teams
 
 ## Available tools

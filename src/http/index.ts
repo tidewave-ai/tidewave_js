@@ -2,6 +2,7 @@ import { checkRemoteIp } from './security';
 import { handleMcp } from './handlers/mcp';
 import { createHandleHtml } from './handlers/html';
 import { createHandleConfig, type LocalPortGetter } from './handlers/config';
+import { createHandleUpload } from './handlers/upload';
 import bodyParser from 'body-parser';
 import type { TidewaveConfig } from '../core';
 import type {
@@ -30,6 +31,7 @@ export function configureServer(
   server.use(`${ENDPOINT}`, securityChecker);
   server.use(`${ENDPOINT}/`, createHandleHtml(config));
   server.use(`${ENDPOINT}/config`, createHandleConfig(config, options.getLocalPort));
+  server.use(`${ENDPOINT}/upload`, createHandleUpload(config));
   server.use(`${ENDPOINT}/mcp`, bodyParser.json());
   server.use(`${ENDPOINT}/mcp`, handleMcp);
 
