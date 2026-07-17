@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { TidewaveRequest, TidewaveResponse } from '../../src/http/types';
 import { handleMcp } from '../../src/http/handlers/mcp';
 import { createHandleConfig } from '../../src/http/handlers/config';
-import { createHandleHtml } from '../../src/http/handlers/html';
+import { createHandleAppHtml, createHandleHtml } from '../../src/http/handlers/html';
 
 // Mock request/response helpers
 const createMockRequest = (headers: Record<string, string> = {}): Partial<TidewaveRequest> => ({
@@ -71,6 +71,25 @@ describe('HTTP Utilities', () => {
       expect(res.statusCode).toBe(200);
       expect(mockSetHeader).toHaveBeenCalledWith('Content-Type', 'text/html');
       expect(mockEnd).toHaveBeenCalledWith(expect.stringContaining('<html>'));
+      expect(mockEnd).toHaveBeenCalledWith(expect.stringContaining('/tc/tc.js'));
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    it('should serve the control app with a content security policy', async () => {
+      const req = { ...createMockRequest(), url: '/tidewave/app' };
+      const { res, mockEnd, mockSetHeader } = createMockResponse();
+      const next = vi.fn();
+
+      const handler = createHandleAppHtml({});
+      await handler(req as TidewaveRequest, res as TidewaveResponse, next);
+
+      expect(res.statusCode).toBe(200);
+      expect(mockSetHeader).toHaveBeenCalledWith('Content-Type', 'text/html');
+      expect(mockSetHeader).toHaveBeenCalledWith(
+        'Content-Security-Policy',
+        "base-uri 'self'; frame-ancestors 'self';",
+      );
+      expect(mockEnd).toHaveBeenCalledWith(expect.stringContaining('/tc/control.js'));
       expect(next).not.toHaveBeenCalled();
     });
   });
