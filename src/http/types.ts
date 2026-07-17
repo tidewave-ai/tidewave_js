@@ -13,5 +13,6 @@ export type TidewaveHandler = (
 ) => Promise<void>;
 
 export interface TidewaveMiddlewareServer {
+  use(handler: unknown): void;
   use(route: string, handler: unknown): void;
 }

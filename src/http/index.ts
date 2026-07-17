@@ -3,6 +3,7 @@ import { handleMcp } from './handlers/mcp';
 import { createHandleAppHtml, createHandleHtml } from './handlers/html';
 import { createHandleConfig, type LocalPortGetter } from './handlers/config';
 import { createHandleUpload } from './handlers/upload';
+import { createHandleResponseHeaders } from './headers';
 import bodyParser from 'body-parser';
 import type { TidewaveConfig } from '../core';
 import type {
@@ -28,6 +29,7 @@ export function configureServer(
 ): TidewaveMiddlewareServer {
   const securityChecker = checkSecurity(config);
 
+  server.use(createHandleResponseHeaders(config, options.getLocalPort));
   server.use(`${ENDPOINT}`, securityChecker);
   server.use(`${ENDPOINT}/`, createHandleHtml(config));
   server.use(`${ENDPOINT}/app`, createHandleAppHtml(config));

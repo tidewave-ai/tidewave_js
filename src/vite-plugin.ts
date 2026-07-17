@@ -10,6 +10,7 @@ const DEFAULT_CONFIG: TidewaveConfig = {
   port: 5173,
   host: 'localhost',
   allowRemoteAccess: false,
+  toolbar: true,
 } as const;
 
 export default function tidewave(
@@ -17,6 +18,7 @@ export default function tidewave(
 ): Plugin {
   return {
     name: 'vite-plugin-tidewave',
+    apply: 'serve',
     configureServer: server => tidewaveServer(server, config),
   };
 }
@@ -50,11 +52,14 @@ async function tidewaveServer(
   // Set framework and projectName upfront
   config.framework = 'vite';
   config.projectName = config.projectName || (await getProjectName('vite_app'));
+  config.toolbar = config.toolbar ?? true;
+
+  const getLocalPort = (): number | undefined => {
+    const address = server.httpServer?.address();
+    return typeof address === 'object' && address !== null ? address.port : undefined;
+  };
 
   configureServer(server.middlewares, config, {
-    getLocalPort: () => {
-      const address = server.httpServer?.address();
-      return typeof address === 'object' && address !== null ? address.port : undefined;
-    },
+    getLocalPort,
   });
 }
