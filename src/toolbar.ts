@@ -8,9 +8,6 @@ import {
 interface ToolbarPayload {
   tidewave: TidewaveConfigPayload;
   root: string;
-  framework: {
-    app_paths: Record<string, string>;
-  };
 }
 
 export function injectToolbarHtml(
@@ -45,9 +42,6 @@ function toolbarPayload(config: TidewaveConfig, getLocalPort?: LocalPortGetter):
   return {
     tidewave: tidewaveConfig(config, getLocalPort),
     root: process.cwd(),
-    framework: {
-      app_paths: {},
-    },
   };
 }
 
