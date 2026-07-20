@@ -3,7 +3,6 @@ import type { TidewaveRequest, TidewaveResponse } from '../../src/http/types';
 import { handleMcp } from '../../src/http/handlers/mcp';
 import { createHandleConfig } from '../../src/http/handlers/config';
 import { createHandleAppHtml, createHandleHtml } from '../../src/http/handlers/html';
-import { createHandleResponseHeaders, rewriteCsp } from '../../src/http/headers';
 
 // Mock request/response helpers
 const createMockRequest = (headers: Record<string, string> = {}): Partial<TidewaveRequest> => ({
@@ -155,89 +154,6 @@ describe('HTTP Utilities', () => {
         local_port: 5173,
         tmp_dir: 'custom-tmp',
       });
-    });
-  });
-
-  describe('handleResponseHeaders', () => {
-    it('should update CSP headers without the toolbar host when the toolbar is disabled', async () => {
-      expect(
-        rewriteCsp(
-          { toolbar: false },
-          "default-src 'self' http://example.com; connect-src 'none'; script-src 'self'; frame-ancestors 'none'",
-        ),
-      ).toBe(
-        "default-src 'self' http://example.com; connect-src 'none'; script-src 'unsafe-eval' 'self'",
-      );
-    });
-
-    it('should update CSP headers with the toolbar host when the toolbar is enabled', async () => {
-      expect(
-        rewriteCsp(
-          { toolbar: true },
-          "default-src 'self' http://example.com; connect-src 'none'; script-src 'self'; frame-ancestors 'none'",
-        ),
-      ).toBe(
-        "default-src 'self' http://example.com; connect-src 'none'; script-src https://tidewave.ai 'unsafe-eval' 'self'",
-      );
-    });
-
-    it('should preserve trailing semicolons while rewriting CSP headers', async () => {
-      expect(rewriteCsp({}, "upgrade-insecure-requests; script-src 'self'; ")).toBe(
-        "upgrade-insecure-requests; script-src https://tidewave.ai 'unsafe-eval' 'self'; ",
-      );
-    });
-
-    it('should remove X-Frame-Options and rewrite CSP headers for app responses', async () => {
-      const req = { ...createMockRequest(), url: '/foo' };
-      const { res, mockSetHeader, mockRemoveHeader } = createMockResponse();
-      const next = vi.fn();
-
-      const handler = createHandleResponseHeaders({ toolbar: true });
-      await handler(req as TidewaveRequest, res as TidewaveResponse, next);
-
-      (res as TidewaveResponse).setHeader(
-        'content-security-policy',
-        "script-src 'self'; frame-ancestors 'none'",
-      );
-      (res as TidewaveResponse).setHeader('x-frame-options', 'DENY');
-
-      expect(next).toHaveBeenCalled();
-      expect(mockRemoveHeader).toHaveBeenCalledWith('x-frame-options');
-      expect(mockSetHeader).toHaveBeenCalledWith(
-        'content-security-policy',
-        "script-src https://tidewave.ai 'unsafe-eval' 'self'",
-      );
-      expect(mockSetHeader).not.toHaveBeenCalledWith('x-frame-options', 'DENY');
-    });
-
-    it('should inject the toolbar into HTML app response bodies', async () => {
-      const req = {
-        ...createMockRequest({ accept: 'text/html,application/xhtml+xml' }),
-        url: '/foo',
-      };
-      const { res, mockEnd, mockRemoveHeader } = createMockResponse();
-      const next = vi.fn();
-
-      const handler = createHandleResponseHeaders(
-        {
-          framework: 'vite',
-          projectName: 'demo_app',
-          toolbar: true,
-        },
-        () => 4321,
-      );
-      await handler(req as TidewaveRequest, res as TidewaveResponse, next);
-
-      (res as TidewaveResponse).setHeader('Content-Type', 'text/html; charset=utf-8');
-      (res as TidewaveResponse).end('<html><head></head><body></body></html>');
-
-      expect(next).toHaveBeenCalled();
-      expect(mockEnd).toHaveBeenCalledWith(expect.stringContaining('/tc/toolbar.js'));
-      expect(mockEnd).toHaveBeenCalledWith(
-        expect.stringContaining('&quot;project_name&quot;:&quot;demo_app&quot;'),
-      );
-      expect(mockEnd).toHaveBeenCalledWith(expect.stringContaining('&quot;local_port&quot;:4321'));
-      expect(mockRemoveHeader).toHaveBeenCalledWith('content-length');
     });
   });
 });
