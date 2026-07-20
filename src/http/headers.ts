@@ -69,10 +69,19 @@ function wrapHtmlResponseBody(
 
   function transformChunk(chunk: unknown, args: unknown[]): unknown {
     if (state === 'unchecked') {
+      if (res.headersSent) {
+        state = 'skip';
+        return chunk;
+      }
+
       state = htmlResponse(res) ? 'searching' : 'skip';
     }
 
     if (state !== 'searching') return chunk;
+    if (res.headersSent && !removedContentLength) {
+      state = 'skip';
+      return chunk;
+    }
 
     const html = chunkToString(chunk, args);
     if (toolbarAlreadyInjected(html)) {
@@ -115,6 +124,8 @@ function chunkEncoding(args: unknown[]): BufferEncoding {
 }
 
 function htmlResponse(res: TidewaveResponse, headers?: unknown): boolean {
+  if (encodedResponse(res, headers)) return false;
+
   const contentType = headerValue(headers, 'content-type');
   if (contentType !== undefined) {
     return htmlContentType(contentType);
@@ -131,6 +142,27 @@ function htmlContentType(contentType: HeaderValue | undefined): boolean {
   return String(contentType || '')
     .toLowerCase()
     .startsWith('text/html');
+}
+
+function encodedResponse(res: TidewaveResponse, headers?: unknown): boolean {
+  const contentEncoding = headerValue(headers, 'content-encoding');
+  if (contentEncoding !== undefined) {
+    return encodedContent(contentEncoding);
+  }
+
+  return encodedContent(res.getHeader('content-encoding'));
+}
+
+function encodedContent(contentEncoding: HeaderValue | undefined): boolean {
+  if (Array.isArray(contentEncoding)) {
+    return contentEncoding.some(encodedContent);
+  }
+
+  const encoding = String(contentEncoding || '')
+    .trim()
+    .toLowerCase();
+
+  return encoding !== '' && encoding !== 'identity';
 }
 
 function shouldInspectHtml(req: TidewaveRequest, config: TidewaveConfig): boolean {

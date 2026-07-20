@@ -243,6 +243,105 @@ describe('HTTP Utilities', () => {
       expect(String(mockWrite.mock.calls[0]![0])).toContain('/tc/toolbar.js');
     });
 
+    it('should keep injecting after writeHead sends headers prepared by the wrapper', async () => {
+      const req = {
+        ...createMockRequest({ accept: 'text/html' }),
+        url: '/',
+      };
+      const { res, mockWrite, mockWriteHead } = createMockResponse();
+      const next = vi.fn();
+      const headers = {
+        'Content-Type': 'text/html',
+        'Content-Length': '39',
+      };
+
+      const handler = createHandleResponseHeaders({});
+      const response = res as TidewaveResponse;
+      await handler(req as TidewaveRequest, response, next);
+
+      response.writeHead(200, headers);
+      (response as any).headersSent = true;
+      response.write('<html><head></head>');
+
+      expect(headers).not.toHaveProperty('Content-Length');
+      expect(mockWriteHead).toHaveBeenCalledWith(200, headers);
+      expect(String(mockWrite.mock.calls[0]![0])).toContain('/tc/toolbar.js');
+    });
+
+    it('should skip injection when headers were already sent before body inspection', async () => {
+      const req = {
+        ...createMockRequest({ accept: 'text/html' }),
+        url: '/',
+      };
+      const { res, mockEnd, mockRemoveHeader } = createMockResponse();
+      const next = vi.fn();
+      const html = '<html><head></head><body></body></html>';
+
+      const handler = createHandleResponseHeaders({});
+      const response = res as TidewaveResponse;
+      await handler(req as TidewaveRequest, response, next);
+
+      response.setHeader('Content-Type', 'text/html');
+      response.setHeader('Content-Length', '39');
+      (response as any).headersSent = true;
+      response.end(html);
+
+      expect(mockRemoveHeader).not.toHaveBeenCalled();
+      expect(mockEnd).toHaveBeenCalledWith(html);
+      expect(String(mockEnd.mock.calls[0]![0])).not.toContain('/tc/toolbar.js');
+    });
+
+    it('should skip injection for encoded HTML responses', async () => {
+      const req = {
+        ...createMockRequest({ accept: 'text/html' }),
+        url: '/',
+      };
+      const { res, mockEnd, mockRemoveHeader } = createMockResponse();
+      const next = vi.fn();
+      const html = '<html><head></head><body></body></html>';
+
+      const handler = createHandleResponseHeaders({});
+      const response = res as TidewaveResponse;
+      await handler(req as TidewaveRequest, response, next);
+
+      response.setHeader('Content-Type', 'text/html');
+      response.setHeader('Content-Encoding', 'gzip');
+      response.setHeader('Content-Length', '39');
+      response.end(html);
+
+      expect(mockRemoveHeader).not.toHaveBeenCalled();
+      expect(mockEnd).toHaveBeenCalledWith(html);
+      expect(String(mockEnd.mock.calls[0]![0])).not.toContain('/tc/toolbar.js');
+    });
+
+    it('should skip injection for encoded HTML headers passed through writeHead', async () => {
+      const req = {
+        ...createMockRequest({ accept: 'text/html' }),
+        url: '/',
+      };
+      const { res, mockEnd, mockRemoveHeader, mockWriteHead } = createMockResponse();
+      const next = vi.fn();
+      const headers = {
+        'Content-Type': 'text/html',
+        'Content-Encoding': 'gzip',
+        'Content-Length': '39',
+      };
+      const html = '<html><head></head><body></body></html>';
+
+      const handler = createHandleResponseHeaders({});
+      const response = res as TidewaveResponse;
+      await handler(req as TidewaveRequest, response, next);
+
+      response.writeHead(200, headers);
+      response.end(html);
+
+      expect(headers).toHaveProperty('Content-Length');
+      expect(mockRemoveHeader).not.toHaveBeenCalled();
+      expect(mockWriteHead).toHaveBeenCalledWith(200, headers);
+      expect(mockEnd).toHaveBeenCalledWith(html);
+      expect(String(mockEnd.mock.calls[0]![0])).not.toContain('/tc/toolbar.js');
+    });
+
     it('should pass non-HTML writes through without injecting', async () => {
       const req = {
         ...createMockRequest({ accept: 'text/html' }),
