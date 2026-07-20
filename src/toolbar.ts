@@ -18,7 +18,7 @@ export function injectToolbarHtml(
   if (config.toolbar === false) return html;
   if (toolbarAlreadyInjected(html)) return html;
 
-  const closingHeadIndex = html.toLowerCase().lastIndexOf('</head>');
+  const closingHeadIndex = html.toLowerCase().indexOf('</head>');
   if (closingHeadIndex === -1) return html;
 
   return `${html.slice(0, closingHeadIndex)}${toolbarHtml(config, getLocalPort)}${html.slice(closingHeadIndex)}`;
