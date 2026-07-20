@@ -198,6 +198,93 @@ describe('HTTP Utilities', () => {
       );
     });
 
+    it('should inject the toolbar when the closing head is split across writes', async () => {
+      const req = {
+        ...createMockRequest({ accept: 'text/html' }),
+        url: '/',
+      };
+      const { res, mockEnd, mockWrite } = createMockResponse();
+      const next = vi.fn();
+
+      const handler = createHandleResponseHeaders(
+        { clientUrl: 'http://localhost:4000' },
+        () => 5173,
+      );
+      const response = res as TidewaveResponse;
+      await handler(req as TidewaveRequest, response, next);
+
+      response.setHeader('Content-Type', 'text/html; charset=utf-8');
+      response.write('<html><head><title>App</title></he');
+      response.write('ad><body>Hello');
+      response.end('</body></html>');
+
+      const body = [
+        ...mockWrite.mock.calls.map(call => String(call[0])),
+        String(mockEnd.mock.calls[0]![0]),
+      ].join('');
+
+      expect(body).toContain('name="tidewave:config"');
+      expect(body).toContain('http://localhost:4000/tc/toolbar.js');
+      expect(body.indexOf('/tc/toolbar.js')).toBeLessThan(body.indexOf('</head>'));
+      expect(body).toContain('<body>Hello</body></html>');
+    });
+
+    it('should inject the toolbar when the closing head is completed by end', async () => {
+      const req = {
+        ...createMockRequest({ accept: 'text/html' }),
+        url: '/',
+      };
+      const { res, mockEnd, mockWrite } = createMockResponse();
+      const next = vi.fn();
+
+      const handler = createHandleResponseHeaders(
+        { clientUrl: 'http://localhost:4000' },
+        () => 5173,
+      );
+      const response = res as TidewaveResponse;
+      await handler(req as TidewaveRequest, response, next);
+
+      response.setHeader('Content-Type', 'text/html; charset=utf-8');
+      response.write('<html><head><title>App</title></he');
+      response.end('ad><body>Hello</body></html>');
+
+      const body = [
+        ...mockWrite.mock.calls.map(call => String(call[0])),
+        String(mockEnd.mock.calls[0]![0]),
+      ].join('');
+
+      expect(body).toContain('name="tidewave:config"');
+      expect(body).toContain('http://localhost:4000/tc/toolbar.js');
+      expect(body.indexOf('/tc/toolbar.js')).toBeLessThan(body.indexOf('</head>'));
+      expect(body).toContain('<body>Hello</body></html>');
+    });
+
+    it('should flush a buffered closing head prefix when the response ends', async () => {
+      const req = {
+        ...createMockRequest({ accept: 'text/html' }),
+        url: '/',
+      };
+      const { res, mockEnd, mockWrite } = createMockResponse();
+      const next = vi.fn();
+      const html = '<html><head></he';
+
+      const handler = createHandleResponseHeaders({});
+      const response = res as TidewaveResponse;
+      await handler(req as TidewaveRequest, response, next);
+
+      response.setHeader('Content-Type', 'text/html');
+      response.write(html);
+      response.end();
+
+      const body = [
+        ...mockWrite.mock.calls.map(call => String(call[0])),
+        String(mockEnd.mock.calls[0]![0]),
+      ].join('');
+
+      expect(body).toBe(html);
+      expect(body).not.toContain('/tc/toolbar.js');
+    });
+
     it('should still inject the toolbar into an HTML response completed with end', async () => {
       const req = {
         ...createMockRequest({ accept: 'text/html' }),
