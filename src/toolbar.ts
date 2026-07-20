@@ -30,7 +30,7 @@ function toolbarHtml(config: TidewaveConfig, getLocalPort?: LocalPortGetter): st
 
   return `
 <meta name="tidewave:config" content="${escapeHtmlAttribute(JSON.stringify(payload))}" />
-<script type="module" src="${escapeHtmlAttribute(`${clientUrl}/tc/toolbar.js`)}"></script>
+<script async type="module" src="${escapeHtmlAttribute(`${clientUrl}/tc/toolbar.js`)}"></script>
 `;
 }
 
