@@ -98,7 +98,7 @@ describe('HTTP Utilities', () => {
     });
 
     it('should serve the entrypoint page even when an entrypoint query parameter is given', async () => {
-      const req = { ...createMockRequest(), url: '/tidewave?entrypoint=foo' };
+      const req = { ...createMockRequest(), url: '/?entrypoint=foo' };
       const { res, mockEnd } = createMockResponse();
       const next = vi.fn();
 
@@ -112,7 +112,7 @@ describe('HTTP Utilities', () => {
     });
 
     it('should serve the control app with a content security policy', async () => {
-      const req = { ...createMockRequest(), url: '/tidewave/app' };
+      const req = { ...createMockRequest(), url: '/' };
       const { res, mockEnd, mockSetHeader } = createMockResponse();
       const next = vi.fn();
 

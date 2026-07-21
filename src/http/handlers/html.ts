@@ -2,14 +2,11 @@ import type { TidewaveConfig } from '../../core';
 import type { TidewaveHandler, TidewaveNext, TidewaveRequest, TidewaveResponse } from '../types';
 
 export function createHandleHtml(config: TidewaveConfig): TidewaveHandler {
-  return createHtmlHandler(config, 'tc.js', {
-    pathnames: ['', '/', '/tidewave'],
-  });
+  return createHtmlHandler(config, 'tc.js', {});
 }
 
 export function createHandleAppHtml(config: TidewaveConfig): TidewaveHandler {
   return createHtmlHandler(config, 'control.js', {
-    pathnames: ['', '/', '/app', '/tidewave/app'],
     headers: {
       'Content-Security-Policy': "base-uri 'self'; frame-ancestors 'self';",
     },
@@ -19,7 +16,7 @@ export function createHandleAppHtml(config: TidewaveConfig): TidewaveHandler {
 function createHtmlHandler(
   config: TidewaveConfig,
   script: 'tc.js' | 'control.js',
-  options: { headers?: Record<string, string>; pathnames: string[] },
+  options: { headers?: Record<string, string> },
 ): TidewaveHandler {
   return async function handleHtml(
     req: TidewaveRequest,
@@ -30,8 +27,8 @@ function createHtmlHandler(
     const url = req.url || '/';
     const pathname = url.split('?')[0] || '';
 
-    // Different connect-style middleware stacks may strip different URL prefixes.
-    if (!options.pathnames.includes(pathname)) {
+    // Vite strips the prefix passed to server.use, so we can always check /
+    if (pathname !== '/') {
       return next();
     }
 
