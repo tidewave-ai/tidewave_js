@@ -8,6 +8,8 @@ import {
 interface ToolbarPayload {
   tidewave: TidewaveConfigPayload;
   root: string;
+  wsl_distro: string | null;
+  framework: Record<string, string>;
 }
 
 export function injectToolbarHtml(
@@ -42,6 +44,8 @@ function toolbarPayload(config: TidewaveConfig, getLocalPort?: LocalPortGetter):
   return {
     tidewave: tidewaveConfig(config, getLocalPort),
     root: process.cwd(),
+    wsl_distro: process.env['WSL_DISTRO_NAME'] ?? null,
+    framework: {},
   };
 }
 
