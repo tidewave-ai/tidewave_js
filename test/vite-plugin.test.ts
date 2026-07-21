@@ -76,14 +76,20 @@ describe('Tidewave Vite Plugin', () => {
 
       const middlewareUse = (mockServer as any)._middlewareUse;
 
-      // Should register 6 middleware: security + html + config + upload + MCP body parser + MCP routes
-      expect(middlewareUse).toHaveBeenCalledTimes(6);
+      // Should register 8 middleware: response headers + security + HTML pages + config + upload + MCP body parser + MCP routes
+      expect(middlewareUse).toHaveBeenCalledTimes(8);
+
+      // Global response header middleware
+      expect(middlewareUse).toHaveBeenCalledWith(expect.any(Function));
 
       // Global security middleware
       expect(middlewareUse).toHaveBeenCalledWith('/tidewave', expect.any(Function));
 
       // HTML route
       expect(middlewareUse).toHaveBeenCalledWith('/tidewave/', expect.any(Function));
+
+      // Control app route
+      expect(middlewareUse).toHaveBeenCalledWith('/tidewave/app', expect.any(Function));
 
       // Config route
       expect(middlewareUse).toHaveBeenCalledWith('/tidewave/config', expect.any(Function));
@@ -108,7 +114,7 @@ describe('Tidewave Vite Plugin', () => {
 
       // Middleware should be registered (config is passed internally)
       const middlewareUse = (mockServer as any)._middlewareUse;
-      expect(middlewareUse).toHaveBeenCalledTimes(6);
+      expect(middlewareUse).toHaveBeenCalledTimes(8);
     });
 
     it('should use the actual Vite server port in config responses', async () => {
@@ -117,7 +123,7 @@ describe('Tidewave Vite Plugin', () => {
 
       await (plugin.configureServer as any)(mockServer);
 
-      const configHandler = (mockServer as any)._middlewareUse.mock.calls[2][1];
+      const configHandler = (mockServer as any)._middlewareUse.mock.calls[4][1];
       const req = {
         socket: { remoteAddress: '127.0.0.1' },
         headers: {
@@ -247,29 +253,36 @@ describe('Tidewave Vite Plugin', () => {
       const middlewareUse = (mockServer as any)._middlewareUse;
       const calls = middlewareUse.mock.calls;
 
-      // First call should be security middleware
-      expect(calls[0][0]).toBe('/tidewave');
-      expect(typeof calls[0][1]).toBe('function');
+      // First call should be response header middleware
+      expect(typeof calls[0][0]).toBe('function');
 
-      // Second call should be HTML endpoint (empty string = '/')
-      expect(calls[1][0]).toBe('/tidewave/');
+      // Second call should be security middleware
+      expect(calls[1][0]).toBe('/tidewave');
       expect(typeof calls[1][1]).toBe('function');
 
-      // Third call should be config endpoint
-      expect(calls[2][0]).toBe('/tidewave/config');
+      // Third call should be HTML endpoint (empty string = '/')
+      expect(calls[2][0]).toBe('/tidewave/');
       expect(typeof calls[2][1]).toBe('function');
 
-      // Fourth call should be upload endpoint
-      expect(calls[3][0]).toBe('/tidewave/upload');
+      // Fourth call should be control app endpoint
+      expect(calls[3][0]).toBe('/tidewave/app');
       expect(typeof calls[3][1]).toBe('function');
 
-      // Fifth call should parse JSON only for the MCP endpoint
-      expect(calls[4][0]).toBe('/tidewave/mcp');
+      // Fifth call should be config endpoint
+      expect(calls[4][0]).toBe('/tidewave/config');
       expect(typeof calls[4][1]).toBe('function');
 
-      // Sixth call should be MCP endpoint
-      expect(calls[5][0]).toBe('/tidewave/mcp');
+      // Sixth call should be upload endpoint
+      expect(calls[5][0]).toBe('/tidewave/upload');
       expect(typeof calls[5][1]).toBe('function');
+
+      // Seventh call should parse JSON only for the MCP endpoint
+      expect(calls[6][0]).toBe('/tidewave/mcp');
+      expect(typeof calls[6][1]).toBe('function');
+
+      // Eighth call should be MCP endpoint
+      expect(calls[7][0]).toBe('/tidewave/mcp');
+      expect(typeof calls[7][1]).toBe('function');
     });
   });
 });

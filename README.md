@@ -122,6 +122,8 @@ Vite's `tidewave` accepts the configuration options below:
   Defaults to `tmp`, storing files under `tmp/tidewave/screenshots` and
   `tmp/tidewave/recordings`
 - `team`: enable Tidewave Web for teams
+- `toolbar`: controls whether the Tidewave toolbar is injected into your HTML
+  pages. Defaults to `true`
 
 ## Available tools
 

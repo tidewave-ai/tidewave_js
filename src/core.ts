@@ -145,6 +145,7 @@ export interface TidewaveConfig {
   port?: number;
   host?: string;
   clientUrl?: string;
+  toolbar?: boolean;
   allowRemoteAccess?: boolean;
   allowedOrigins?: string[];
   projectName?: string;
