@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.8.0] - 2026-07-22
+
+* Add the Tidewave Toolbar
+* Align minor version across Tidewave packages
+* Drop Next.JS support
+
 ## [0.7.0] - 2026-06-14
 
 * Support namespaces/files in `get_docs` tool and make it return a list of exports
