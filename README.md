@@ -1,17 +1,26 @@
 # Tidewave
 
-Tidewave is the coding agent for full-stack web app development. Integrate
-Claude Code, OpenAI Codex, and other agents with your web app and web framework
-at every layer, from UI to database. [See our website](https://tidewave.ai) for
-more information.
-
-This project supports:
+Tidewave JS is an MCP server that provides runtime-level tools for developing JS
+apps using coding agents. This project supports:
 
 - TanStack Start with React
 - Vite with React/Vue (which includes Astro, VitePress, etc)
 
-If you are using React/Vue with Django, FastAPI, Flask, Phoenix, or Rails,
-[follow the steps here instead](http://hexdocs.pm/tidewave/frontend.html).
+Your agent will be able to use this MCP server to talk to your running app in
+development to:
+
+- execute code in the context of the running app (like an terminal session for
+  agents)
+- read the app's live logs
+- get source locations of modules and functions
+- read documentation pinned to the exact package versions your project depends
+  on
+
+This MCP server is an open-source component of [Tidewave](https://tidewave.ai).
+
+You can use this project as a standalone MCP server or integrated with the
+[Tidewave product](https://tidewave.ai) by following the installation
+instructions below.
 
 This project can also be used through the CLI or as
 [a standalone Model Context Protocol server](https://hexdocs.pm/tidewave/mcp.html).
