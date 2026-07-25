@@ -10,6 +10,7 @@ import { isExtractError, isResolveError } from '../core';
 import { name, version } from '../../package.json';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { serveMcp } from '../mcp';
+import { handleInstall } from './install';
 
 function chdir(path: string): void {
   try {
@@ -77,6 +78,13 @@ const {
   docs: { cli: docsCli },
   source: { cli: sourceCli },
 } = tools;
+
+program
+  .command('install')
+  .description('Install Tidewave in a Vite or TanStack Start project')
+  .option('--prefix <path>', 'Specify the directory containing package.json')
+  .option('--dry-run', 'Preview changes without modifying files')
+  .action(handleInstall);
 
 program
   .command('mcp')

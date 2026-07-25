@@ -18,9 +18,30 @@ This project can also be used through the CLI or as
 
 ## Installation
 
-### TanStack Start
+If you are using Vite (with React/Vue) or TanStack Start with React, install
+Tidewave with:
 
-If you are using TanStack Start with React, install Tidewave with:
+```sh
+$ npx tidewave install
+# or
+$ yarn dlx tidewave install
+# or
+$ pnpm dlx tidewave install
+# or
+$ bunx tidewave install
+```
+
+And you are almost there! Now make sure to add the
+[Tidewave MCP](https://hexdocs.pm/tidewave/installation.html) to your coding
+agent and you are good to go!
+
+In case the command above does not work, you can toggle the manual installation
+instructions below.
+
+<details>
+<summary>Show manual installation steps for TanStack Start</summary><br />
+
+**1. Add Tidewave as a dependency**
 
 ```sh
 $ npm install -D tidewave
@@ -32,7 +53,9 @@ $ pnpm add --save-dev tidewave
 $ bun add --dev tidewave
 ```
 
-Then configure your `vite.config.js` (also works for `.ts` and `.mjs`):
+**2. Configure Vite**
+
+Configure your `vite.config.js` (also works for `.ts` and `.mjs`):
 
 ```javascript
 import { defineConfig } from 'vite';
@@ -43,8 +66,9 @@ export default defineConfig({
 });
 ```
 
-And finally create or modify `src/start.ts` file to import Tidewave in
-development:
+**3. Configure TanStack Start**
+
+Finally, create or modify `src/start.ts` to import Tidewave in development:
 
 ```ts
 import { createStart } from '@tanstack/react-start';
@@ -59,17 +83,12 @@ export const startInstance = createStart(() => {
 });
 ```
 
-Now make sure
-[Tidewave is installed](https://hexdocs.pm/tidewave/installation.html) and you
-are ready to connect Tidewave to your app.
+</details>
 
-### Vite
+<details>
+<summary>Show manual installation steps for Vite</summary><br />
 
-If you are building a frontend application with React or Vue, using a backend as
-a service, such as Supabase, or a non-officially supported web framework, we
-recommend using our Vite integration.
-
-Install it with:
+**1. Add Tidewave as a dependency**
 
 ```sh
 $ npm install -D tidewave
@@ -81,7 +100,9 @@ $ pnpm add --save-dev tidewave
 $ bun add --dev tidewave
 ```
 
-Then configure your `vite.config.js` (also works for `.ts` and `.mjs`):
+**2. Configure Vite**
+
+Configure your `vite.config.js` (also works for `.ts` and `.mjs`):
 
 ```javascript
 import { defineConfig } from 'vite';
@@ -92,21 +113,11 @@ export default defineConfig({
 });
 ```
 
-Now make sure
-[Tidewave is installed](https://hexdocs.pm/tidewave/installation.html) and you
-are ready to connect Tidewave to your app.
-
-Our Vite integration for React and Vue allows Tidewave Web to perform changes on
-the front-end, and the agent will be able to modify your backend code as usual,
-but some functionality (such as accessing logs, doing database calls, etc) won't
-be available. You can also use our
-[Figma Dev Mode](https://hexdocs.pm/tidewave/figma.html) and
-[Supabase](https://hexdocs.pm/tidewave/supabase.html) integration for additional
-features.
+</details>
 
 ### Configuration
 
-Vite's `tidewave` accepts the configuration options below:
+Vite's `tidewave` plugin accepts the configuration options below:
 
 - `allowRemoteAccess`: Tidewave only allows requests from localhost by default,
   even if your server listens on other interfaces, for security purposes. Read
