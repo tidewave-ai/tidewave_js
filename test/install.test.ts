@@ -110,6 +110,54 @@ export default defineConfig({ plugins: [tidewavePlugin()] });
     expect(read('vite.config.mts')).toBe(config);
   });
 
+  test('configures a shorthand plugins option without modifying its declaration', async () => {
+    write('package.json', JSON.stringify({ devDependencies: { vite: '^7.0.0' } }));
+    const config = `import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+const plugins = [react()];
+
+export default defineConfig({
+  plugins,
+});
+`;
+    write('vite.config.ts', config);
+
+    await handleInstall({ prefix: projectDir, skipDeps: true });
+
+    expect(read('vite.config.ts')).toBe(`import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tidewave from 'tidewave/vite-plugin';
+
+const plugins = [react()];
+
+export default defineConfig({
+  plugins: [tidewave(), ...plugins],
+});
+`);
+  });
+
+  test('does not override plugins provided by a spread property', async () => {
+    write('package.json', JSON.stringify({ devDependencies: { vite: '^7.0.0' } }));
+    const config = `import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+const baseConfig = {
+  plugins: [react()],
+};
+
+export default defineConfig({
+  ...baseConfig,
+});
+`;
+    write('vite.config.ts', config);
+
+    await expect(handleInstall({ prefix: projectDir, skipDeps: true })).rejects.toThrow(
+      'Add tidewave() to the plugins array manually.',
+    );
+    expect(read('vite.config.ts')).toBe(config);
+  });
+
   test('does not modify files during a dry run', async () => {
     write('package.json', JSON.stringify({ devDependencies: { vite: '^7.0.0' } }));
     const config = `import { defineConfig } from 'vite';

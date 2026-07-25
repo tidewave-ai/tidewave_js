@@ -281,13 +281,22 @@ function addPluginToConfig(
   pluginName: string,
 ): string {
   const plugins = config.properties.find(
-    property => ts.isPropertyAssignment(property) && property.name.getText() === 'plugins',
+    property =>
+      (ts.isPropertyAssignment(property) || ts.isShorthandPropertyAssignment(property)) &&
+      property.name.getText() === 'plugins',
   );
 
   if (plugins) {
+    if (ts.isShorthandPropertyAssignment(plugins)) {
+      return `${source.slice(0, plugins.getStart())}plugins: [${pluginName}(), ...plugins]${source.slice(
+        plugins.end,
+      )}`;
+    }
+
     if (!ts.isPropertyAssignment(plugins) || !ts.isArrayLiteralExpression(plugins.initializer)) {
       throw new Error(
-        'The Vite plugins option must be an array to install Tidewave automatically.',
+        'The Vite plugins option must be an inline array to install Tidewave automatically. ' +
+          `Add ${pluginName}() to the existing plugins array manually.`,
       );
     }
 
@@ -300,6 +309,13 @@ function addPluginToConfig(
     return `${source.slice(0, firstElement.getStart())}${pluginName}(), ${source.slice(
       firstElement.getStart(),
     )}`;
+  }
+
+  if (config.properties.some(ts.isSpreadAssignment)) {
+    throw new Error(
+      'Could not safely add Tidewave to a Vite config with spread properties. ' +
+        `Add ${pluginName}() to the plugins array manually.`,
+    );
   }
 
   const closingBrace = config.end - 1;
