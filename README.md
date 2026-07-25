@@ -38,6 +38,8 @@ agent and you are good to go!
 In case the command above does not work, you can toggle the manual installation
 instructions below.
 
+### Manual installation
+
 <details>
 <summary>Show manual installation steps for TanStack Start</summary><br />
 
@@ -115,7 +117,7 @@ export default defineConfig({
 
 </details>
 
-### Configuration
+## Configuration
 
 Vite's `tidewave` plugin accepts the configuration options below:
 
