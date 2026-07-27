@@ -52,7 +52,6 @@ We also have specific instructions for:
 - [Neovim](https://tidewave.hexdocs.pm/mcp_neovim.html)
 - [OpenCode](https://tidewave.hexdocs.pm/mcp_opencode.html)
 - [VS Code](https://tidewave.hexdocs.pm/mcp_vscode.html)
-- [Zed](https://tidewave.hexdocs.pm/mcp_zed.html)
 - [Others](https://tidewave.hexdocs.pm/mcp.html)
 
 In case the command above does not work, you can toggle the manual installation
