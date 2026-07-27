@@ -62,7 +62,7 @@ export async function handleInstall(options: InstallOptions): Promise<void> {
 
   console.log(chalk.green('\n✅ Tidewave setup complete!\n'));
   console.log('Next step: add Tidewave as a MCP server to your favorite coding agent');
-  console.log('More info: https://hexdocs.pm/tidewave/installation.html');
+  console.log('More info: https://tidewave.hexdocs.pm/mcp.html');
 }
 
 function readPackageJson(dir: string): Record<string, unknown> {

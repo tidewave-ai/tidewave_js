@@ -23,7 +23,7 @@ You can use this project as a standalone MCP server or integrated with the
 instructions below.
 
 This project can also be used through the CLI or as
-[a standalone Model Context Protocol server](https://hexdocs.pm/tidewave/mcp.html).
+[a standalone Model Context Protocol server](https://tidewave.hexdocs.pm/mcp.html).
 
 ## Installation
 
@@ -40,9 +40,20 @@ $ pnpm dlx tidewave install
 $ bunx tidewave install
 ```
 
-And you are almost there! Now make sure to add the
-[Tidewave MCP](https://hexdocs.pm/tidewave/installation.html) to your coding
-agent and you are good to go!
+And you are almost there! Now make sure to add the Tidewave MCP server to your
+editor or MCP client configuration as the type "http" (streamable), pointing to
+the `/tidewave/mcp` path and port your web application is running at.
+
+We also have specific instructions for:
+
+- [Claude Code](https://tidewave.hexdocs.pm/mcp_claude_code.html)
+- [Codex](https://tidewave.hexdocs.pm/mcp_codex.html)
+- [Cursor](https://tidewave.hexdocs.pm/mcp_cursor.html)
+- [Neovim](https://tidewave.hexdocs.pm/mcp_neovim.html)
+- [OpenCode](https://tidewave.hexdocs.pm/mcp_opencode.html)
+- [VS Code](https://tidewave.hexdocs.pm/mcp_vscode.html)
+- [Zed](https://tidewave.hexdocs.pm/mcp_zed.html)
+- [Others](https://tidewave.hexdocs.pm/mcp.html)
 
 In case the command above does not work, you can toggle the manual installation
 instructions below.
@@ -132,7 +143,7 @@ Vite's `tidewave` plugin accepts the configuration options below:
 
 - `allowRemoteAccess`: Tidewave only allows requests from localhost by default,
   even if your server listens on other interfaces, for security purposes. Read
-  [our security guidelines for more information and when to allow remote access](https://hexdocs.pm/tidewave/security.html)
+  [our security guidelines for more information and when to allow remote access](https://tidewave.hexdocs.pm/security.html)
   (if you know what you are doing)
 - `allowedOrigins`: a list of values matched against the `Origin` header to
   prevent cross origin and DNS rebinding attacks. Each value must be a string of
