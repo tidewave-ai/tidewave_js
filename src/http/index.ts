@@ -1,11 +1,13 @@
 import { checkRemoteIp } from './security';
-import { handleMcp } from './handlers/mcp';
-import { createHandleAppHtml, createHandleHtml } from './handlers/html';
-import { createHandleConfig, type LocalPortGetter } from './handlers/config';
+import { createHandleMcp } from './handlers/mcp';
+import { createHandleControlHtml, createHandleHtml } from './handlers/html';
+import { createHandleConfig } from './handlers/config';
 import { createHandleUpload } from './handlers/upload';
 import { createHandleResponseHeaders } from './headers';
 import bodyParser from 'body-parser';
 import type { TidewaveConfig } from '../core';
+import type { LocalRequestInfoGetter } from '../config';
+import { ENDPOINT } from './constants';
 import type {
   TidewaveMiddlewareServer,
   TidewaveNext,
@@ -13,13 +15,12 @@ import type {
   TidewaveResponse,
 } from './types';
 
-export const ENDPOINT = '/tidewave' as const;
 const DEFAULT_OPTIONS: TidewaveConfig = {
   allowRemoteAccess: false,
 } as const;
 
 export interface HandlerOptions {
-  getLocalPort?: LocalPortGetter;
+  getLocalRequestInfo?: LocalRequestInfoGetter<TidewaveRequest>;
 }
 
 export function configureServer(
@@ -29,14 +30,14 @@ export function configureServer(
 ): TidewaveMiddlewareServer {
   const securityChecker = checkSecurity(config);
 
-  server.use(createHandleResponseHeaders(config, options.getLocalPort));
+  server.use(createHandleResponseHeaders(config, options.getLocalRequestInfo));
   server.use(`${ENDPOINT}`, securityChecker);
   server.use(`${ENDPOINT}/`, createHandleHtml(config));
-  server.use(`${ENDPOINT}/app`, createHandleAppHtml(config));
-  server.use(`${ENDPOINT}/config`, createHandleConfig(config, options.getLocalPort));
+  server.use(`${ENDPOINT}/connect`, createHandleControlHtml(config, options.getLocalRequestInfo));
+  server.use(`${ENDPOINT}/config`, createHandleConfig(config, options.getLocalRequestInfo));
   server.use(`${ENDPOINT}/upload`, createHandleUpload(config));
   server.use(`${ENDPOINT}/mcp`, bodyParser.json());
-  server.use(`${ENDPOINT}/mcp`, handleMcp);
+  server.use(`${ENDPOINT}/mcp`, createHandleMcp(config, options));
 
   return server;
 }

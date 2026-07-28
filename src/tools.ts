@@ -4,6 +4,7 @@ export type DocsInputSchema = z.infer<typeof docsInputSchema>;
 export type SourceInputSchema = z.infer<typeof sourceInputSchema>;
 export type ProjectEvalInputSchema = z.infer<typeof projectEvalInputSchema>;
 export type GetLogsInputSchema = z.infer<typeof getLogsInputSchema>;
+export type BrowserEvalInputSchema = z.infer<typeof browserEvalInputSchema>;
 
 export interface Tool<InputSchema> {
   mcp: {
@@ -25,6 +26,7 @@ export interface Tools {
   source: Tool<typeof sourceInputSchema>;
   eval: Omit<Tool<typeof projectEvalInputSchema>, 'cli'>;
   logs: Omit<Tool<typeof getLogsInputSchema>, 'cli'>;
+  browserEval: Omit<Tool<typeof browserEvalInputSchema>, 'cli'>;
 }
 
 const projectEvalDescription = `
@@ -100,6 +102,24 @@ export const getLogsInputSchema = z.object({
     .describe('Filter by log severity level'),
   since: z.string().optional().describe('ISO 8601 timestamp - return logs after this time'),
 });
+
+export const browserEvalInputSchema = z
+  .object({
+    code: z
+      .string()
+      .optional()
+      .describe(
+        'JavaScript that interacts with the page. It MUST use the global `browser` object API. Omit it on the first call to handshake and discover a session and the API.',
+      ),
+    sid: z
+      .string()
+      .optional()
+      .describe(
+        'The session to target, e.g. "nice-cactus#1". Omit it to use a new primary session (returned to you as `sid`).',
+      ),
+    timeout: z.number().optional().describe('Timeout in milliseconds. Defaults to 45000.'),
+  })
+  .passthrough();
 
 export const tools: Tools = {
   docs: {
@@ -177,6 +197,17 @@ Start with module-only references to explore, then drill into specific symbols f
       description:
         "Retrieve application logs within your project's build tool (or server for full-stack applications). Supports filtering by level, time, and pattern matching.",
       inputSchema: getLogsInputSchema,
+    },
+  },
+  browserEval: {
+    mcp: {
+      name: 'browser_eval',
+      description: `Runs JavaScript in a real browser page that Tidewave controls (an iframe in your application, on the same origin), to validate UI-affecting changes.
+
+Call it with NO arguments first: that connects to an open browser session and returns its \`sid\` along with the full \`browser\` API documentation. Then call again with \`code\` (and the \`sid\` you were given) to interact with the page.
+
+Use it to verify visibility, text, state, and interactions - DO NOT use it to validate design, styles, or general CSS.`,
+      inputSchema: browserEvalInputSchema,
     },
   },
 } as const;

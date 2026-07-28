@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { TidewaveRequest, TidewaveResponse } from '../../src/http/types';
 import { handleMcp } from '../../src/http/handlers/mcp';
 import { createHandleConfig } from '../../src/http/handlers/config';
-import { createHandleAppHtml, createHandleHtml } from '../../src/http/handlers/html';
+import { createHandleControlHtml, createHandleHtml } from '../../src/http/handlers/html';
 import { createHandleResponseHeaders } from '../../src/http/headers';
 
 // Mock request/response helpers
@@ -116,7 +116,13 @@ describe('HTTP Utilities', () => {
       const { res, mockEnd, mockSetHeader } = createMockResponse();
       const next = vi.fn();
 
-      const handler = createHandleAppHtml({});
+      const handler = createHandleControlHtml(
+        {
+          framework: 'vite',
+          projectName: 'test_app',
+        },
+        () => ({ port: 5173, scheme: 'http' }),
+      );
       await handler(req as TidewaveRequest, res as TidewaveResponse, next);
 
       expect(res.statusCode).toBe(200);
@@ -126,6 +132,13 @@ describe('HTTP Utilities', () => {
         "base-uri 'self'; frame-ancestors 'self';",
       );
       expect(mockEnd).toHaveBeenCalledWith(expect.stringContaining('/tc/control.js'));
+      expect(mockEnd).toHaveBeenCalledWith(expect.stringContaining('name="tidewave:config"'));
+      expect(mockEnd).toHaveBeenCalledWith(
+        expect.stringContaining('&quot;framework_type&quot;:&quot;vite&quot;'),
+      );
+      expect(mockEnd).toHaveBeenCalledWith(
+        expect.stringContaining('&quot;local_scheme&quot;:&quot;http&quot;'),
+      );
       expect(next).not.toHaveBeenCalled();
     });
   });
@@ -142,7 +155,7 @@ describe('HTTP Utilities', () => {
           projectName: 'test_app',
           tmpDir: 'custom-tmp',
         },
-        () => 5173,
+        () => ({ port: 5173, scheme: 'http' }),
       );
       await handler(req as TidewaveRequest, res as TidewaveResponse, next);
 
@@ -153,6 +166,7 @@ describe('HTTP Utilities', () => {
         project_name: 'test_app',
         framework_type: 'vite',
         local_port: 5173,
+        local_scheme: 'http',
         tmp_dir: 'custom-tmp',
       });
     });
@@ -167,10 +181,10 @@ describe('HTTP Utilities', () => {
       const { res, mockEnd, mockWrite } = createMockResponse();
       const next = vi.fn();
 
-      const handler = createHandleResponseHeaders(
-        { clientUrl: 'http://localhost:4000' },
-        () => 5173,
-      );
+      const handler = createHandleResponseHeaders({ clientUrl: 'http://localhost:4000' }, () => ({
+        port: 5173,
+        scheme: 'http',
+      }));
       const response = res as TidewaveResponse;
       await handler(req as TidewaveRequest, response, next);
 
@@ -206,10 +220,10 @@ describe('HTTP Utilities', () => {
       const { res, mockEnd, mockWrite } = createMockResponse();
       const next = vi.fn();
 
-      const handler = createHandleResponseHeaders(
-        { clientUrl: 'http://localhost:4000' },
-        () => 5173,
-      );
+      const handler = createHandleResponseHeaders({ clientUrl: 'http://localhost:4000' }, () => ({
+        port: 5173,
+        scheme: 'http',
+      }));
       const response = res as TidewaveResponse;
       await handler(req as TidewaveRequest, response, next);
 
@@ -237,10 +251,10 @@ describe('HTTP Utilities', () => {
       const { res, mockEnd, mockWrite } = createMockResponse();
       const next = vi.fn();
 
-      const handler = createHandleResponseHeaders(
-        { clientUrl: 'http://localhost:4000' },
-        () => 5173,
-      );
+      const handler = createHandleResponseHeaders({ clientUrl: 'http://localhost:4000' }, () => ({
+        port: 5173,
+        scheme: 'http',
+      }));
       const response = res as TidewaveResponse;
       await handler(req as TidewaveRequest, response, next);
 

@@ -66,6 +66,7 @@
     "@modelcontextprotocol/sdk": "^1.17.4",
     "body-parser": "^2.2.0",
     "typescript": "^5",
+    "ws": "^8.21.1",
     "zod": "3.25.76"
   },
   "devDependencies": {
@@ -73,6 +74,7 @@
     "@types/body-parser": "^1.19.6",
     "@types/bun": "latest",
     "@types/node": "^22.10.1",
+    "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.18.0",
     "@typescript-eslint/parser": "^8.18.0",
     "@vitest/ui": "^3.2.4",

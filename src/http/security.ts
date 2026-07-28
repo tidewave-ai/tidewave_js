@@ -1,6 +1,14 @@
 import type { TidewaveConfig } from '../core';
 import type { TidewaveRequest, TidewaveResponse } from './types';
 
+export type SecurityCheckResult =
+  | { ok: true }
+  | {
+      ok: false;
+      statusCode: 403;
+      message: string;
+    };
+
 function fetchRemoteIp(req: TidewaveRequest): string | null {
   const remote = req.socket.remoteAddress;
 
@@ -25,18 +33,34 @@ export function checkRemoteIp(
   res: TidewaveResponse,
   config: TidewaveConfig,
 ): boolean {
+  const result = validateRemoteIp(req, config);
+  if (result.ok) return true;
+
+  sendSecurityFailure(res, result);
+  return false;
+}
+
+export function validateRemoteIp(
+  req: TidewaveRequest,
+  config: TidewaveConfig,
+): SecurityCheckResult {
   const ip = fetchRemoteIp(req);
 
-  if (!ip) return false;
-  if (isLocalIp(ip)) return true;
-  if (config.allowRemoteAccess) return true;
+  if (!ip) {
+    return {
+      ok: false,
+      statusCode: 403,
+      message:
+        'For security reasons, Tidewave does not accept requests without a remote IP address.',
+    };
+  }
+
+  if (isLocalIp(ip)) return { ok: true };
+  if (config.allowRemoteAccess) return { ok: true };
 
   const message =
     'For security reasons, Tidewave does not accept remote connections by default.\n\nIf you really want to allow remote connections, configure the Tidewave with the `allowRemoteAccess: true` option.';
-  console.warn(message);
-  res.statusCode = 403;
-  res.end(message);
-  return false;
+  return { ok: false, statusCode: 403, message };
 }
 
 export function checkOrigin(
@@ -44,33 +68,35 @@ export function checkOrigin(
   res: TidewaveResponse,
   config: TidewaveConfig,
 ): boolean {
+  const result = validateOrigin(req, config);
+  if (result.ok) return true;
+
+  sendSecurityFailure(res, result);
+  return false;
+}
+
+export function validateOrigin(req: TidewaveRequest, config: TidewaveConfig): SecurityCheckResult {
   const { origin } = req.headers;
 
   // No origin header means non-browser request (e.g. Claude Code, Cursor)
-  if (!origin) return true;
+  if (!origin) return { ok: true };
 
   const allowedOrigins = config.allowedOrigins || getDefaultAllowedOrigins(config);
   const originUrl = parseUrl(origin);
 
   if (!originUrl) {
     const message = `For security reasons, Tidewave only accepts requests from allowed origins.\n\nInvalid origin: ${origin}`;
-    console.warn(message);
-    res.statusCode = 403;
-    res.end(message);
-    return false;
+    return { ok: false, statusCode: 403, message };
   }
 
   const isAllowed = allowedOrigins.some(allowed => isOriginAllowed(originUrl, parseUrl(allowed)));
 
   if (!isAllowed) {
     const message = `For security reasons, Tidewave only accepts requests from the same origin your web app is running on.\n\nIf you really want to allow remote connections, configure the Tidewave with the \`allowedOrigins: [${JSON.stringify(origin)}]\` option.`;
-    console.warn(message);
-    res.statusCode = 403;
-    res.end(message);
-    return false;
+    return { ok: false, statusCode: 403, message };
   }
 
-  return true;
+  return { ok: true };
 }
 
 export function getDefaultAllowedOrigins(config: TidewaveConfig): string[] {
@@ -127,4 +153,13 @@ export function isLocalIp(ip?: string): boolean {
   if (ip === '::ffff:127.0.0.1') return true;
 
   return false;
+}
+
+function sendSecurityFailure(
+  res: TidewaveResponse,
+  result: Exclude<SecurityCheckResult, { ok: true }>,
+): void {
+  console.warn(result.message);
+  res.statusCode = result.statusCode;
+  res.end(result.message);
 }

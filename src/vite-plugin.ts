@@ -3,6 +3,9 @@ import { configureServer } from './http';
 import { getProjectName } from './core';
 import type { Plugin, ViteDevServer } from 'vite';
 import { patchConsole } from './logger/console-patch';
+import { installControlWebSocket } from './control/websocket';
+import type { LocalRequestInfoGetter, LocalScheme } from './config';
+import type { TidewaveRequest } from './http/types';
 
 patchConsole();
 
@@ -54,12 +57,29 @@ async function tidewaveServer(
   config.projectName = config.projectName || (await getProjectName('vite_app'));
   config.toolbar = config.toolbar ?? true;
 
-  const getLocalPort = (): number | undefined => {
-    const address = server.httpServer?.address();
-    return typeof address === 'object' && address !== null ? address.port : undefined;
-  };
+  const fallbackLocalScheme: LocalScheme = serverConfig.server.https ? 'https' : 'http';
+  const getLocalRequestInfo: LocalRequestInfoGetter<TidewaveRequest> = req => ({
+    port: localPort(server),
+    scheme: localScheme(req, fallbackLocalScheme),
+  });
 
   configureServer(server.middlewares, config, {
-    getLocalPort,
+    getLocalRequestInfo,
   });
+  installControlWebSocket(server.httpServer, config);
+}
+
+function localPort(server: ViteDevServer): number | undefined {
+  const address = server.httpServer?.address();
+  return typeof address === 'object' && address !== null ? address.port : undefined;
+}
+
+function localScheme(req: TidewaveRequest | undefined, fallback: LocalScheme): LocalScheme {
+  return socketEncrypted(req) ? 'https' : fallback;
+}
+
+function socketEncrypted(req: TidewaveRequest | undefined): boolean {
+  return Boolean(
+    (req?.socket as (TidewaveRequest['socket'] & { encrypted?: boolean }) | undefined)?.encrypted,
+  );
 }
