@@ -206,14 +206,12 @@ function directBrowserResult(
       return toolError(`Invalid sid "${sid}". A sid looks like "nice-cactus#1".`);
     case 'unknown_client':
       return toolError(
-        `No connected browser owns sid "${sid}". It may have disconnected - call browser_eval with action "help" to discover a live session.`,
+        `No connected browser owns sid "${sid}". It may have disconnected - call browser_eval({"action": "new-session"}) to start a new one.`,
       );
     case 'timeout':
       return toolError('browser_eval timed out waiting for the browser to respond.');
     case 'disconnected':
-      return toolError(
-        `The browser disconnected before responding. Open ${url}/tidewave in your browser to open a new session.`,
-      );
+      return toolError(`The browser disconnected before responding. ${openMessage(url)}`);
     case 'no_clients':
       return toolError(noBrowserMessage(url));
   }
@@ -225,7 +223,11 @@ function broadcastBrowserResult(result: BrowserSessionResult, url: string): Call
 }
 
 function noBrowserMessage(url: string): string {
-  return `No browser is connected to the Tidewave control page. Open ${url}/tidewave in your browser and try again.`;
+  return `No browser is connected to the Tidewave control page. ${openMessage(url)}`;
+}
+
+function openMessage(url: string): string {
+  return `Use the \`open\` command (or similar) to open ${url}/tidewave in the browser and try again.`;
 }
 
 function toolError(text: string): CallToolResult {

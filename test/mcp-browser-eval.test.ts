@@ -57,7 +57,7 @@ describe('browser_eval MCP tool', () => {
           type: 'text',
           text:
             'No browser is connected to the Tidewave control page. ' +
-            'Open http://localhost:4000/tidewave in your browser and try again.',
+            'Use the `open` command (or similar) to open http://localhost:4000/tidewave in the browser and try again.',
         },
       ],
     });
@@ -81,7 +81,28 @@ describe('browser_eval MCP tool', () => {
           type: 'text',
           text:
             'No browser is connected to the Tidewave control page. ' +
-            'Open http://localhost:4000/tidewave in your browser and try again.',
+            'Use the `open` command (or similar) to open http://localhost:4000/tidewave in the browser and try again.',
+        },
+      ],
+    });
+  });
+
+  it('suggests starting a new session when a targeted sid is stale', async () => {
+    const client = await connectMcp({ includeBrowserTools: true });
+
+    const result = await client.callTool({
+      name: 'browser_eval',
+      arguments: { action: 'eval', sid: 'ghost#1' },
+    });
+
+    expect(result).toMatchObject({
+      isError: true,
+      content: [
+        {
+          type: 'text',
+          text:
+            'No connected browser owns sid "ghost#1". It may have disconnected - ' +
+            'call browser_eval({"action": "new-session"}) to start a new one.',
         },
       ],
     });
