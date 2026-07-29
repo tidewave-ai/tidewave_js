@@ -7,6 +7,8 @@ import { validateOrigin, validateRemoteIp } from '../http/security';
 import type { TidewaveRequest } from '../http/types';
 import { browserSessions, type BrowserSessions } from './browser-sessions';
 
+const HEARTBEAT_INTERVAL = 15_000;
+
 type UpgradeCapableServer = {
   on(
     event: 'upgrade',
@@ -55,8 +57,28 @@ export function installControlWebSocket(
       ws.on('message', (data, isBinary) => {
         if (!isBinary) client.receive(data.toString('utf8'));
       });
-      ws.on('close', () => client.disconnect());
-      ws.on('error', () => client.disconnect());
+
+      let alive = true;
+      const heartbeat = setInterval(() => {
+        if (!alive) {
+          ws.terminate();
+          return;
+        }
+
+        alive = false;
+        ws.ping();
+      }, HEARTBEAT_INTERVAL);
+
+      const disconnect = (): void => {
+        clearInterval(heartbeat);
+        client.disconnect();
+      };
+
+      ws.on('pong', () => {
+        alive = true;
+      });
+      ws.on('close', disconnect);
+      ws.on('error', disconnect);
       wss.emit('connection', ws, req);
     });
   };
