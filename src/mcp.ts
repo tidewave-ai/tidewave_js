@@ -176,7 +176,7 @@ async function handleBrowserEval(
 
   if (typeof args.sid === 'string' && args.sid !== '') {
     return directBrowserResult(
-      await browserSessions().run(args.sid, 'browser_eval', args, Infinity),
+      await browserSessions().run(args.sid, 'browser_eval', args),
       args.sid,
       url,
     );

@@ -18,7 +18,35 @@ describe('BrowserSessions', () => {
 
     expect(first.sent).toEqual([{ type: 'hello_ok', name: 'nice-cactus' }]);
     expect(second.sent).toEqual([{ type: 'hello_error', reason: 'name_taken' }]);
-    expect(sessions.listClients()).toEqual([['nice-cactus', first.client]]);
+    expect([...sessions.listClients()]).toEqual([first.client]);
+  });
+
+  it('ignores malformed incoming messages', async () => {
+    const sessions = new BrowserSessions();
+    const { client, sent } = createClient(sessions);
+    client.receive(JSON.stringify({ type: 'hello', name: 'nice-cactus' }));
+
+    const resultPromise = sessions.run('nice-cactus#1', 'browser_eval', {});
+    const runTool = sent.at(-1);
+    const ref = runTool?.type === 'run_tool' ? runTool.ref : -1;
+
+    client.receive('{');
+    client.receive(JSON.stringify({ type: 'tool_reply', ref, reply: { result: null } }));
+    expect(client.pendingRefs()).toEqual([ref]);
+
+    client.receive(
+      JSON.stringify({
+        type: 'tool_reply',
+        ref,
+        reply: { result: { content: [{ type: 'text', text: 'ok' }], isError: false } },
+      }),
+    );
+
+    await expect(resultPromise).resolves.toEqual({
+      ok: true,
+      reply: { result: { content: [{ type: 'text', text: 'ok' }], isError: false } },
+    });
+    expect(client.pendingRefs()).toEqual([]);
   });
 
   it('routes a run request to the client owning the sid', async () => {

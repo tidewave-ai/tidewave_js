@@ -5,6 +5,11 @@ import { createHandleConfig } from '../../src/http/handlers/config';
 import { createHandleControlHtml, createHandleHtml } from '../../src/http/handlers/html';
 import { createHandleResponseHeaders } from '../../src/http/headers';
 
+const TIDEWAVE_CONFIG = {
+  projectName: 'test_app',
+  framework: 'vite',
+};
+
 // Mock request/response helpers
 const createMockRequest = (headers: Record<string, string> = {}): Partial<TidewaveRequest> => ({
   socket: { remoteAddress: '127.0.0.1' } as any,
@@ -181,10 +186,13 @@ describe('HTTP Utilities', () => {
       const { res, mockEnd, mockWrite } = createMockResponse();
       const next = vi.fn();
 
-      const handler = createHandleResponseHeaders({ clientUrl: 'http://localhost:4000' }, () => ({
-        port: 5173,
-        scheme: 'http',
-      }));
+      const handler = createHandleResponseHeaders(
+        { ...TIDEWAVE_CONFIG, clientUrl: 'http://localhost:4000' },
+        () => ({
+          port: 5173,
+          scheme: 'http',
+        }),
+      );
       const response = res as TidewaveResponse;
       await handler(req as TidewaveRequest, response, next);
 
@@ -220,10 +228,13 @@ describe('HTTP Utilities', () => {
       const { res, mockEnd, mockWrite } = createMockResponse();
       const next = vi.fn();
 
-      const handler = createHandleResponseHeaders({ clientUrl: 'http://localhost:4000' }, () => ({
-        port: 5173,
-        scheme: 'http',
-      }));
+      const handler = createHandleResponseHeaders(
+        { ...TIDEWAVE_CONFIG, clientUrl: 'http://localhost:4000' },
+        () => ({
+          port: 5173,
+          scheme: 'http',
+        }),
+      );
       const response = res as TidewaveResponse;
       await handler(req as TidewaveRequest, response, next);
 
@@ -251,10 +262,13 @@ describe('HTTP Utilities', () => {
       const { res, mockEnd, mockWrite } = createMockResponse();
       const next = vi.fn();
 
-      const handler = createHandleResponseHeaders({ clientUrl: 'http://localhost:4000' }, () => ({
-        port: 5173,
-        scheme: 'http',
-      }));
+      const handler = createHandleResponseHeaders(
+        { ...TIDEWAVE_CONFIG, clientUrl: 'http://localhost:4000' },
+        () => ({
+          port: 5173,
+          scheme: 'http',
+        }),
+      );
       const response = res as TidewaveResponse;
       await handler(req as TidewaveRequest, response, next);
 
@@ -282,7 +296,7 @@ describe('HTTP Utilities', () => {
       const next = vi.fn();
       const html = '<html><head></he';
 
-      const handler = createHandleResponseHeaders({});
+      const handler = createHandleResponseHeaders(TIDEWAVE_CONFIG);
       const response = res as TidewaveResponse;
       await handler(req as TidewaveRequest, response, next);
 
@@ -307,7 +321,7 @@ describe('HTTP Utilities', () => {
       const { res, mockEnd, mockRemoveHeader, mockWrite } = createMockResponse();
       const next = vi.fn();
 
-      const handler = createHandleResponseHeaders({});
+      const handler = createHandleResponseHeaders(TIDEWAVE_CONFIG);
       const response = res as TidewaveResponse;
       await handler(req as TidewaveRequest, response, next);
 
@@ -332,7 +346,7 @@ describe('HTTP Utilities', () => {
         'Content-Length': '39',
       };
 
-      const handler = createHandleResponseHeaders({});
+      const handler = createHandleResponseHeaders(TIDEWAVE_CONFIG);
       const response = res as TidewaveResponse;
       await handler(req as TidewaveRequest, response, next);
 
@@ -356,7 +370,7 @@ describe('HTTP Utilities', () => {
         'Content-Length': '39',
       };
 
-      const handler = createHandleResponseHeaders({});
+      const handler = createHandleResponseHeaders(TIDEWAVE_CONFIG);
       const response = res as TidewaveResponse;
       await handler(req as TidewaveRequest, response, next);
 
@@ -378,7 +392,7 @@ describe('HTTP Utilities', () => {
       const next = vi.fn();
       const html = '<html><head></head><body></body></html>';
 
-      const handler = createHandleResponseHeaders({});
+      const handler = createHandleResponseHeaders(TIDEWAVE_CONFIG);
       const response = res as TidewaveResponse;
       await handler(req as TidewaveRequest, response, next);
 
@@ -401,7 +415,7 @@ describe('HTTP Utilities', () => {
       const next = vi.fn();
       const html = '<html><head></head><body></body></html>';
 
-      const handler = createHandleResponseHeaders({});
+      const handler = createHandleResponseHeaders(TIDEWAVE_CONFIG);
       const response = res as TidewaveResponse;
       await handler(req as TidewaveRequest, response, next);
 
@@ -429,7 +443,7 @@ describe('HTTP Utilities', () => {
       };
       const html = '<html><head></head><body></body></html>';
 
-      const handler = createHandleResponseHeaders({});
+      const handler = createHandleResponseHeaders(TIDEWAVE_CONFIG);
       const response = res as TidewaveResponse;
       await handler(req as TidewaveRequest, response, next);
 
@@ -451,7 +465,7 @@ describe('HTTP Utilities', () => {
       const { res, mockEnd, mockRemoveHeader, mockWrite } = createMockResponse();
       const next = vi.fn();
 
-      const handler = createHandleResponseHeaders({});
+      const handler = createHandleResponseHeaders(TIDEWAVE_CONFIG);
       const response = res as TidewaveResponse;
       await handler(req as TidewaveRequest, response, next);
 

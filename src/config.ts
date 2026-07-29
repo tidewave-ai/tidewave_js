@@ -34,9 +34,17 @@ export function tidewaveConfig<Request = unknown>(
 ): TidewaveConfigPayload {
   const localRequestInfo = getLocalRequestInfo?.(request) ?? defaultLocalRequestInfo();
 
+  if (!config.projectName) {
+    throw new Error('Tidewave projectName must be configured');
+  }
+
+  if (!config.framework) {
+    throw new Error('Tidewave framework must be configured');
+  }
+
   return {
-    project_name: config.projectName || 'app',
-    framework_type: config.framework || 'unknown',
+    project_name: config.projectName,
+    framework_type: config.framework,
     tidewave_version: tidewavePackage.version,
     team: config.team || {},
     local_port: localRequestInfo.port,
