@@ -176,17 +176,13 @@ async function handleBrowserEval(
 
   if (typeof args.sid === 'string' && args.sid !== '') {
     return directBrowserResult(
-      await browserSessions().run(args.sid, 'browser_eval', args, evalTimeout(args)),
+      await browserSessions().run(args.sid, 'browser_eval', args, Infinity),
       args.sid,
       url,
     );
   }
 
-  if (args.code === '' || !('code' in args) || args.code === undefined) {
-    return broadcastBrowserResult(await broadcastBrowserEval(args), url);
-  }
-
-  return toolError('browser_eval requires a `sid` when `code` is not empty.');
+  return broadcastBrowserResult(await broadcastBrowserEval(args), url);
 }
 
 async function broadcastBrowserEval(args: BrowserEvalInputSchema): Promise<BrowserSessionResult> {
@@ -203,14 +199,14 @@ function directBrowserResult(
   sid: string,
   url: string,
 ): CallToolResult {
-  if (result.ok) return result.result;
+  if (result.ok) return result.reply.result;
 
   switch (result.reason) {
     case 'invalid_sid':
       return toolError(`Invalid sid "${sid}". A sid looks like "nice-cactus#1".`);
     case 'unknown_client':
       return toolError(
-        `No connected browser owns sid "${sid}". It may have disconnected - call browser_eval with no arguments to discover a live session.`,
+        `No connected browser owns sid "${sid}". It may have disconnected - call browser_eval with action "help" to discover a live session.`,
       );
     case 'timeout':
       return toolError('browser_eval timed out waiting for the browser to respond.');
@@ -224,7 +220,7 @@ function directBrowserResult(
 }
 
 function broadcastBrowserResult(result: BrowserSessionResult, url: string): CallToolResult {
-  if (result.ok) return result.result;
+  if (result.ok) return result.reply.result;
   return toolError(noBrowserMessage(url));
 }
 
@@ -237,15 +233,6 @@ function toolError(text: string): CallToolResult {
     content: [{ type: 'text', text }],
     isError: true,
   };
-}
-
-function evalTimeout(args: BrowserEvalInputSchema): number {
-  const { timeout } = args;
-  if (typeof timeout === 'number' && Number.isFinite(timeout) && timeout > 0) {
-    return Math.min(timeout + 5_000, 60_000);
-  }
-
-  return 15_000;
 }
 
 export async function serveMcp(transport: Transport, options: ServeMcpOptions = {}): Promise<void> {

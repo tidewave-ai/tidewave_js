@@ -103,23 +103,15 @@ export const getLogsInputSchema = z.object({
   since: z.string().optional().describe('ISO 8601 timestamp - return logs after this time'),
 });
 
-export const browserEvalInputSchema = z
-  .object({
-    code: z
-      .string()
-      .optional()
-      .describe(
-        'JavaScript that interacts with the page. It MUST use the global `browser` object API. Omit it on the first call to handshake and discover a session and the API.',
-      ),
-    sid: z
-      .string()
-      .optional()
-      .describe(
-        'The session to target, e.g. "nice-cactus#1". Omit it to use a new primary session (returned to you as `sid`).',
-      ),
-    timeout: z.number().optional().describe('Timeout in milliseconds. Defaults to 45000.'),
-  })
-  .passthrough();
+export const browserEvalInputSchema = z.object({
+  action: z.string(),
+  sid: z.string().optional().describe('The session to target, e.g. "nice-cactus#1".'),
+  args: z
+    .object({})
+    .passthrough()
+    .optional()
+    .describe('Parameters for the action, as documented by "help".'),
+});
 
 export const tools: Tools = {
   docs: {
@@ -202,11 +194,9 @@ Start with module-only references to explore, then drill into specific symbols f
   browserEval: {
     mcp: {
       name: 'browser_eval',
-      description: `Runs JavaScript in a real browser page that Tidewave controls (an iframe in your application, on the same origin), to validate UI-affecting changes.
+      description: `Runs JavaScript in a real browser to interact with the application.
 
-Call it with NO arguments first: that connects to an open browser session and returns its \`sid\` along with the full \`browser\` API documentation. Then call again with \`code\` (and the \`sid\` you were given) to interact with the page.
-
-Use it to verify visibility, text, state, and interactions - DO NOT use it to validate design, styles, or general CSS.`,
+You MUST use "help" action first to learn the full API.`,
       inputSchema: browserEvalInputSchema,
     },
   },

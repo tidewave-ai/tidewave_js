@@ -40,13 +40,13 @@ describe('BrowserSessions', () => {
       JSON.stringify({
         type: 'tool_reply',
         ref: runTool?.type === 'run_tool' ? runTool.ref : -1,
-        result: { content: [{ type: 'text', text: 'ok' }], isError: false },
+        reply: { result: { content: [{ type: 'text', text: 'ok' }], isError: false } },
       }),
     );
 
     await expect(resultPromise).resolves.toEqual({
       ok: true,
-      result: { content: [{ type: 'text', text: 'ok' }], isError: false },
+      reply: { result: { content: [{ type: 'text', text: 'ok' }], isError: false } },
     });
   });
 
@@ -92,13 +92,13 @@ describe('BrowserSessions', () => {
       JSON.stringify({
         type: 'tool_reply',
         ref: secondRunTool?.type === 'run_tool' ? secondRunTool.ref : -1,
-        result: { content: [{ type: 'text', text: 'from second' }], isError: false },
+        reply: { result: { content: [{ type: 'text', text: 'from second' }], isError: false } },
       }),
     );
 
     await expect(resultPromise).resolves.toEqual({
       ok: true,
-      result: { content: [{ type: 'text', text: 'from second' }], isError: false },
+      reply: { result: { content: [{ type: 'text', text: 'from second' }], isError: false } },
     });
     expect(first.client.pendingRefs()).toEqual([]);
     expect(second.client.pendingRefs()).toEqual([]);

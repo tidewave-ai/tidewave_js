@@ -53,13 +53,13 @@ describe('control websocket', () => {
       JSON.stringify({
         type: 'tool_reply',
         ref: runTool.ref,
-        result: { content: [{ type: 'text', text: 'ok' }], isError: false },
+        reply: { result: { content: [{ type: 'text', text: 'ok' }], isError: false } },
       }),
     );
 
     await expect(runPromise).resolves.toEqual({
       ok: true,
-      result: { content: [{ type: 'text', text: 'ok' }], isError: false },
+      reply: { result: { content: [{ type: 'text', text: 'ok' }], isError: false } },
     });
   });
 });

@@ -1,5 +1,9 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 
+export interface ControlToolReply {
+  result: CallToolResult;
+}
+
 export type BrowserSessionErrorReason =
   | 'invalid_sid'
   | 'unknown_client'
@@ -8,7 +12,7 @@ export type BrowserSessionErrorReason =
   | 'disconnected';
 
 export type BrowserSessionResult =
-  | { ok: true; result: CallToolResult }
+  | { ok: true; reply: ControlToolReply }
   | { ok: false; reason: BrowserSessionErrorReason };
 
 export type ControlOutgoingMessage =
@@ -17,7 +21,7 @@ export type ControlOutgoingMessage =
   | { type: 'run_tool'; ref: number; name: string; sid: string | null; input: unknown };
 
 type PendingRequest = {
-  resolveReply(result: CallToolResult): void;
+  resolveReply(reply: ControlToolReply): void;
   resolveDisconnect(): void;
 };
 
@@ -55,7 +59,8 @@ export class BrowserClient {
     }
 
     if (record.type === 'tool_reply' && typeof record.ref === 'number') {
-      this.reply(record.ref, record.result as CallToolResult);
+      const reply = controlToolReply(record);
+      if (reply) this.reply(record.ref, reply);
     }
   }
 
@@ -83,12 +88,12 @@ export class BrowserClient {
     return this.push({ type: 'run_tool', ref, name, sid, input });
   }
 
-  private reply(ref: number, result: CallToolResult): void {
+  private reply(ref: number, reply: ControlToolReply): void {
     const pending = this.pending.get(ref);
     if (!pending) return;
 
     this.pending.delete(ref);
-    pending.resolveReply(result);
+    pending.resolveReply(reply);
   }
 
   private push(message: ControlOutgoingMessage): boolean {
@@ -174,9 +179,9 @@ export class BrowserSessions {
           resolveReply: result => {
             if (settled) return;
             settled = true;
-            clearTimeout(timer);
+            clearRequestTimeout(timer);
             cleanup();
-            resolve({ ok: true, result });
+            resolve({ ok: true, reply: result });
           },
           resolveDisconnect: () => {
             client.deletePending(ref);
@@ -204,17 +209,17 @@ export class BrowserSessions {
       const settle = (result: BrowserSessionResult): void => {
         if (settled) return;
         settled = true;
-        clearTimeout(timer);
+        clearRequestTimeout(timer);
         client.deletePending(ref);
         resolve(result);
       };
 
-      const timer = setTimeout(() => {
+      const timer = setRequestTimeout(() => {
         settle({ ok: false, reason: 'timeout' });
       }, timeout);
 
       client.addPending(ref, {
-        resolveReply: result => settle({ ok: true, result }),
+        resolveReply: reply => settle({ ok: true, reply }),
         resolveDisconnect: () => settle({ ok: false, reason: 'disconnected' }),
       });
 
@@ -242,6 +247,30 @@ export function browserSessions(): BrowserSessions {
 
 export function resetBrowserSessionsForTest(): void {
   globalThis.__TIDEWAVE_BROWSER_SESSIONS__ = new BrowserSessions();
+}
+
+function controlToolReply(record: Record<string, unknown>): ControlToolReply | null {
+  if (record.reply && typeof record.reply === 'object') {
+    return record.reply as ControlToolReply;
+  }
+
+  if ('result' in record) {
+    return { result: record.result as CallToolResult };
+  }
+
+  return null;
+}
+
+function setRequestTimeout(
+  callback: () => void,
+  timeout: number,
+): ReturnType<typeof setTimeout> | null {
+  if (!Number.isFinite(timeout)) return null;
+  return setTimeout(callback, timeout);
+}
+
+function clearRequestTimeout(timer: ReturnType<typeof setTimeout> | null): void {
+  if (timer) clearTimeout(timer);
 }
 
 function parseSid(sid: string): string | null {
