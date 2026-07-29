@@ -69,8 +69,8 @@ function serveOptions(
 function includeBrowserTools(req: TidewaveRequest): boolean {
   try {
     return (
-      new URL(req.url || '/', 'http://localhost').searchParams.get('include_browser_tools') ===
-      'true'
+      new URL(req.url || '/', 'http://localhost').searchParams.get('include_browser_tools') !==
+      'false'
     );
   } catch {
     return false;
