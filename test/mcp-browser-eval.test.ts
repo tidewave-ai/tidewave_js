@@ -111,7 +111,10 @@ describe('browser_eval MCP tool', () => {
   it('routes eval action to the targeted browser session', async () => {
     const client = await connectMcp({ includeBrowserTools: true });
     const sent: ControlOutgoingMessage[] = [];
-    const browserClient = browserSessions().createClient(message => sent.push(message));
+    const browserClient = browserSessions().createClient(message => {
+      sent.push(message);
+      return true;
+    });
     browserClient.receive(JSON.stringify({ type: 'hello', name: 'nice-cactus' }));
 
     const resultPromise = client.callTool({

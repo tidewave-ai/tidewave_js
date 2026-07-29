@@ -49,8 +49,12 @@ export function installControlWebSocket(
 
     wss.handleUpgrade(req, socket, head, ws => {
       const client = sessions.createClient(message => {
-        if (ws.readyState === WebSocket.OPEN) {
+        try {
+          if (ws.readyState !== WebSocket.OPEN) return false;
           ws.send(JSON.stringify(message));
+          return true;
+        } catch {
+          return false;
         }
       });
 

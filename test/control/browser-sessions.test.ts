@@ -3,7 +3,10 @@ import { BrowserSessions, type ControlOutgoingMessage } from '../../src/control/
 
 function createClient(sessions: BrowserSessions) {
   const sent: ControlOutgoingMessage[] = [];
-  const client = sessions.createClient(message => sent.push(message));
+  const client = sessions.createClient(message => {
+    sent.push(message);
+    return true;
+  });
   return { client, sent };
 }
 
@@ -100,6 +103,20 @@ describe('BrowserSessions', () => {
     client.disconnect();
 
     await expect(resultPromise).resolves.toEqual({ ok: false, reason: 'disconnected' });
+  });
+
+  it('reports a disconnect when a message cannot be sent', async () => {
+    const sessions = new BrowserSessions();
+    let canSend = true;
+    const client = sessions.createClient(() => canSend);
+    client.receive(JSON.stringify({ type: 'hello', name: 'fading-moon' }));
+    canSend = false;
+
+    await expect(sessions.run('fading-moon#1', 'browser_eval', {})).resolves.toEqual({
+      ok: false,
+      reason: 'disconnected',
+    });
+    expect(client.pendingRefs()).toEqual([]);
   });
 
   it('broadcasts to all clients and returns the first reply', async () => {

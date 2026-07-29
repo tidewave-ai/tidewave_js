@@ -49,7 +49,7 @@ export class BrowserClient {
 
   constructor(
     private readonly sessions: BrowserSessions,
-    private readonly sendMessage: (message: ControlOutgoingMessage) => void,
+    private readonly sendMessage: (message: ControlOutgoingMessage) => boolean,
   ) {}
 
   receive(text: string): void {
@@ -110,12 +110,7 @@ export class BrowserClient {
   }
 
   private push(message: ControlOutgoingMessage): boolean {
-    try {
-      this.sendMessage(message);
-      return true;
-    } catch {
-      return false;
-    }
+    return this.sendMessage(message);
   }
 }
 
@@ -128,7 +123,7 @@ export class BrowserSessions {
   private readonly clients = new Map<string, BrowserClient>();
   private nextRef = 1;
 
-  createClient(sendMessage: (message: ControlOutgoingMessage) => void): BrowserClient {
+  createClient(sendMessage: (message: ControlOutgoingMessage) => boolean): BrowserClient {
     return new BrowserClient(this, sendMessage);
   }
 
