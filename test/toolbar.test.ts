@@ -6,7 +6,18 @@ describe('toolbar HTML injection', () => {
     const html =
       '<html><head><title>App</title></head><body><script>const marker = "</head>";</script></body></html>';
 
-    const injected = injectToolbarHtml(html, { clientUrl: 'http://localhost:4000' }, () => 5173);
+    const injected = injectToolbarHtml(
+      html,
+      {
+        clientUrl: 'http://localhost:4000',
+        projectName: 'test_app',
+        framework: 'vite',
+      },
+      () => ({
+        port: 5173,
+        scheme: 'http',
+      }),
+    );
 
     const toolbarIndex = injected.indexOf('/tc/toolbar.js');
     const firstClosingHeadIndex = injected.indexOf('</head>');

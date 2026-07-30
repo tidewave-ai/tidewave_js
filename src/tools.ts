@@ -4,6 +4,7 @@ export type DocsInputSchema = z.infer<typeof docsInputSchema>;
 export type SourceInputSchema = z.infer<typeof sourceInputSchema>;
 export type ProjectEvalInputSchema = z.infer<typeof projectEvalInputSchema>;
 export type GetLogsInputSchema = z.infer<typeof getLogsInputSchema>;
+export type BrowserEvalInputSchema = z.infer<typeof browserEvalInputSchema>;
 
 export interface Tool<InputSchema> {
   mcp: {
@@ -25,6 +26,7 @@ export interface Tools {
   source: Tool<typeof sourceInputSchema>;
   eval: Omit<Tool<typeof projectEvalInputSchema>, 'cli'>;
   logs: Omit<Tool<typeof getLogsInputSchema>, 'cli'>;
+  browserEval: Omit<Tool<typeof browserEvalInputSchema>, 'cli'>;
 }
 
 const projectEvalDescription = `
@@ -99,6 +101,16 @@ export const getLogsInputSchema = z.object({
     .optional()
     .describe('Filter by log severity level'),
   since: z.string().optional().describe('ISO 8601 timestamp - return logs after this time'),
+});
+
+export const browserEvalInputSchema = z.object({
+  action: z.string(),
+  sid: z.string().optional().describe('The session to target, e.g. "nice-cactus#1".'),
+  args: z
+    .object({})
+    .passthrough()
+    .optional()
+    .describe('Parameters for the action, as documented by "help".'),
 });
 
 export const tools: Tools = {
@@ -177,6 +189,15 @@ Start with module-only references to explore, then drill into specific symbols f
       description:
         "Retrieve application logs within your project's build tool (or server for full-stack applications). Supports filtering by level, time, and pattern matching.",
       inputSchema: getLogsInputSchema,
+    },
+  },
+  browserEval: {
+    mcp: {
+      name: 'browser_eval',
+      description: `Runs JavaScript in a real browser to interact with the application.
+
+You MUST use "help" action first to learn the full API.`,
+      inputSchema: browserEvalInputSchema,
     },
   },
 } as const;

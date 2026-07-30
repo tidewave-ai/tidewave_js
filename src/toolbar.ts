@@ -1,21 +1,11 @@
 import type { TidewaveConfig } from './core';
-import {
-  tidewaveConfig,
-  type LocalPortGetter,
-  type TidewaveConfigPayload,
-} from './http/handlers/config';
+import { escapeHtmlAttribute, type LocalRequestInfoGetter, tidewaveConfigMetaHtml } from './config';
 
-interface ToolbarPayload {
-  tidewave: TidewaveConfigPayload;
-  root: string;
-  wsl_distro: string | null;
-  framework: Record<string, string>;
-}
-
-export function injectToolbarHtml(
+export function injectToolbarHtml<Request = unknown>(
   html: string,
   config: TidewaveConfig,
-  getLocalPort?: LocalPortGetter,
+  getLocalRequestInfo?: LocalRequestInfoGetter<Request>,
+  request?: Request,
 ): string {
   if (config.toolbar === false) return html;
   if (toolbarAlreadyInjected(html)) return html;
@@ -23,36 +13,22 @@ export function injectToolbarHtml(
   const closingHeadIndex = html.toLowerCase().indexOf('</head>');
   if (closingHeadIndex === -1) return html;
 
-  return `${html.slice(0, closingHeadIndex)}${toolbarHtml(config, getLocalPort)}${html.slice(closingHeadIndex)}`;
+  return `${html.slice(0, closingHeadIndex)}${toolbarHtml(config, getLocalRequestInfo, request)}${html.slice(closingHeadIndex)}`;
 }
 
-function toolbarHtml(config: TidewaveConfig, getLocalPort?: LocalPortGetter): string {
+function toolbarHtml<Request = unknown>(
+  config: TidewaveConfig,
+  getLocalRequestInfo?: LocalRequestInfoGetter<Request>,
+  request?: Request,
+): string {
   const clientUrl = config.clientUrl || 'https://tidewave.ai';
-  const payload = toolbarPayload(config, getLocalPort);
 
   return `
-<meta name="tidewave:config" content="${escapeHtmlAttribute(JSON.stringify(payload))}" />
+${tidewaveConfigMetaHtml(config, getLocalRequestInfo, request)}
 <script async type="module" src="${escapeHtmlAttribute(`${clientUrl}/tc/toolbar.js`)}"></script>
 `;
 }
 
 export function toolbarAlreadyInjected(html: string): boolean {
   return html.includes('name="tidewave:config"') || html.includes('/tc/toolbar.js');
-}
-
-function toolbarPayload(config: TidewaveConfig, getLocalPort?: LocalPortGetter): ToolbarPayload {
-  return {
-    tidewave: tidewaveConfig(config, getLocalPort),
-    root: process.cwd(),
-    wsl_distro: process.env['WSL_DISTRO_NAME'] ?? null,
-    framework: {},
-  };
-}
-
-function escapeHtmlAttribute(value: string): string {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('"', '&quot;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;');
 }

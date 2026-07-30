@@ -1,6 +1,6 @@
 import type { TidewaveConfig } from '../core';
+import type { LocalRequestInfoGetter } from '../config';
 import { injectToolbarHtml, toolbarAlreadyInjected } from '../toolbar';
-import type { LocalPortGetter } from './handlers/config';
 import type { TidewaveHandler, TidewaveNext, TidewaveRequest, TidewaveResponse } from './types';
 
 type HeaderValue = number | string | string[];
@@ -9,7 +9,7 @@ const CLOSING_HEAD = '</head>';
 
 export function createHandleResponseHeaders(
   config: TidewaveConfig,
-  getLocalPort?: LocalPortGetter,
+  getLocalRequestInfo?: LocalRequestInfoGetter<TidewaveRequest>,
 ): TidewaveHandler {
   return async function handleResponseHeaders(
     req: TidewaveRequest,
@@ -18,7 +18,7 @@ export function createHandleResponseHeaders(
   ): Promise<void> {
     if (!isTidewaveRequest(req)) {
       if (shouldInspectHtml(req, config)) {
-        wrapHtmlResponseBody(res, config, getLocalPort);
+        wrapHtmlResponseBody(req, res, config, getLocalRequestInfo);
       }
     }
 
@@ -29,9 +29,10 @@ export function createHandleResponseHeaders(
 type ToolbarInjectionState = 'unchecked' | 'searching' | 'skip' | 'injected';
 
 function wrapHtmlResponseBody(
+  req: TidewaveRequest,
   res: TidewaveResponse,
   config: TidewaveConfig,
-  getLocalPort?: LocalPortGetter,
+  getLocalRequestInfo?: LocalRequestInfoGetter<TidewaveRequest>,
 ): void {
   const originalWrite = res.write.bind(res) as (...args: unknown[]) => boolean;
   const originalEnd = res.end.bind(res) as (...args: unknown[]) => TidewaveResponse;
@@ -109,7 +110,7 @@ function wrapHtmlResponseBody(
       return hadPendingTail ? replaceChunk(chunk, html, args) : chunk;
     }
 
-    const injectedHtml = injectToolbarHtml(html, config, getLocalPort);
+    const injectedHtml = injectToolbarHtml(html, config, getLocalRequestInfo, req);
     if (injectedHtml !== html) {
       state = 'injected';
       removeContentLength();

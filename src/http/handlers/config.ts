@@ -1,38 +1,20 @@
 import type { TidewaveConfig } from '../../core';
+import { tidewaveConfig, type LocalRequestInfoGetter } from '../../config';
 import type { TidewaveHandler, TidewaveNext, TidewaveRequest, TidewaveResponse } from '../types';
-import { default as tidewavePackage } from '../../../package.json' with { type: 'json' };
 
-export type LocalPortGetter = () => number | undefined;
-
-export interface TidewaveConfigPayload {
-  project_name: string;
-  framework_type: string;
-  tidewave_version: string;
-  team: NonNullable<TidewaveConfig['team']> | Record<string, never>;
-  local_port: number | undefined;
-  tmp_dir: string;
-}
-
-export function tidewaveConfig(
-  config: TidewaveConfig,
-  getLocalPort?: LocalPortGetter,
-): TidewaveConfigPayload {
-  return {
-    project_name: config.projectName || 'app',
-    framework_type: config.framework || 'unknown',
-    tidewave_version: tidewavePackage.version,
-    team: config.team || {},
-    local_port: getLocalPort?.(),
-    tmp_dir: config.tmpDir || 'tmp',
-  };
-}
+export {
+  tidewaveConfig,
+  type LocalRequestInfo,
+  type LocalRequestInfoGetter,
+  type TidewaveConfigPayload,
+} from '../../config';
 
 export function createHandleConfig(
   config: TidewaveConfig,
-  getLocalPort?: LocalPortGetter,
+  getLocalRequestInfo?: LocalRequestInfoGetter<TidewaveRequest>,
 ): TidewaveHandler {
   return async function handleConfig(
-    _req: TidewaveRequest,
+    req: TidewaveRequest,
     res: TidewaveResponse,
     next: TidewaveNext,
   ): Promise<void> {
@@ -40,7 +22,7 @@ export function createHandleConfig(
       res.statusCode = 200;
       res.setHeader('Content-Type', 'application/json');
       res.setHeader('Access-Control-Allow-Origin', '*');
-      res.end(JSON.stringify(tidewaveConfig(config, getLocalPort)));
+      res.end(JSON.stringify(tidewaveConfig(config, getLocalRequestInfo, req)));
     } catch (err) {
       console.error(`[Tidewave] Failed to serve config: ${err}`);
 

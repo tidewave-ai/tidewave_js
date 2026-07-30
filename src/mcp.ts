@@ -4,22 +4,30 @@ import { name, version } from '../package.json';
 
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import type {
+  BrowserEvalInputSchema,
   DocsInputSchema,
+  GetLogsInputSchema,
   ProjectEvalInputSchema,
   SourceInputSchema,
-  GetLogsInputSchema,
 } from './tools';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { isExtractError, isResolveError } from './core';
 import { Tidewave } from '.';
 import { tidewaveLogger } from './logger/tidewave-logger';
+import { browserSessions, type BrowserSessionResult } from './control/browser-sessions';
 
 const {
   docs: { mcp: docsMcp },
   source: { mcp: sourceMcp },
   eval: { mcp: evalMcp },
   logs: { mcp: logsMcp },
+  browserEval: { mcp: browserEvalMcp },
 } = tools;
+
+export interface ServeMcpOptions {
+  includeBrowserTools?: boolean;
+  url?: string;
+}
 
 async function handleProjectEvaluation({
   code,
@@ -160,7 +168,76 @@ async function handleGetLogs(args: GetLogsInputSchema): Promise<CallToolResult> 
   }
 }
 
-export async function serveMcp(transport: Transport): Promise<void> {
+async function handleBrowserEval(
+  args: BrowserEvalInputSchema,
+  options: ServeMcpOptions,
+): Promise<CallToolResult> {
+  const url = options.url || 'http://localhost:5173';
+
+  if (typeof args.sid === 'string' && args.sid !== '') {
+    return directBrowserResult(
+      await browserSessions().run(args.sid, 'browser_eval', args),
+      args.sid,
+      url,
+    );
+  }
+
+  return broadcastBrowserResult(await broadcastBrowserEval(args), url);
+}
+
+async function broadcastBrowserEval(args: BrowserEvalInputSchema): Promise<BrowserSessionResult> {
+  const first = await browserSessions().broadcastRun('browser_eval', args, 5_000);
+  if (!first.ok && first.reason === 'timeout') {
+    return browserSessions().broadcastRun('browser_eval', args, 5_000);
+  }
+
+  return first;
+}
+
+function directBrowserResult(
+  result: BrowserSessionResult,
+  sid: string,
+  url: string,
+): CallToolResult {
+  if (result.ok) return result.reply.result;
+
+  switch (result.reason) {
+    case 'invalid_sid':
+      return toolError(`Invalid sid "${sid}". A sid looks like "nice-cactus#1".`);
+    case 'unknown_client':
+      return toolError(
+        `No connected browser owns sid "${sid}". It may have disconnected - call browser_eval({"action": "new-session"}) to start a new one.`,
+      );
+    case 'timeout':
+      return toolError('browser_eval timed out waiting for the browser to respond.');
+    case 'disconnected':
+      return toolError(`The browser disconnected before responding. ${openMessage(url)}`);
+    case 'no_clients':
+      return toolError(noBrowserMessage(url));
+  }
+}
+
+function broadcastBrowserResult(result: BrowserSessionResult, url: string): CallToolResult {
+  if (result.ok) return result.reply.result;
+  return toolError(noBrowserMessage(url));
+}
+
+function noBrowserMessage(url: string): string {
+  return `No browser is connected to the Tidewave control page. ${openMessage(url)}`;
+}
+
+function openMessage(url: string): string {
+  return `Use the \`open\` command (or similar) to open ${url}/tidewave in the browser and try again.`;
+}
+
+function toolError(text: string): CallToolResult {
+  return {
+    content: [{ type: 'text', text }],
+    isError: true,
+  };
+}
+
+export async function serveMcp(transport: Transport, options: ServeMcpOptions = {}): Promise<void> {
   const server = new McpServer({ name, version });
 
   server.registerTool(
@@ -197,6 +274,17 @@ export async function serveMcp(transport: Transport): Promise<void> {
         inputSchema: logsMcp.inputSchema.shape,
       },
       handleGetLogs,
+    );
+  }
+
+  if (options.includeBrowserTools) {
+    server.registerTool(
+      browserEvalMcp.name,
+      {
+        description: browserEvalMcp.description,
+        inputSchema: browserEvalMcp.inputSchema.shape,
+      },
+      args => handleBrowserEval(args, options),
     );
   }
 
