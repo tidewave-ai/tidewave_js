@@ -106,7 +106,7 @@ export const getLogsInputSchema = z.object({
 export const browserEvalInputSchema = z.object({
   action: z.string(),
   sid: z.string().optional().describe('The session to target, e.g. "nice-cactus#1".'),
-  args: z
+  action_inputs: z
     .object({})
     .passthrough()
     .optional()

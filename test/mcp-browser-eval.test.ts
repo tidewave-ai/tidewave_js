@@ -33,7 +33,7 @@ describe('browser_eval MCP tool', () => {
     expect(browserEval?.inputSchema.properties?.['action']).toMatchObject({
       type: 'string',
     });
-    expect(browserEval?.inputSchema.properties?.['args']).toMatchObject({
+    expect(browserEval?.inputSchema.properties?.['action_inputs']).toMatchObject({
       type: 'object',
       additionalProperties: true,
     });
@@ -119,7 +119,7 @@ describe('browser_eval MCP tool', () => {
 
     const resultPromise = client.callTool({
       name: 'browser_eval',
-      arguments: { action: 'eval', sid: 'nice-cactus#1', args: { code: '1+1' } },
+      arguments: { action: 'eval', sid: 'nice-cactus#1', action_inputs: { code: '1+1' } },
     });
     const runTool = await waitForRunTool(sent);
 
@@ -127,7 +127,7 @@ describe('browser_eval MCP tool', () => {
       type: 'run_tool',
       name: 'browser_eval',
       sid: 'nice-cactus#1',
-      input: { action: 'eval', sid: 'nice-cactus#1', args: { code: '1+1' } },
+      input: { action: 'eval', sid: 'nice-cactus#1', action_inputs: { code: '1+1' } },
     });
 
     browserClient.receive(
