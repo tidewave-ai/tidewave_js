@@ -1,14 +1,22 @@
 # Changelog
 
-## [v0.8.2] - 2026-07-30
+## [0.9.0] - 2026-08-18
+
+* Add `create_design_canvas` tool
+
+## [0.8.3] - 2026-08-05
+
+* Use `action_inputs` for `browser_eval`
+
+## [0.8.2] - 2026-07-30
 
 - Add Tidewave Connect
 
-## [v0.8.1] - 2026-07-25
+## [0.8.1] - 2026-07-25
 
 - Add `install` command
 
-## [v0.8.0] - 2026-07-22
+## [0.8.0] - 2026-07-22
 
 - Add the Tidewave Toolbar
 - Align minor version across Tidewave packages
