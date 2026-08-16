@@ -5,6 +5,7 @@ export type SourceInputSchema = z.infer<typeof sourceInputSchema>;
 export type ProjectEvalInputSchema = z.infer<typeof projectEvalInputSchema>;
 export type GetLogsInputSchema = z.infer<typeof getLogsInputSchema>;
 export type BrowserEvalInputSchema = z.infer<typeof browserEvalInputSchema>;
+export type CreateDesignCanvasInputSchema = z.infer<typeof createDesignCanvasInputSchema>;
 
 export interface Tool<InputSchema> {
   mcp: {
@@ -27,6 +28,7 @@ export interface Tools {
   eval: Omit<Tool<typeof projectEvalInputSchema>, 'cli'>;
   logs: Omit<Tool<typeof getLogsInputSchema>, 'cli'>;
   browserEval: Omit<Tool<typeof browserEvalInputSchema>, 'cli'>;
+  createDesignCanvas: Omit<Tool<typeof createDesignCanvasInputSchema>, 'cli'>;
 }
 
 const projectEvalDescription = `
@@ -111,6 +113,14 @@ export const browserEvalInputSchema = z.object({
     .passthrough()
     .optional()
     .describe('Parameters for the action, as documented by "help".'),
+});
+
+export const createDesignCanvasInputSchema = z.object({
+  path: z
+    .string()
+    .describe(
+      'The absolute path for the canvas file, with .html file extension. The file must not exist yet.',
+    ),
 });
 
 export const tools: Tools = {
@@ -198,6 +208,16 @@ Start with module-only references to explore, then drill into specific symbols f
 
 You MUST use "help" action first to learn the full API.`,
       inputSchema: browserEvalInputSchema,
+    },
+  },
+  createDesignCanvas: {
+    mcp: {
+      name: 'create_design_canvas',
+      description: `Creates a new design canvas, an HTML file for presenting design explorations.
+
+The tool returns the absolute path of the HTML file. The file includes usage
+instructions, read it, then edit it to author the actual design.`,
+      inputSchema: createDesignCanvasInputSchema,
     },
   },
 } as const;

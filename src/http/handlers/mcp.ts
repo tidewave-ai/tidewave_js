@@ -63,6 +63,7 @@ function serveOptions(
   return {
     includeBrowserTools: includeBrowserTools(req),
     url: localOrigin(req, options.config || {}, options.getLocalRequestInfo),
+    clientUrl: options.config?.clientUrl,
   };
 }
 

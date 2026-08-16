@@ -1,3 +1,6 @@
+import path from 'node:path';
+import fs from 'node:fs/promises';
+import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { tools } from './tools';
 import { name, version } from '../package.json';
@@ -5,6 +8,7 @@ import { name, version } from '../package.json';
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import type {
   BrowserEvalInputSchema,
+  CreateDesignCanvasInputSchema,
   DocsInputSchema,
   GetLogsInputSchema,
   ProjectEvalInputSchema,
@@ -22,11 +26,13 @@ const {
   eval: { mcp: evalMcp },
   logs: { mcp: logsMcp },
   browserEval: { mcp: browserEvalMcp },
+  createDesignCanvas: { mcp: createDesignCanvasMcp },
 } = tools;
 
 export interface ServeMcpOptions {
   includeBrowserTools?: boolean;
   url?: string;
+  clientUrl?: string;
 }
 
 async function handleProjectEvaluation({
@@ -230,6 +236,92 @@ function openMessage(url: string): string {
   return `Use the \`open\` command (or similar) to open ${url}/tidewave in the browser and try again.`;
 }
 
+async function handleCreateDesignCanvas(
+  args: CreateDesignCanvasInputSchema,
+  options: ServeMcpOptions,
+): Promise<CallToolResult> {
+  const canvasPath = args.path;
+
+  if (!(path.isAbsolute(canvasPath) && canvasPath.endsWith('.html'))) {
+    return toolError(
+      `Invalid path ${JSON.stringify(canvasPath)}. It must be an absolute path with the .html file extension.`,
+    );
+  }
+
+  let html: string;
+  try {
+    html = await fetchCanvasHtml(options.clientUrl || 'https://tidewave.ai');
+  } catch (error) {
+    return toolError(errorMessage(error));
+  }
+
+  try {
+    await fs.mkdir(path.dirname(canvasPath), { recursive: true });
+  } catch (error) {
+    return toolError(`Failed to create the design canvas directory: ${errorMessage(error)}`);
+  }
+
+  try {
+    await fs.writeFile(canvasPath, html, { flag: 'wx' });
+  } catch (error) {
+    if ((error as { code?: string }).code === 'EEXIST') {
+      return toolError('Failed to create the design canvas file, the file already exists.');
+    }
+
+    return toolError(`Failed to create the design canvas file: ${errorMessage(error)}`);
+  }
+
+  return {
+    content: [
+      {
+        type: 'text',
+        text: `Design canvas created at: <path>${canvasPath}</path>. Read the file for usage instructions.`,
+      },
+    ],
+    isError: false,
+  };
+}
+
+const canvasResponseSchema = z.object({ html: z.string() });
+
+async function fetchCanvasHtml(clientUrl: string): Promise<string> {
+  const url = `${clientUrl}/tc/data/canvas.json`;
+
+  let response: Response;
+  try {
+    response = await fetch(url, { signal: AbortSignal.timeout(15_000) });
+  } catch (error) {
+    throw new Error(
+      `Failed to fetch the design canvas template, request to ${url} failed: ${errorMessage(error)}`,
+    );
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch the design canvas template, request to ${url} failed with status ${response.status}`,
+    );
+  }
+
+  let data: unknown;
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error(`Failed to fetch the design canvas template, unexpected response from ${url}`);
+  }
+
+  const result = canvasResponseSchema.safeParse(data);
+
+  if (!result.success) {
+    throw new Error(`Failed to fetch the design canvas template, unexpected response from ${url}`);
+  }
+
+  return result.data.html;
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 function toolError(text: string): CallToolResult {
   return {
     content: [{ type: 'text', text }],
@@ -285,6 +377,15 @@ export async function serveMcp(transport: Transport, options: ServeMcpOptions = 
         inputSchema: browserEvalMcp.inputSchema.shape,
       },
       args => handleBrowserEval(args, options),
+    );
+
+    server.registerTool(
+      createDesignCanvasMcp.name,
+      {
+        description: createDesignCanvasMcp.description,
+        inputSchema: createDesignCanvasMcp.inputSchema.shape,
+      },
+      args => handleCreateDesignCanvas(args, options),
     );
   }
 
