@@ -93,20 +93,6 @@ async function handleGetDocs({ reference }: DocsInputSchema): Promise<CallToolRe
     };
   }
 
-  // Handle both FileInfo and SymbolInfo
-  // For SymbolInfo, check if documentation is available
-  if ('documentation' in docs && !docs.documentation) {
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Documentation not avaialble for ${reference}, reference did not include it`,
-        },
-      ],
-      isError: true,
-    };
-  }
-
   return {
     content: [{ type: 'text', text: Tidewave.formatOutput(docs) }],
     isError: false,
