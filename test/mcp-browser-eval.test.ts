@@ -35,7 +35,7 @@ describe('browser_eval MCP tool', () => {
     });
     expect(browserEval?.inputSchema.properties?.['action_inputs']).toMatchObject({
       type: 'object',
-      additionalProperties: true,
+      additionalProperties: {},
     });
   });
 

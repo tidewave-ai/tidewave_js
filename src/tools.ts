@@ -109,8 +109,7 @@ export const browserEvalInputSchema = z.object({
   action: z.string(),
   sid: z.string().optional().describe('The session to target, e.g. "nice-cactus#1".'),
   action_inputs: z
-    .object({})
-    .passthrough()
+    .looseObject({})
     .optional()
     .describe('Parameters for the action, as documented by "help".'),
 });

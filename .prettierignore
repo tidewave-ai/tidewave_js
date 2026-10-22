@@ -1,6 +1,5 @@
 # Dependencies
 node_modules/
-.bun/
 
 # Build outputs
 dist/
@@ -20,13 +19,11 @@ coverage/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-bun-debug.log*
-bun-error.log*
 
 # Lock files (don't format)
 package-lock.json
 yarn.lock
-bun.lockb
+pnpm-lock.yaml
 
 # Generated files
 CHANGELOG.md

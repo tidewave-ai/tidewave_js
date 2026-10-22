@@ -217,15 +217,14 @@ npx tidewave source typescript:createProgram
 ## Contributing
 
 ```bash
-bun install              # Install dependencies
-bun run build            # Compile TypeScript
-bun run dev              # Run CLI with Bun
-bun test                 # Run tests with Vitest
-bun run lint             # ESLint checking
-bun run lint:fix         # ESLint with auto-fix
-bun run format           # Prettier formatting
-bun run format:check     # Check Prettier formatting
-bun run clean            # Clean dist directory
+pnpm install             # Install dependencies
+pnpm build               # Build with tsdown
+pnpm dev                 # Build in watch mode
+pnpm test                # Run tests with Vitest
+pnpm lint                # ESLint checking
+pnpm lint:fix            # ESLint with auto-fix
+pnpm format              # Prettier formatting
+pnpm format:check        # Check Prettier formatting
 ```
 
 ## Acknowledgements

@@ -10,7 +10,6 @@
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
-    "declaration": true,
     // Best practices
     "strict": true,
     "skipLibCheck": true,

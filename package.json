@@ -19,27 +19,21 @@
   "license": "Apache-2.0",
   "author": "Dashbit",
   "type": "module",
-  "main": "dist/cli/index.js",
-  "module": "dist/cli/index.js",
   "bin": {
-    "tidewave": "dist/cli/index.js"
+    "tidewave": "dist/cli/index.mjs"
   },
-  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
     },
     "./vite-plugin": {
-      "types": "./dist/vite-plugin.d.ts",
-      "import": "./dist/vite-plugin.js",
-      "require": "./dist/vite-plugin.js"
+      "types": "./dist/vite-plugin.d.mts",
+      "default": "./dist/vite-plugin.mjs"
     },
     "./tanstack": {
-      "types": "./dist/tanstack.d.ts",
-      "import": "./dist/tanstack.js",
-      "require": "./dist/tanstack.js"
+      "types": "./dist/tanstack.d.mts",
+      "default": "./dist/tanstack.mjs"
     },
     "./package.json": "./package.json"
   },
@@ -49,50 +43,52 @@
     "LICENSE",
     "CHANGELOG.md"
   ],
+  "packageManager": "pnpm@11.13.0",
   "scripts": {
-    "dist": "bun run clean && bun run build:js && bun run build:types",
-    "build:js": "bun build --outdir dist --root src --external typescript --external module src/vite-plugin.ts src/tanstack.ts src/cli/index.ts --target node",
-    "build:types": "tsc -p tsconfig.declarations.json",
-    "dev": "bun run src/cli/index.ts",
-    "test": "bun test",
-    "lint": "eslint src/ --ext .ts,.js",
-    "lint:fix": "eslint src/ --ext .ts,.js --fix",
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "test": "vitest run",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "type:check": "tsc --noEmit",
-    "clean": "rm -rf dist/"
+    "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.17.4",
+    "@modelcontextprotocol/sdk": "~1.32.1",
     "body-parser": "^2.2.0",
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0",
     "typescript": "^5",
     "ws": "^8.21.1",
-    "zod": "3.25.76"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@eslint/js": "^9.16.0",
     "@types/body-parser": "^1.19.6",
-    "@types/bun": "latest",
     "@types/node": "^22.10.1",
     "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.18.0",
     "@typescript-eslint/parser": "^8.18.0",
-    "@vitest/ui": "^3.2.4",
-    "bun-types": "latest",
-    "chalk": "^5.3.0",
-    "commander": "^12.1.0",
     "eslint": "^9.16.0",
     "globals": "^15.14.0",
     "prettier": "^3.4.2",
+    "tsdown": "^0.23.1",
     "vite": "^7.1.5",
     "vitest": "^4.1.8"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite": "^6.0.0 || ^7.0.0 || ^8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    }
   },
   "engines": {
-    "node": ">=18.0.0",
-    "bun": ">=1.0.0"
+    "node": ">=20.19.0"
   },
   "publishConfig": {
     "access": "public"
