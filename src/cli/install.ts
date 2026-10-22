@@ -17,6 +17,28 @@ interface FileChange {
   content: string;
 }
 
+interface VitePlugin {
+  module: string;
+  name: string;
+  namedExport: boolean;
+}
+
+const TIDEWAVE_PLUGIN: VitePlugin = {
+  module: 'tidewave/vite-plugin',
+  name: 'tidewave',
+  namedExport: false,
+};
+
+// TanStack Devtools adds source locations to JSX elements, which makes
+// Tidewave more precise. As per TanStack docs, it must be the first plugin,
+// so that it runs before other TanStack plugins transform the source.
+// The position of the Tidewave plugin does not matter.
+const DEVTOOLS_PLUGIN: VitePlugin = {
+  module: '@tanstack/devtools-vite',
+  name: 'devtools',
+  namedExport: true,
+};
+
 const VITE_CONFIG_FILES = [
   'vite.config.ts',
   'vite.config.js',
@@ -25,6 +47,13 @@ const VITE_CONFIG_FILES = [
 ];
 
 const TANSTACK_START_FILES = ['src/start.ts', 'src/start.js'];
+
+const DEFAULT_START = `import { createStart } from '@tanstack/react-start';
+
+export const startInstance = createStart(() => {
+  return {};
+});
+`;
 
 export async function handleInstall(options: InstallOptions): Promise<void> {
   const targetDir = path.resolve(options.prefix ?? process.cwd());
@@ -38,7 +67,11 @@ export async function handleInstall(options: InstallOptions): Promise<void> {
   }
 
   const packageJson = readPackageJson(targetDir);
-  const projectType = detectProjectType(packageJson);
+  const dependencies = {
+    ...asDependencies(packageJson.dependencies),
+    ...asDependencies(packageJson.devDependencies),
+  };
+  const projectType = detectProjectType(dependencies);
   const changes = buildFileChanges(targetDir, projectType);
 
   console.log(
@@ -51,13 +84,18 @@ export async function handleInstall(options: InstallOptions): Promise<void> {
     if (dryRun) {
       console.log(chalk.gray(`[DRY RUN] Would update: ${relativePath}`));
     } else {
+      fs.mkdirSync(path.dirname(change.path), { recursive: true });
       fs.writeFileSync(change.path, change.content, 'utf8');
       console.log(chalk.green(`✅ Updated: ${relativePath}`));
     }
   }
 
   if (!options.skipDeps) {
-    installDependency(targetDir, dryRun);
+    const packages = ['tidewave'];
+    if (projectType === 'tanstack' && !(DEVTOOLS_PLUGIN.module in dependencies)) {
+      packages.push(DEVTOOLS_PLUGIN.module);
+    }
+    installDependencies(targetDir, packages, dryRun);
   }
 
   console.log(chalk.green('\n✅ Tidewave setup complete!\n'));
@@ -79,12 +117,7 @@ function readPackageJson(dir: string): Record<string, unknown> {
   }
 }
 
-function detectProjectType(packageJson: Record<string, unknown>): ProjectType {
-  const dependencies = {
-    ...asDependencies(packageJson.dependencies),
-    ...asDependencies(packageJson.devDependencies),
-  };
-
+function detectProjectType(dependencies: Record<string, unknown>): ProjectType {
   if ('@tanstack/react-start' in dependencies) {
     return 'tanstack';
   }
@@ -110,19 +143,21 @@ function buildFileChanges(dir: string, projectType: ProjectType): FileChange[] {
 
   const changes: FileChange[] = [];
   const viteConfig = fs.readFileSync(viteConfigPath, 'utf8');
-  const updatedViteConfig = addVitePlugin(viteConfig, viteConfigPath);
+  let updatedViteConfig = addVitePlugin(viteConfig, viteConfigPath, TIDEWAVE_PLUGIN);
+
+  if (projectType === 'tanstack') {
+    updatedViteConfig = addVitePlugin(updatedViteConfig, viteConfigPath, DEVTOOLS_PLUGIN);
+  }
 
   if (updatedViteConfig !== viteConfig) {
     changes.push({ path: viteConfigPath, content: updatedViteConfig });
   }
 
   if (projectType === 'tanstack') {
-    const startPath = findFile(dir, TANSTACK_START_FILES);
-    if (!startPath) {
-      throw new Error(`Could not find ${TANSTACK_START_FILES.join(' or ')}`);
-    }
-
-    const start = fs.readFileSync(startPath, 'utf8');
+    // The start file is optional in TanStack Start, so we create it when missing.
+    const startPath =
+      findFile(dir, TANSTACK_START_FILES) ?? path.join(dir, TANSTACK_START_FILES[0]!);
+    const start = fs.existsSync(startPath) ? fs.readFileSync(startPath, 'utf8') : DEFAULT_START;
     const updatedStart = addTanStackImport(start, startPath);
 
     if (updatedStart !== start) {
@@ -142,7 +177,7 @@ function findFile(dir: string, candidates: string[]): string | null {
   return null;
 }
 
-function addVitePlugin(source: string, fileName: string): string {
+function addVitePlugin(source: string, fileName: string, plugin: VitePlugin): string {
   let updated = source;
   const sourceFile = parseSource(source, fileName);
   const config = findViteConfigObject(sourceFile);
@@ -151,22 +186,19 @@ function addVitePlugin(source: string, fileName: string): string {
     throw new Error(`Could not find the Vite configuration object in ${fileName}`);
   }
 
-  const existingImportName = findTidewaveImportName(sourceFile);
-  const pluginName = existingImportName ?? availablePluginName(sourceFile);
-
-  if (!pluginName) {
-    throw new Error(`Could not determine the Tidewave import in ${fileName}`);
-  }
+  const existingImportName = findImportName(sourceFile, plugin);
+  const pluginName = existingImportName ?? availablePluginName(sourceFile, plugin);
 
   if (new RegExp(`\\b${pluginName}\\s*\\(`).test(source)) {
     return source;
   }
 
-  updated = addPluginToConfig(updated, config, pluginName);
+  const devtoolsName = findImportName(sourceFile, DEVTOOLS_PLUGIN);
+  updated = addPluginToConfig(updated, config, pluginName, devtoolsName);
 
   if (!existingImportName) {
     const reparsed = parseSource(updated, fileName);
-    updated = addImport(updated, reparsed, pluginName, 'tidewave/vite-plugin');
+    updated = addImport(updated, reparsed, pluginName, plugin);
   }
 
   return updated;
@@ -249,21 +281,30 @@ function findObjectLiteral(node: ts.Node): ts.ObjectLiteralExpression | null {
   return result;
 }
 
-function findTidewaveImportName(sourceFile: ts.SourceFile): string | null {
+function findImportName(sourceFile: ts.SourceFile, plugin: VitePlugin): string | null {
   for (const statement of sourceFile.statements) {
     if (
       ts.isImportDeclaration(statement) &&
       ts.isStringLiteral(statement.moduleSpecifier) &&
-      statement.moduleSpecifier.text === 'tidewave/vite-plugin'
+      statement.moduleSpecifier.text === plugin.module
     ) {
-      return statement.importClause?.name?.text ?? null;
+      const clause = statement.importClause;
+      if (!plugin.namedExport) return clause?.name?.text ?? null;
+
+      const bindings = clause?.namedBindings;
+      if (bindings && ts.isNamedImports(bindings)) {
+        const element = bindings.elements.find(
+          element => (element.propertyName ?? element.name).text === plugin.name,
+        );
+        if (element) return element.name.text;
+      }
     }
   }
 
   return null;
 }
 
-function availablePluginName(sourceFile: ts.SourceFile): string {
+function availablePluginName(sourceFile: ts.SourceFile, plugin: VitePlugin): string {
   const identifiers = new Set<string>();
 
   function visit(node: ts.Node): void {
@@ -272,13 +313,14 @@ function availablePluginName(sourceFile: ts.SourceFile): string {
   }
 
   visit(sourceFile);
-  return identifiers.has('tidewave') ? 'tidewavePlugin' : 'tidewave';
+  return identifiers.has(plugin.name) ? `${plugin.name}Plugin` : plugin.name;
 }
 
 function addPluginToConfig(
   source: string,
   config: ts.ObjectLiteralExpression,
   pluginName: string,
+  firstPluginName: string | null,
 ): string {
   const plugins = config.properties.find(
     property =>
@@ -306,6 +348,10 @@ function addPluginToConfig(
     }
 
     const firstElement = array.elements[0]!;
+    if (isCallTo(firstElement, firstPluginName)) {
+      return `${source.slice(0, firstElement.end)}, ${pluginName}()${source.slice(firstElement.end)}`;
+    }
+
     return `${source.slice(0, firstElement.getStart())}${pluginName}(), ${source.slice(
       firstElement.getStart(),
     )}`;
@@ -341,13 +387,26 @@ function addPluginToConfig(
   )}`;
 }
 
+function isCallTo(node: ts.Node, name: string | null): boolean {
+  return (
+    name !== null &&
+    ts.isCallExpression(node) &&
+    ts.isIdentifier(node.expression) &&
+    node.expression.text === name
+  );
+}
+
 function addImport(
   source: string,
   sourceFile: ts.SourceFile,
   name: string,
-  moduleName: string,
+  plugin: VitePlugin,
 ): string {
-  const statement = `import ${name} from '${moduleName}';`;
+  let binding = name;
+  if (plugin.namedExport) {
+    binding = name === plugin.name ? `{ ${name} }` : `{ ${plugin.name} as ${name} }`;
+  }
+  const statement = `import ${binding} from '${plugin.module}';`;
   const imports = sourceFile.statements.filter(ts.isImportDeclaration);
 
   if (imports.length === 0) return `${statement}\n${source}`;
@@ -365,15 +424,15 @@ function detectPackageManager(dir: string): string {
   return 'npm';
 }
 
-function installDependency(dir: string, dryRun: boolean): void {
+function installDependencies(dir: string, packages: string[], dryRun: boolean): void {
   const packageManager = detectPackageManager(dir);
   const args: Record<string, string[]> = {
-    npm: ['install', '-D', 'tidewave'],
-    yarn: ['add', '-D', 'tidewave'],
-    pnpm: ['add', '--save-dev', 'tidewave'],
-    bun: ['add', '--dev', 'tidewave'],
+    npm: ['install', '-D'],
+    yarn: ['add', '-D'],
+    pnpm: ['add', '--save-dev'],
+    bun: ['add', '--dev'],
   };
-  const installArgs = args[packageManager]!;
+  const installArgs = [...args[packageManager]!, ...packages];
 
   console.log(chalk.yellow('📦 Installing Tidewave...'));
 

@@ -62,16 +62,16 @@ instructions below.
 <details>
 <summary>Show manual installation steps for TanStack Start</summary><br />
 
-**1. Add Tidewave as a dependency**
+**1. Add Tidewave and TanStack Devtools as dependencies**
 
 ```sh
-$ npm install -D tidewave
+$ npm install -D tidewave @tanstack/devtools-vite
 # or
-$ yarn add -D tidewave
+$ yarn add -D tidewave @tanstack/devtools-vite
 # or
-$ pnpm add --save-dev tidewave
+$ pnpm add --save-dev tidewave @tanstack/devtools-vite
 # or
-$ bun add --dev tidewave
+$ bun add --dev tidewave @tanstack/devtools-vite
 ```
 
 **2. Configure Vite**
@@ -80,12 +80,17 @@ Configure your `vite.config.js` (also works for `.ts` and `.mjs`):
 
 ```javascript
 import { defineConfig } from 'vite';
+import { devtools } from '@tanstack/devtools-vite';
 import tidewave from 'tidewave/vite-plugin';
 
 export default defineConfig({
-  plugins: [tidewave()],
+  plugins: [devtools(), tidewave()],
 });
 ```
+
+The TanStack Devtools plugin is optional, but it adds source locations to
+elements, which makes Tidewave more precise. As per TanStack docs, it must be
+the first plugin.
 
 **3. Configure TanStack Start**
 
