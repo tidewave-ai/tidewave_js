@@ -94,6 +94,7 @@ export interface EvaluatedModuleResult {
   result: string | null;
   stdout: string;
   stderr: string;
+  note?: string;
 }
 
 export type ResolveResult = ResolvedModule | ResolveError;

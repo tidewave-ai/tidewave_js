@@ -1,11 +1,12 @@
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { serveMcp, type ServeMcpOptions } from '../../mcp';
+import { serveMcp, type Evaluate, type ServeMcpOptions } from '../../mcp';
 import type { TidewaveConfig } from '../../core';
 import type { LocalRequestInfoGetter } from '../../config';
 import type { TidewaveNext, TidewaveRequest, TidewaveResponse } from '../types';
 
 export interface McpHandlerOptions {
   getLocalRequestInfo?: LocalRequestInfoGetter<TidewaveRequest>;
+  evaluate?: Evaluate;
 }
 
 export function createHandleMcp(
@@ -64,6 +65,7 @@ function serveOptions(
     includeBrowserTools: includeBrowserTools(req),
     url: localOrigin(req, options.config || {}, options.getLocalRequestInfo),
     clientUrl: options.config?.clientUrl,
+    evaluate: options.evaluate,
   };
 }
 

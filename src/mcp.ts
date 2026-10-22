@@ -15,7 +15,12 @@ import type {
   SourceInputSchema,
 } from './tools';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
-import { isExtractError, isResolveError } from './core';
+import {
+  isExtractError,
+  isResolveError,
+  type EvaluatedModuleResult,
+  type EvaluationRequest,
+} from './core';
 import { Tidewave } from '.';
 import { tidewaveLogger } from './logger/tidewave-logger';
 import { browserSessions, type BrowserSessionResult } from './control/browser-sessions';
@@ -33,15 +38,17 @@ export interface ServeMcpOptions {
   includeBrowserTools?: boolean;
   url?: string;
   clientUrl?: string;
+  evaluate?: Evaluate;
 }
 
-async function handleProjectEvaluation({
-  code,
-  timeout,
-  arguments: args,
-  json,
-}: ProjectEvalInputSchema): Promise<CallToolResult> {
-  const result = await Tidewave.executeIsolated({ code, timeout, args });
+export type Evaluate = (request: EvaluationRequest) => Promise<EvaluatedModuleResult>;
+
+async function handleProjectEvaluation(
+  { code, timeout, arguments: args, json }: ProjectEvalInputSchema,
+  evaluate: Evaluate,
+): Promise<CallToolResult> {
+  const result = await evaluate({ code, timeout, args });
+  const note = result.note ? `Note: ${result.note}\n\n` : '';
 
   if (!result.success) {
     if (json)
@@ -54,7 +61,7 @@ async function handleProjectEvaluation({
       content: [
         {
           type: 'text',
-          text: `Failed to evaluate code. Process exited with reason: ${result.stderr}\n\n${result.result}`,
+          text: `${note}Failed to evaluate code. Process exited with reason: ${result.stderr}\n\n${result.result}`,
         },
       ],
       isError: true,
@@ -71,7 +78,7 @@ async function handleProjectEvaluation({
     content: [
       {
         type: 'text',
-        text: `Stdout:\n\n${result.stdout}\n\nStderr:${result.stderr}\n\nResult:${result.result}`,
+        text: `${note}Stdout:\n\n${result.stdout}\n\nStderr:${result.stderr}\n\nResult:${result.result}`,
       },
     ],
     isError: false,
@@ -339,7 +346,7 @@ export async function serveMcp(transport: Transport, options: ServeMcpOptions = 
   server.registerTool(
     evalMcp.name,
     { description: evalMcp.description, inputSchema: evalMcp.inputSchema.shape },
-    handleProjectEvaluation,
+    args => handleProjectEvaluation(args, options.evaluate ?? Tidewave.executeIsolated),
   );
 
   // Only register logs MCP if console has been patched

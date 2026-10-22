@@ -175,7 +175,10 @@ Vite's `tidewave` plugin accepts the configuration options below:
 - `get_logs` - reads console log written by the server
 
 - `project_eval` - evaluates code within the runtime itself, giving the agent
-  access to dependencies, server code, and all in-memory data
+  access to dependencies, server code, and all in-memory data. If the app server
+  runs in workerd (such as with `@cloudflare/vite-plugin`), or has not handled a
+  request yet, the code runs in the Vite process instead, without access to the
+  app's in-memory data
 
 ## CLI
 
