@@ -1,20 +1,20 @@
-import { checkRemoteIp } from './security';
-import { createHandleMcp } from './handlers/mcp';
-import type { Evaluate } from '../mcp';
-import { createHandleControlHtml, createHandleHtml } from './handlers/html';
-import { createHandleConfig } from './handlers/config';
-import { createHandleUpload } from './handlers/upload';
-import { createHandleResponseHeaders } from './headers';
-import bodyParser from 'body-parser';
-import type { TidewaveConfig } from '../core';
-import type { LocalRequestInfoGetter } from '../config';
-import { ENDPOINT } from './constants';
+import { checkRemoteIp } from "./security";
+import { createHandleMcp } from "./handlers/mcp";
+import type { Evaluate } from "../mcp";
+import { createHandleControlHtml, createHandleHtml } from "./handlers/html";
+import { createHandleConfig } from "./handlers/config";
+import { createHandleUpload } from "./handlers/upload";
+import { createHandleResponseHeaders } from "./headers";
+import bodyParser from "body-parser";
+import type { TidewaveConfig } from "../core";
+import type { LocalRequestInfoGetter } from "../config";
+import { ENDPOINT } from "./constants";
 import type {
   TidewaveMiddlewareServer,
   TidewaveNext,
   TidewaveRequest,
   TidewaveResponse,
-} from './types';
+} from "./types";
 
 const DEFAULT_OPTIONS: TidewaveConfig = {
   allowRemoteAccess: false,

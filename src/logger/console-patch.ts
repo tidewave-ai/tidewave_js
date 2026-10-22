@@ -1,7 +1,7 @@
-import { tidewaveLogger } from './tidewave-logger';
-import { stripAnsiCodes } from './ansi';
+import { tidewaveLogger } from "./tidewave-logger";
+import { stripAnsiCodes } from "./ansi";
 
-type ConsoleMethods = 'log' | 'info' | 'warn' | 'error' | 'debug';
+type ConsoleMethods = "log" | "info" | "warn" | "error" | "debug";
 
 /**
  * Patch console methods to write directly to the tidewave logger.
@@ -9,9 +9,7 @@ type ConsoleMethods = 'log' | 'info' | 'warn' | 'error' | 'debug';
  */
 export function patchConsole(): void {
   const isBrowser =
-    typeof globalThis !== 'undefined' &&
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    typeof (globalThis as any).window !== 'undefined';
+    typeof globalThis !== "undefined" && typeof (globalThis as any).window !== "undefined";
 
   if (isBrowser) {
     return;
@@ -24,11 +22,11 @@ export function patchConsole(): void {
   }
 
   const severityMap: Record<ConsoleMethods, string> = {
-    log: 'INFO',
-    info: 'INFO',
-    warn: 'WARN',
-    error: 'ERROR',
-    debug: 'DEBUG',
+    log: "INFO",
+    info: "INFO",
+    warn: "WARN",
+    error: "ERROR",
+    debug: "DEBUG",
   };
 
   (Object.entries(severityMap) as [ConsoleMethods, string][]).forEach(
@@ -40,11 +38,11 @@ export function patchConsole(): void {
         try {
           const body = args
             .map((arg: unknown) => {
-              if (typeof arg === 'string') return arg;
+              if (typeof arg === "string") return arg;
               if (arg instanceof Error) {
                 return String(arg.stack);
               }
-              if (typeof arg === 'object') {
+              if (typeof arg === "object") {
                 try {
                   return JSON.stringify(arg);
                 } catch {
@@ -54,7 +52,7 @@ export function patchConsole(): void {
               return String(arg);
             })
             .map(stripAnsiCodes)
-            .join(' ');
+            .join(" ");
 
           const isAllWhitespace = body.match(/^\s+$/);
 
@@ -64,8 +62,8 @@ export function patchConsole(): void {
               severityText: severity,
               body,
               attributes: {
-                'log.origin': 'console',
-                'log.method': method,
+                "log.origin": "console",
+                "log.method": method,
               },
             });
           }

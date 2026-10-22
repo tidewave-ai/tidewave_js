@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 // src/cli/index.ts
 
-import { program } from 'commander';
-import chalk from 'chalk';
-import { tools } from '../tools';
-import { Tidewave } from '../index';
-import { isExtractError, isResolveError } from '../core';
+import { program } from "commander";
+import chalk from "chalk";
+import { tools } from "../tools";
+import { Tidewave } from "../index";
+import { isExtractError, isResolveError } from "../core";
 
-import { name, version } from '../../package.json';
-import { handleInstall } from './install';
+import { name, version } from "../../package.json";
+import { handleInstall } from "./install";
 
 function chdir(path: string): void {
   try {
@@ -21,7 +21,7 @@ function chdir(path: string): void {
 // CLI Interface
 program
   .name(name)
-  .description('Universal documentation and source extraction tool for TypeScript and JavaScript')
+  .description("Universal documentation and source extraction tool for TypeScript and JavaScript")
   .version(version);
 
 async function handleGetDocs(
@@ -65,10 +65,10 @@ const {
 } = tools;
 
 program
-  .command('install')
-  .description('Install Tidewave in a Vite or TanStack Start project')
-  .option('--prefix <path>', 'Specify the directory containing package.json')
-  .option('--dry-run', 'Preview changes without modifying files')
+  .command("install")
+  .description("Install Tidewave in a Vite or TanStack Start project")
+  .option("--prefix <path>", "Specify the directory containing package.json")
+  .option("--dry-run", "Preview changes without modifying files")
   .action(handleInstall);
 
 program

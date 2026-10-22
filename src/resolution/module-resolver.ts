@@ -1,7 +1,7 @@
-import ts from 'typescript';
-import path from 'node:path';
-import type { InternalResolveResult } from '../core';
-import { resolveError } from '../core';
+import ts from "typescript";
+import path from "node:path";
+import type { InternalResolveResult } from "../core";
+import { resolveError } from "../core";
 
 // Load TypeScript configuration
 export function loadTsConfig(prefix?: string): {
@@ -9,7 +9,7 @@ export function loadTsConfig(prefix?: string): {
   options: ts.CompilerOptions;
 } {
   const projectPath = prefix || process.cwd();
-  const configPath = ts.findConfigFile(projectPath, ts.sys.fileExists, 'tsconfig.json');
+  const configPath = ts.findConfigFile(projectPath, ts.sys.fileExists, "tsconfig.json");
 
   let compilerOptions: ts.CompilerOptions = {
     target: ts.ScriptTarget.ES2020,
@@ -20,8 +20,8 @@ export function loadTsConfig(prefix?: string): {
     skipLibCheck: true,
     allowJs: true,
     declaration: true,
-    typeRoots: ['./node_modules/@types'],
-    baseUrl: '.',
+    typeRoots: ["./node_modules/@types"],
+    baseUrl: ".",
   };
 
   let rootNames: string[] = [];
@@ -51,9 +51,9 @@ export function resolveModule(
 ): InternalResolveResult {
   // For local files, check if the exact path exists first (to prefer .js over .ts)
   if (
-    moduleName.startsWith('./') ||
-    moduleName.startsWith('../') ||
-    (moduleName.includes('.') && !moduleName.includes('/'))
+    moduleName.startsWith("./") ||
+    moduleName.startsWith("../") ||
+    (moduleName.includes(".") && !moduleName.includes("/"))
   ) {
     const absolutePath = path.resolve(moduleName);
     if (ts.sys.fileExists(absolutePath)) {
@@ -69,7 +69,7 @@ export function resolveModule(
   // Fall back to normal module resolution for non-local modules
   const moduleResolver = ts.resolveModuleName(
     moduleName,
-    path.resolve('./index.ts'),
+    path.resolve("./index.ts"),
     compilerOptions,
     ts.sys,
   );
@@ -95,7 +95,7 @@ export function resolveNodeBuiltin(
   compilerOptions: ts.CompilerOptions,
 ): InternalResolveResult {
   // Check if it's a node: builtin module
-  if (!moduleName.startsWith('node:')) {
+  if (!moduleName.startsWith("node:")) {
     return resolveError(moduleName, process.cwd());
   }
 
@@ -103,29 +103,29 @@ export function resolveNodeBuiltin(
 
   // Known Node.js global modules
   const globalBuiltins = [
-    'Math',
-    'Date',
-    'JSON',
-    'Object',
-    'Array',
-    'String',
-    'Number',
-    'Boolean',
-    'RegExp',
-    'Function',
-    'Promise',
-    'Map',
-    'Set',
-    'WeakMap',
-    'WeakSet',
-    'Symbol',
-    'Error',
-    'console',
-    'process',
-    'Buffer',
-    'global',
-    '__dirname',
-    '__filename',
+    "Math",
+    "Date",
+    "JSON",
+    "Object",
+    "Array",
+    "String",
+    "Number",
+    "Boolean",
+    "RegExp",
+    "Function",
+    "Promise",
+    "Map",
+    "Set",
+    "WeakMap",
+    "WeakSet",
+    "Symbol",
+    "Error",
+    "console",
+    "process",
+    "Buffer",
+    "global",
+    "__dirname",
+    "__filename",
   ];
 
   if (globalBuiltins.includes(symbolName)) {

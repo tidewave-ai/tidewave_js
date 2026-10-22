@@ -3,25 +3,31 @@
   "version": "0.8.2",
   "description": "Tidewave for JavaScript (TanStack, Vite)",
   "keywords": [
-    "typescript",
+    "cli",
     "documentation",
     "mcp",
-    "cli",
+    "tanstack",
     "tidewave",
-    "vite",
-    "tanstack"
+    "typescript",
+    "vite"
   ],
   "homepage": "https://tidewave.ai",
+  "license": "Apache-2.0",
+  "author": "Dashbit",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/tidewave-ai/tidewave_js.git"
   },
-  "license": "Apache-2.0",
-  "author": "Dashbit",
-  "type": "module",
   "bin": {
     "tidewave": "dist/cli/index.mjs"
   },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.mts",
@@ -37,49 +43,40 @@
     },
     "./package.json": "./package.json"
   },
-  "files": [
-    "dist/",
-    "README.md",
-    "LICENSE",
-    "CHANGELOG.md"
-  ],
-  "packageManager": "pnpm@11.13.0",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
     "test": "vitest run",
-    "lint": "eslint src/",
-    "lint:fix": "eslint src/ --fix",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
     "type:check": "tsc --noEmit",
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "~1.32.1",
-    "body-parser": "^2.2.0",
-    "chalk": "^5.3.0",
-    "commander": "^12.1.0",
-    "typescript": "^5",
-    "ws": "^8.21.1",
-    "zod": "4.6.7"
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "body-parser": "^2.3.0",
+    "chalk": "^6.0.1",
+    "commander": "^15.0.0",
+    "typescript": "^6.0.3",
+    "ws": "^8.22.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@eslint/js": "^9.16.0",
     "@types/body-parser": "^1.19.6",
-    "@types/node": "^22.10.1",
-    "@types/ws": "^8.18.1",
-    "@typescript-eslint/eslint-plugin": "^8.18.0",
-    "@typescript-eslint/parser": "^8.18.0",
-    "eslint": "^9.16.0",
-    "globals": "^15.14.0",
-    "prettier": "^3.4.2",
+    "@types/node": "^22.19.0",
+    "@types/ws": "^8.18.2",
+    "oxfmt": "^0.74.0",
+    "oxlint": "^1.89.0",
     "tsdown": "^0.23.1",
-    "vite": "^7.1.5",
-    "vitest": "^4.1.8"
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
   },
   "peerDependencies": {
-    "typescript": "^5",
     "vite": "^6.0.0 || ^7.0.0 || ^8.0.0"
   },
   "peerDependenciesMeta": {
@@ -88,9 +85,7 @@
     }
   },
   "engines": {
-    "node": ">=20.19.0"
+    "node": ">=22.12.0"
   },
-  "publishConfig": {
-    "access": "public"
-  }
+  "packageManager": "pnpm@11.13.0"
 }

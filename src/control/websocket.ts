@@ -1,22 +1,22 @@
-import type { IncomingMessage } from 'node:http';
-import type { Socket } from 'node:net';
-import { WebSocket, WebSocketServer } from 'ws';
-import type { TidewaveConfig } from '../core';
-import { ENDPOINT } from '../http/constants';
-import { validateOrigin, validateRemoteIp } from '../http/security';
-import type { TidewaveRequest } from '../http/types';
-import { browserSessions, type BrowserSessions } from './browser-sessions';
+import type { IncomingMessage } from "node:http";
+import type { Socket } from "node:net";
+import { WebSocket, WebSocketServer } from "ws";
+import type { TidewaveConfig } from "../core";
+import { ENDPOINT } from "../http/constants";
+import { validateOrigin, validateRemoteIp } from "../http/security";
+import type { TidewaveRequest } from "../http/types";
+import { browserSessions, type BrowserSessions } from "./browser-sessions";
 
 const HEARTBEAT_INTERVAL = 15_000;
 
 type UpgradeCapableServer = {
   on(
-    event: 'upgrade',
+    event: "upgrade",
     listener: (req: IncomingMessage, socket: Socket, head: Buffer) => void,
   ): void;
-  once(event: 'close', listener: () => void): void;
+  once(event: "close", listener: () => void): void;
   off(
-    event: 'upgrade',
+    event: "upgrade",
     listener: (req: IncomingMessage, socket: Socket, head: Buffer) => void,
   ): void;
 };
@@ -47,8 +47,8 @@ export function installControlWebSocket(
       return;
     }
 
-    wss.handleUpgrade(req, socket, head, ws => {
-      const client = sessions.createClient(message => {
+    wss.handleUpgrade(req, socket, head, (ws) => {
+      const client = sessions.createClient((message) => {
         try {
           if (ws.readyState !== WebSocket.OPEN) return false;
           ws.send(JSON.stringify(message));
@@ -58,8 +58,8 @@ export function installControlWebSocket(
         }
       });
 
-      ws.on('message', (data, isBinary) => {
-        if (!isBinary) client.receive(data.toString('utf8'));
+      ws.on("message", (data, isBinary) => {
+        if (!isBinary) client.receive(data.toString("utf8"));
       });
 
       let alive = true;
@@ -78,48 +78,48 @@ export function installControlWebSocket(
         client.disconnect();
       };
 
-      ws.on('pong', () => {
+      ws.on("pong", () => {
         alive = true;
       });
-      ws.on('close', disconnect);
-      ws.on('error', disconnect);
-      wss.emit('connection', ws, req);
+      ws.on("close", disconnect);
+      ws.on("error", disconnect);
+      wss.emit("connection", ws, req);
     });
   };
 
   const closeHandler = (): void => {
     if (closed) return;
     closed = true;
-    httpServer.off('upgrade', upgradeHandler);
+    httpServer.off("upgrade", upgradeHandler);
     for (const client of wss.clients) {
       client.terminate();
     }
     wss.close();
   };
 
-  httpServer.on('upgrade', upgradeHandler);
-  httpServer.once('close', closeHandler);
+  httpServer.on("upgrade", upgradeHandler);
+  httpServer.once("close", closeHandler);
 
   return closeHandler;
 }
 
 function requestPath(req: IncomingMessage): string {
   try {
-    return new URL(req.url || '/', 'http://localhost').pathname;
+    return new URL(req.url || "/", "http://localhost").pathname;
   } catch {
-    return '';
+    return "";
   }
 }
 
 function rejectUpgrade(socket: Socket, statusCode: number, message: string): void {
   console.warn(message);
-  const statusText = statusCode === 403 ? 'Forbidden' : 'Error';
+  const statusText = statusCode === 403 ? "Forbidden" : "Error";
   socket.write(
     `HTTP/1.1 ${statusCode} ${statusText}\r\n` +
-      'Connection: close\r\n' +
-      'Content-Type: text/plain; charset=utf-8\r\n' +
+      "Connection: close\r\n" +
+      "Content-Type: text/plain; charset=utf-8\r\n" +
       `Content-Length: ${Buffer.byteLength(message)}\r\n` +
-      '\r\n' +
+      "\r\n" +
       message,
   );
   socket.destroy();

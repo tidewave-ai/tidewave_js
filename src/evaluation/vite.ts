@@ -35,10 +35,10 @@
 //
 // See runtime.ts for the part that runs in the app runtime.
 
-import { randomUUID } from 'crypto';
-import { basename, join } from 'path';
-import type { DevEnvironment, RunnableDevEnvironment, UserConfig, ViteDevServer } from 'vite';
-import type { EvaluatedModuleResult, EvaluationRequest } from '../core';
+import { randomUUID } from "crypto";
+import { basename, join } from "path";
+import type { DevEnvironment, RunnableDevEnvironment, UserConfig, ViteDevServer } from "vite";
+import type { EvaluatedModuleResult, EvaluationRequest } from "../core";
 import {
   EVAL_EVENT,
   EVAL_RESULT_EVENT,
@@ -46,7 +46,7 @@ import {
   evaluate,
   type EvalMessage,
   type EvalResultMessage,
-} from './runtime';
+} from "./runtime";
 
 // Evaluation modules look like files in the project root, so that Vite
 // resolves their imports (including tsconfig paths) the same as app code.
@@ -54,11 +54,11 @@ const EVAL_FILE_REGEX = /\/__tidewave_eval_(\d+)\.ts$/;
 
 // When the app server code runs outside of the Vite process and we
 // cannot evaluate there, we evaluate in this environment instead.
-const FALLBACK_ENVIRONMENT = 'tidewave';
+const FALLBACK_ENVIRONMENT = "tidewave";
 
 const FALLBACK_NOTE =
-  'The app server runtime is not available (the app has not handled a request yet, or the runtime is not supported, such as Cloudflare Workers). ' +
-  'The code was evaluated in the Vite process, where app modules are separate instances from the ones used by the app.';
+  "The app server runtime is not available (the app has not handled a request yet, or the runtime is not supported, such as Cloudflare Workers). " +
+  "The code was evaluated in the Vite process, where app modules are separate instances from the ones used by the app.";
 
 export interface ViteEvaluator {
   config(): UserConfig;
@@ -97,7 +97,7 @@ export function createViteEvaluator(): ViteEvaluator {
     // We get the runner before evaluation, so that its connection log is
     // not captured as evaluation output
     const { runner } = env;
-    return evaluate(url => runner.import(url), url, request.args);
+    return evaluate((url) => runner.import(url), url, request.args);
   }
 
   async function evaluateRemote(
@@ -106,11 +106,11 @@ export function createViteEvaluator(): ViteEvaluator {
     request: EvaluationRequest,
   ): Promise<EvaluatedModuleResult> {
     const id = randomUUID();
-    const result = new Promise<EvaluatedModuleResult>(resolve => pending.set(id, resolve));
+    const result = new Promise<EvaluatedModuleResult>((resolve) => pending.set(id, resolve));
 
     try {
       const message: EvalMessage = { id, url, args: request.args };
-      env.hot.send({ type: 'custom', event: EVAL_EVENT, data: message });
+      env.hot.send({ type: "custom", event: EVAL_EVENT, data: message });
       return await result;
     } finally {
       pending.delete(id);
@@ -122,7 +122,7 @@ export function createViteEvaluator(): ViteEvaluator {
       environments: { [FALLBACK_ENVIRONMENT]: {} },
       // The app runtime must load our package through the module runner,
       // so that it can evaluate code (see tanstack.ts)
-      ssr: { noExternal: ['tidewave'] },
+      ssr: { noExternal: ["tidewave"] },
     }),
 
     resolveId(id: string, root: string | undefined): string | undefined {
@@ -137,7 +137,7 @@ export function createViteEvaluator(): ViteEvaluator {
         // The runner may import a free slot, for example on full reload.
         // We keep the code on the first line, so that error lines match.
         return code == null
-          ? 'export default null;'
+          ? "export default null;"
           : `export default async function () {${code}\n}`;
       }
     },
@@ -178,7 +178,7 @@ export function createViteEvaluator(): ViteEvaluator {
 // Same as isRunnableDevEnvironment from Vite, but without importing Vite at
 // runtime, and it works with multiple Vite copies
 function isRunnable(env: DevEnvironment): env is RunnableDevEnvironment {
-  return 'runner' in env;
+  return "runner" in env;
 }
 
 function evalUrl(slot: number): string {

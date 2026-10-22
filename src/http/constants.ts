@@ -1,1 +1,1 @@
-export const ENDPOINT = '/tidewave' as const;
+export const ENDPOINT = "/tidewave" as const;

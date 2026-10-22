@@ -1,34 +1,34 @@
-import { afterEach, beforeEach, describe, expect, test } from 'vitest';
-import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
-import { handleInstall } from '../src/cli/install';
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
+import { handleInstall } from "../src/cli/install";
 
 let projectDir: string;
 
 function write(relativePath: string, content: string): void {
   const filePath = path.join(projectDir, relativePath);
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  fs.writeFileSync(filePath, content, 'utf8');
+  fs.writeFileSync(filePath, content, "utf8");
 }
 
 function read(relativePath: string): string {
-  return fs.readFileSync(path.join(projectDir, relativePath), 'utf8');
+  return fs.readFileSync(path.join(projectDir, relativePath), "utf8");
 }
 
-describe('install command', () => {
+describe("install command", () => {
   beforeEach(() => {
-    projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'tidewave-install-'));
+    projectDir = fs.mkdtempSync(path.join(os.tmpdir(), "tidewave-install-"));
   });
 
   afterEach(() => {
     fs.rmSync(projectDir, { recursive: true, force: true });
   });
 
-  test('configures a Vite project', async () => {
-    write('package.json', JSON.stringify({ devDependencies: { vite: '^7.0.0' } }));
+  test("configures a Vite project", async () => {
+    write("package.json", JSON.stringify({ devDependencies: { vite: "^7.0.0" } }));
     write(
-      'vite.config.ts',
+      "vite.config.ts",
       `import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -40,7 +40,7 @@ export default defineConfig({
 
     await handleInstall({ prefix: projectDir, skipDeps: true });
 
-    expect(read('vite.config.ts')).toBe(`import { defineConfig } from 'vite';
+    expect(read("vite.config.ts")).toBe(`import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tidewave from 'tidewave/vite-plugin';
 
@@ -50,16 +50,16 @@ export default defineConfig({
 `);
   });
 
-  test('configures Vite and the server entry point in a TanStack Start project', async () => {
+  test("configures Vite and the server entry point in a TanStack Start project", async () => {
     write(
-      'package.json',
+      "package.json",
       JSON.stringify({
-        dependencies: { '@tanstack/react-start': '^1.0.0' },
-        devDependencies: { vite: '^7.0.0' },
+        dependencies: { "@tanstack/react-start": "^1.0.0" },
+        devDependencies: { vite: "^7.0.0" },
       }),
     );
     write(
-      'vite.config.js',
+      "vite.config.js",
       `import { defineConfig } from 'vite';
 
 export default defineConfig({
@@ -70,7 +70,7 @@ export default defineConfig({
 `,
     );
     write(
-      'src/start.ts',
+      "src/start.ts",
       `import { createStart } from '@tanstack/react-start';
 
 export const startInstance = createStart(() => {
@@ -81,7 +81,7 @@ export const startInstance = createStart(() => {
 
     await handleInstall({ prefix: projectDir, skipDeps: true });
 
-    expect(read('vite.config.js')).toBe(`import { defineConfig } from 'vite';
+    expect(read("vite.config.js")).toBe(`import { defineConfig } from 'vite';
 import tidewave from 'tidewave/vite-plugin';
 import { devtools } from '@tanstack/devtools-vite';
 
@@ -92,7 +92,7 @@ export default defineConfig({
   plugins: [devtools(), tidewave()],
 });
 `);
-    expect(read('src/start.ts')).toBe(`import { createStart } from '@tanstack/react-start';
+    expect(read("src/start.ts")).toBe(`import { createStart } from '@tanstack/react-start';
 
 // Import Tidewave only in development.
 if (process.env.NODE_ENV === 'development' && typeof window === 'undefined') {
@@ -105,10 +105,10 @@ export const startInstance = createStart(() => {
 `);
   });
 
-  test('adds Tidewave after an existing TanStack Devtools plugin', async () => {
-    write('package.json', JSON.stringify({ dependencies: { '@tanstack/react-start': '^1.0.0' } }));
+  test("adds Tidewave after an existing TanStack Devtools plugin", async () => {
+    write("package.json", JSON.stringify({ dependencies: { "@tanstack/react-start": "^1.0.0" } }));
     write(
-      'vite.config.ts',
+      "vite.config.ts",
       `import { defineConfig } from 'vite';
 import { devtools as tanstackDevtools } from '@tanstack/devtools-vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
@@ -121,7 +121,7 @@ export default defineConfig({
 
     await handleInstall({ prefix: projectDir, skipDeps: true });
 
-    expect(read('vite.config.ts')).toBe(`import { defineConfig } from 'vite';
+    expect(read("vite.config.ts")).toBe(`import { defineConfig } from 'vite';
 import { devtools as tanstackDevtools } from '@tanstack/devtools-vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import tidewave from 'tidewave/vite-plugin';
@@ -132,13 +132,13 @@ export default defineConfig({
 `);
   });
 
-  test('creates the TanStack Start entry point when missing', async () => {
-    write('package.json', JSON.stringify({ dependencies: { '@tanstack/react-start': '^1.0.0' } }));
-    write('vite.config.ts', 'export default defineConfig({ plugins: [] });\n');
+  test("creates the TanStack Start entry point when missing", async () => {
+    write("package.json", JSON.stringify({ dependencies: { "@tanstack/react-start": "^1.0.0" } }));
+    write("vite.config.ts", "export default defineConfig({ plugins: [] });\n");
 
     await handleInstall({ prefix: projectDir, skipDeps: true });
 
-    expect(read('src/start.ts')).toBe(`import { createStart } from '@tanstack/react-start';
+    expect(read("src/start.ts")).toBe(`import { createStart } from '@tanstack/react-start';
 
 // Import Tidewave only in development.
 if (process.env.NODE_ENV === 'development' && typeof window === 'undefined') {
@@ -151,22 +151,22 @@ export const startInstance = createStart(() => {
 `);
   });
 
-  test('does not duplicate an existing installation', async () => {
-    write('package.json', JSON.stringify({ devDependencies: { vite: '^7.0.0' } }));
+  test("does not duplicate an existing installation", async () => {
+    write("package.json", JSON.stringify({ devDependencies: { vite: "^7.0.0" } }));
     const config = `import { defineConfig } from 'vite';
 import tidewavePlugin from 'tidewave/vite-plugin';
 
 export default defineConfig({ plugins: [tidewavePlugin()] });
 `;
-    write('vite.config.mts', config);
+    write("vite.config.mts", config);
 
     await handleInstall({ prefix: projectDir, skipDeps: true });
 
-    expect(read('vite.config.mts')).toBe(config);
+    expect(read("vite.config.mts")).toBe(config);
   });
 
-  test('configures a shorthand plugins option without modifying its declaration', async () => {
-    write('package.json', JSON.stringify({ devDependencies: { vite: '^7.0.0' } }));
+  test("configures a shorthand plugins option without modifying its declaration", async () => {
+    write("package.json", JSON.stringify({ devDependencies: { vite: "^7.0.0" } }));
     const config = `import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -176,11 +176,11 @@ export default defineConfig({
   plugins,
 });
 `;
-    write('vite.config.ts', config);
+    write("vite.config.ts", config);
 
     await handleInstall({ prefix: projectDir, skipDeps: true });
 
-    expect(read('vite.config.ts')).toBe(`import { defineConfig } from 'vite';
+    expect(read("vite.config.ts")).toBe(`import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tidewave from 'tidewave/vite-plugin';
 
@@ -192,8 +192,8 @@ export default defineConfig({
 `);
   });
 
-  test('does not override plugins provided by a spread property', async () => {
-    write('package.json', JSON.stringify({ devDependencies: { vite: '^7.0.0' } }));
+  test("does not override plugins provided by a spread property", async () => {
+    write("package.json", JSON.stringify({ devDependencies: { vite: "^7.0.0" } }));
     const config = `import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -205,32 +205,32 @@ export default defineConfig({
   ...baseConfig,
 });
 `;
-    write('vite.config.ts', config);
+    write("vite.config.ts", config);
 
     await expect(handleInstall({ prefix: projectDir, skipDeps: true })).rejects.toThrow(
-      'Add tidewave() to the plugins array manually.',
+      "Add tidewave() to the plugins array manually.",
     );
-    expect(read('vite.config.ts')).toBe(config);
+    expect(read("vite.config.ts")).toBe(config);
   });
 
-  test('does not modify files during a dry run', async () => {
-    write('package.json', JSON.stringify({ devDependencies: { vite: '^7.0.0' } }));
+  test("does not modify files during a dry run", async () => {
+    write("package.json", JSON.stringify({ devDependencies: { vite: "^7.0.0" } }));
     const config = `import { defineConfig } from 'vite';
 
 export default defineConfig({ plugins: [] });
 `;
-    write('vite.config.ts', config);
+    write("vite.config.ts", config);
 
     await handleInstall({ prefix: projectDir, dryRun: true, skipDeps: true });
 
-    expect(read('vite.config.ts')).toBe(config);
+    expect(read("vite.config.ts")).toBe(config);
   });
 
-  test('rejects projects that are not Vite or TanStack Start projects', async () => {
-    write('package.json', JSON.stringify({ dependencies: { react: '^19.0.0' } }));
+  test("rejects projects that are not Vite or TanStack Start projects", async () => {
+    write("package.json", JSON.stringify({ dependencies: { react: "^19.0.0" } }));
 
     await expect(handleInstall({ prefix: projectDir, skipDeps: true })).rejects.toThrow(
-      'Could not detect Vite or TanStack Start',
+      "Could not detect Vite or TanStack Start",
     );
   });
 });

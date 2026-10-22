@@ -1,1 +1,1 @@
-export const initialItems = ['first'];
+export const initialItems = ["first"];

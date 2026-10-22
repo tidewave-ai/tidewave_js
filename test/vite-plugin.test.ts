@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { ViteDevServer } from 'vite';
-import tidewave from '../src/vite-plugin';
-import type { TidewaveConfig } from '../src/core';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { ViteDevServer } from "vite";
+import tidewave from "../src/vite-plugin";
+import type { TidewaveConfig } from "../src/core";
 
 // Mock Vite server
 interface MockViteDevServer extends Partial<ViteDevServer> {
@@ -11,7 +11,7 @@ interface MockViteDevServer extends Partial<ViteDevServer> {
 }
 
 const createMockServer = (
-  host: string | boolean | undefined = 'localhost',
+  host: string | boolean | undefined = "localhost",
   port = 5173,
   https = false,
 ): MockViteDevServer => {
@@ -24,7 +24,7 @@ const createMockServer = (
       server: { host, port, https },
     } as any,
     httpServer: {
-      address: vi.fn(() => ({ address: '127.0.0.1', family: 'IPv4', port: 4321 })),
+      address: vi.fn(() => ({ address: "127.0.0.1", family: "IPv4", port: 4321 })),
       on: httpServerOn,
       once: httpServerOnce,
       off: vi.fn(),
@@ -41,47 +41,47 @@ const createMockServer = (
   };
 };
 
-describe('Tidewave Vite Plugin', () => {
+describe("Tidewave Vite Plugin", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('Plugin Creation', () => {
-    it('should create plugin with default config', () => {
+  describe("Plugin Creation", () => {
+    it("should create plugin with default config", () => {
       const plugin = tidewave();
 
-      expect(plugin.name).toBe('vite-plugin-tidewave');
+      expect(plugin.name).toBe("vite-plugin-tidewave");
       expect(plugin.configureServer).toBeDefined();
-      expect(typeof plugin.configureServer).toBe('function');
+      expect(typeof plugin.configureServer).toBe("function");
     });
 
-    it('should create plugin with custom config', () => {
+    it("should create plugin with custom config", () => {
       const config: TidewaveConfig = {
         allowRemoteAccess: true,
-        allowedOrigins: ['https://example.com'],
+        allowedOrigins: ["https://example.com"],
       };
 
       const plugin = tidewave(config);
 
-      expect(plugin.name).toBe('vite-plugin-tidewave');
+      expect(plugin.name).toBe("vite-plugin-tidewave");
       expect(plugin.configureServer).toBeDefined();
     });
 
-    it('should handle empty config object', () => {
+    it("should handle empty config object", () => {
       const plugin = tidewave({});
 
-      expect(plugin.name).toBe('vite-plugin-tidewave');
+      expect(plugin.name).toBe("vite-plugin-tidewave");
     });
 
-    it('should handle undefined config', () => {
+    it("should handle undefined config", () => {
       const plugin = tidewave(undefined as any);
 
-      expect(plugin.name).toBe('vite-plugin-tidewave');
+      expect(plugin.name).toBe("vite-plugin-tidewave");
     });
   });
 
-  describe('Server Configuration', () => {
-    it('should register middleware on server configuration', async () => {
+  describe("Server Configuration", () => {
+    it("should register middleware on server configuration", async () => {
       const mockServer = createMockServer();
       const plugin = tidewave();
 
@@ -96,28 +96,28 @@ describe('Tidewave Vite Plugin', () => {
       expect(middlewareUse).toHaveBeenCalledWith(expect.any(Function));
 
       // Global security middleware
-      expect(middlewareUse).toHaveBeenCalledWith('/tidewave', expect.any(Function));
+      expect(middlewareUse).toHaveBeenCalledWith("/tidewave", expect.any(Function));
 
       // HTML route
-      expect(middlewareUse).toHaveBeenCalledWith('/tidewave/', expect.any(Function));
+      expect(middlewareUse).toHaveBeenCalledWith("/tidewave/", expect.any(Function));
 
       // Control app route
-      expect(middlewareUse).toHaveBeenCalledWith('/tidewave/connect', expect.any(Function));
+      expect(middlewareUse).toHaveBeenCalledWith("/tidewave/connect", expect.any(Function));
 
       // Config route
-      expect(middlewareUse).toHaveBeenCalledWith('/tidewave/config', expect.any(Function));
+      expect(middlewareUse).toHaveBeenCalledWith("/tidewave/config", expect.any(Function));
 
       // Upload route
-      expect(middlewareUse).toHaveBeenCalledWith('/tidewave/upload', expect.any(Function));
+      expect(middlewareUse).toHaveBeenCalledWith("/tidewave/upload", expect.any(Function));
 
       // MCP route
-      expect(middlewareUse).toHaveBeenCalledWith('/tidewave/mcp', expect.any(Function));
+      expect(middlewareUse).toHaveBeenCalledWith("/tidewave/mcp", expect.any(Function));
     });
 
-    it('should pass config to configureServer', async () => {
+    it("should pass config to configureServer", async () => {
       const config: TidewaveConfig = {
         allowRemoteAccess: false,
-        allowedOrigins: ['https://custom.com'],
+        allowedOrigins: ["https://custom.com"],
       };
 
       const mockServer = createMockServer();
@@ -130,27 +130,27 @@ describe('Tidewave Vite Plugin', () => {
       expect(middlewareUse).toHaveBeenCalledTimes(8);
 
       expect((mockServer as any)._httpServerOn).toHaveBeenCalledWith(
-        'upgrade',
+        "upgrade",
         expect.any(Function),
       );
       expect((mockServer as any)._httpServerOnce).toHaveBeenCalledWith(
-        'close',
+        "close",
         expect.any(Function),
       );
     });
 
-    it('should use the actual Vite server port in config responses', async () => {
-      const mockServer = createMockServer('localhost', 5173);
+    it("should use the actual Vite server port in config responses", async () => {
+      const mockServer = createMockServer("localhost", 5173);
       const plugin = tidewave();
 
       await (plugin.configureServer as any)(mockServer);
 
       const configHandler = (mockServer as any)._middlewareUse.mock.calls[4][1];
       const req = {
-        socket: { remoteAddress: '127.0.0.1' },
+        socket: { remoteAddress: "127.0.0.1" },
         headers: {
-          host: 'localhost:5173',
-          origin: 'http://localhost:9999',
+          host: "localhost:5173",
+          origin: "http://localhost:9999",
         },
       };
       const res = {
@@ -163,26 +163,26 @@ describe('Tidewave Vite Plugin', () => {
       await configHandler(req, res, vi.fn());
 
       expect(res.statusCode).toBe(200);
-      expect(res.setHeader).toHaveBeenCalledWith('Access-Control-Allow-Origin', '*');
+      expect(res.setHeader).toHaveBeenCalledWith("Access-Control-Allow-Origin", "*");
       expect(JSON.parse(res.end.mock.calls[0]![0])).toMatchObject({
-        framework_type: 'vite',
+        framework_type: "vite",
         local_port: 4321,
-        local_scheme: 'http',
+        local_scheme: "http",
       });
     });
 
-    it('should use the request socket scheme in config responses', async () => {
-      const mockServer = createMockServer('localhost', 5173);
+    it("should use the request socket scheme in config responses", async () => {
+      const mockServer = createMockServer("localhost", 5173);
       const plugin = tidewave();
 
       await (plugin.configureServer as any)(mockServer);
 
       const configHandler = (mockServer as any)._middlewareUse.mock.calls[4][1];
       const req = {
-        socket: { remoteAddress: '127.0.0.1', encrypted: true },
+        socket: { remoteAddress: "127.0.0.1", encrypted: true },
         headers: {
-          host: 'localhost:5173',
-          origin: 'https://localhost:9999',
+          host: "localhost:5173",
+          origin: "https://localhost:9999",
         },
       };
       const res = {
@@ -195,37 +195,37 @@ describe('Tidewave Vite Plugin', () => {
       await configHandler(req, res, vi.fn());
 
       expect(JSON.parse(res.end.mock.calls[0]![0])).toMatchObject({
-        framework_type: 'vite',
+        framework_type: "vite",
         local_port: 4321,
-        local_scheme: 'https',
+        local_scheme: "https",
       });
     });
 
-    it('should configure host and port from the Vite server', async () => {
+    it("should configure host and port from the Vite server", async () => {
       const config: TidewaveConfig = {};
-      const mockServer = createMockServer('app.example.test', 5173);
+      const mockServer = createMockServer("app.example.test", 5173);
       const plugin = tidewave(config);
 
       await (plugin.configureServer as any)(mockServer);
 
-      expect(config.host).toBe('app.example.test');
+      expect(config.host).toBe("app.example.test");
       expect(config.port).toBe(5173);
     });
 
-    it('should use localhost when Vite host is implicit', async () => {
+    it("should use localhost when Vite host is implicit", async () => {
       const config: TidewaveConfig = {};
       const mockServer = createMockServer(undefined, 5173);
       const plugin = tidewave(config);
 
       await (plugin.configureServer as any)(mockServer);
 
-      expect(config.host).toBe('localhost');
+      expect(config.host).toBe("localhost");
       expect(config.port).toBe(5173);
     });
   });
 
-  describe('Route Registration', () => {
-    it('should register MCP route with correct path', async () => {
+  describe("Route Registration", () => {
+    it("should register MCP route with correct path", async () => {
       const mockServer = createMockServer();
       const plugin = tidewave();
 
@@ -233,40 +233,40 @@ describe('Tidewave Vite Plugin', () => {
 
       const middlewareUse = (mockServer as any)._middlewareUse;
 
-      expect(middlewareUse).toHaveBeenCalledWith('/tidewave/mcp', expect.any(Function));
+      expect(middlewareUse).toHaveBeenCalledWith("/tidewave/mcp", expect.any(Function));
     });
   });
 
-  describe('Configuration Validation', () => {
-    it('should accept valid allowRemoteAccess values', () => {
+  describe("Configuration Validation", () => {
+    it("should accept valid allowRemoteAccess values", () => {
       expect(() => tidewave({ allowRemoteAccess: true })).not.toThrow();
       expect(() => tidewave({ allowRemoteAccess: false })).not.toThrow();
     });
 
-    it('should accept valid allowedOrigins arrays', () => {
+    it("should accept valid allowedOrigins arrays", () => {
       const origins = [
-        'https://example.com',
-        'http://localhost:3000',
-        '//sub.domain.com',
-        'https://*.example.com',
+        "https://example.com",
+        "http://localhost:3000",
+        "//sub.domain.com",
+        "https://*.example.com",
       ];
 
       expect(() => tidewave({ allowedOrigins: origins })).not.toThrow();
       expect(() => tidewave({ allowedOrigins: [] })).not.toThrow();
     });
 
-    it('should accept combined configuration options', () => {
+    it("should accept combined configuration options", () => {
       const config: TidewaveConfig = {
         allowRemoteAccess: true,
-        allowedOrigins: ['https://trusted.com', 'http://localhost:8080'],
+        allowedOrigins: ["https://trusted.com", "http://localhost:8080"],
       };
 
       expect(() => tidewave(config)).not.toThrow();
     });
   });
 
-  describe('Plugin Interface Compliance', () => {
-    it('should return valid Vite plugin object', () => {
+  describe("Plugin Interface Compliance", () => {
+    it("should return valid Vite plugin object", () => {
       const plugin = tidewave();
 
       expect(plugin).toMatchObject({
@@ -275,29 +275,29 @@ describe('Tidewave Vite Plugin', () => {
       });
     });
 
-    it('should have consistent plugin name', () => {
+    it("should have consistent plugin name", () => {
       const plugin1 = tidewave();
       const plugin2 = tidewave({ allowRemoteAccess: true });
 
       expect(plugin1.name).toBe(plugin2.name);
-      expect(plugin1.name).toBe('vite-plugin-tidewave');
+      expect(plugin1.name).toBe("vite-plugin-tidewave");
     });
   });
 
-  describe('Default Export', () => {
-    it('should be a default export function', () => {
-      expect(typeof tidewave).toBe('function');
+  describe("Default Export", () => {
+    it("should be a default export function", () => {
+      expect(typeof tidewave).toBe("function");
     });
 
-    it('should work with destructured import pattern', () => {
+    it("should work with destructured import pattern", () => {
       // This test ensures the export works correctly
       const plugin = tidewave();
-      expect(plugin.name).toBe('vite-plugin-tidewave');
+      expect(plugin.name).toBe("vite-plugin-tidewave");
     });
   });
 
-  describe('Middleware Registration', () => {
-    it('should register middleware in correct order', async () => {
+  describe("Middleware Registration", () => {
+    it("should register middleware in correct order", async () => {
       const mockServer = createMockServer();
       const plugin = tidewave();
 
@@ -307,35 +307,35 @@ describe('Tidewave Vite Plugin', () => {
       const calls = middlewareUse.mock.calls;
 
       // First call should be response header middleware
-      expect(typeof calls[0][0]).toBe('function');
+      expect(typeof calls[0][0]).toBe("function");
 
       // Second call should be security middleware
-      expect(calls[1][0]).toBe('/tidewave');
-      expect(typeof calls[1][1]).toBe('function');
+      expect(calls[1][0]).toBe("/tidewave");
+      expect(typeof calls[1][1]).toBe("function");
 
       // Third call should be HTML endpoint (empty string = '/')
-      expect(calls[2][0]).toBe('/tidewave/');
-      expect(typeof calls[2][1]).toBe('function');
+      expect(calls[2][0]).toBe("/tidewave/");
+      expect(typeof calls[2][1]).toBe("function");
 
       // Fourth call should be control app endpoint
-      expect(calls[3][0]).toBe('/tidewave/connect');
-      expect(typeof calls[3][1]).toBe('function');
+      expect(calls[3][0]).toBe("/tidewave/connect");
+      expect(typeof calls[3][1]).toBe("function");
 
       // Fifth call should be config endpoint
-      expect(calls[4][0]).toBe('/tidewave/config');
-      expect(typeof calls[4][1]).toBe('function');
+      expect(calls[4][0]).toBe("/tidewave/config");
+      expect(typeof calls[4][1]).toBe("function");
 
       // Sixth call should be upload endpoint
-      expect(calls[5][0]).toBe('/tidewave/upload');
-      expect(typeof calls[5][1]).toBe('function');
+      expect(calls[5][0]).toBe("/tidewave/upload");
+      expect(typeof calls[5][1]).toBe("function");
 
       // Seventh call should parse JSON only for the MCP endpoint
-      expect(calls[6][0]).toBe('/tidewave/mcp');
-      expect(typeof calls[6][1]).toBe('function');
+      expect(calls[6][0]).toBe("/tidewave/mcp");
+      expect(typeof calls[6][1]).toBe("function");
 
       // Eighth call should be MCP endpoint
-      expect(calls[7][0]).toBe('/tidewave/mcp');
-      expect(typeof calls[7][1]).toBe('function');
+      expect(calls[7][0]).toBe("/tidewave/mcp");
+      expect(typeof calls[7][1]).toBe("function");
     });
   });
 });

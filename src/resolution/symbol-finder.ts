@@ -1,8 +1,8 @@
-import ts from 'typescript';
-import type { SymbolInfo, ExtractError } from '../core';
-import { createExtractError } from '../core';
-import { getLocation, getDocumentation, getJSDoc, getSymbolKind } from './utils';
-import { getSignature, getTypeString } from './formatters';
+import ts from "typescript";
+import type { SymbolInfo, ExtractError } from "../core";
+import { createExtractError } from "../core";
+import { getLocation, getDocumentation, getJSDoc, getSymbolKind } from "./utils";
+import { getSignature, getTypeString } from "./formatters";
 
 // Find a symbol in a JavaScript file
 export function findSymbolInJavaScriptFile(
@@ -42,9 +42,9 @@ export function findSymbolInJavaScriptFile(
         if (
           ts.isPropertyAccessExpression(left) &&
           ts.isIdentifier(left.expression) &&
-          left.expression.text === 'module' &&
+          left.expression.text === "module" &&
           ts.isIdentifier(left.name) &&
-          left.name.text === 'exports' &&
+          left.name.text === "exports" &&
           ts.isObjectLiteralExpression(right)
         ) {
           // Look for the symbol in the object literal
@@ -132,7 +132,7 @@ export function getSymbolInfo(
   // For symbols without valueDeclaration (like interfaces), use the first declaration
   const declaration = symbol.valueDeclaration || (symbol.declarations && symbol.declarations[0]);
   if (!declaration && (!symbol.declarations || symbol.declarations.length === 0)) {
-    return createExtractError('TYPE_ERROR', `Symbol '${symbol.getName()}' has no declarations`);
+    return createExtractError("TYPE_ERROR", `Symbol '${symbol.getName()}' has no declarations`);
   }
   const targetDeclaration = declaration || symbol.declarations![0]!;
 
@@ -155,7 +155,7 @@ export function getSymbolInfo(
     if (isStatic) {
       // Static member: look in the constructor/class itself or enum values
       const staticMembers = checker.getPropertiesOfType(type);
-      const staticMember = staticMembers.find(s => s.getName() === member);
+      const staticMember = staticMembers.find((s) => s.getName() === member);
       if (staticMember) {
         targetSymbol = staticMember;
         targetType = checker.getTypeOfSymbolAtLocation(
@@ -165,10 +165,10 @@ export function getSymbolInfo(
         name = `${symbolName}.${member}`;
       } else {
         return createExtractError(
-          'MEMBER_NOT_FOUND',
+          "MEMBER_NOT_FOUND",
           `Static member '${member}' not found on '${symbolName}'. Available: ${staticMembers
-            .map(m => m.getName())
-            .join(', ')}`,
+            .map((m) => m.getName())
+            .join(", ")}`,
         );
       }
     } else {
@@ -180,7 +180,7 @@ export function getSymbolInfo(
         // For interfaces, the type itself contains the properties
         instanceType = type;
         const instanceMembers = checker.getPropertiesOfType(instanceType);
-        const instanceMember = instanceMembers.find(s => s.getName() === member);
+        const instanceMember = instanceMembers.find((s) => s.getName() === member);
 
         if (instanceMember) {
           targetSymbol = instanceMember;
@@ -193,10 +193,10 @@ export function getSymbolInfo(
           name = `${symbolName}#${member}`;
         } else {
           return createExtractError(
-            'MEMBER_NOT_FOUND',
+            "MEMBER_NOT_FOUND",
             `Instance member '${member}' not found on interface '${symbolName}'. Available: ${instanceMembers
-              .map(m => m.getName())
-              .join(', ')}`,
+              .map((m) => m.getName())
+              .join(", ")}`,
           );
         }
       } else if (symbol.flags & ts.SymbolFlags.Class) {
@@ -211,7 +211,7 @@ export function getSymbolInfo(
             const instanceTypeFromConstruct = checker.getReturnTypeOfSignature(constructSignature);
             const instanceMembers = checker.getPropertiesOfType(instanceTypeFromConstruct);
 
-            const instanceMember = instanceMembers.find(s => s.getName() === member);
+            const instanceMember = instanceMembers.find((s) => s.getName() === member);
 
             if (instanceMember) {
               targetSymbol = instanceMember;
@@ -222,10 +222,10 @@ export function getSymbolInfo(
               name = `${symbolName}#${member}`;
             } else {
               return createExtractError(
-                'MEMBER_NOT_FOUND',
+                "MEMBER_NOT_FOUND",
                 `Instance member '${member}' not found on '${symbolName}'. Available: ${instanceMembers
-                  .map(m => m.getName())
-                  .join(', ')}`,
+                  .map((m) => m.getName())
+                  .join(", ")}`,
               );
             }
           }
@@ -233,7 +233,7 @@ export function getSymbolInfo(
           // Fallback: try direct property access
           const instanceMembers = checker.getPropertiesOfType(instanceType);
 
-          const instanceMember = instanceMembers.find(s => s.getName() === member);
+          const instanceMember = instanceMembers.find((s) => s.getName() === member);
 
           if (instanceMember) {
             targetSymbol = instanceMember;
@@ -244,10 +244,10 @@ export function getSymbolInfo(
             name = `${symbolName}#${member}`;
           } else {
             return createExtractError(
-              'MEMBER_NOT_FOUND',
+              "MEMBER_NOT_FOUND",
               `Instance member '${member}' not found on '${symbolName}'. Available: ${instanceMembers
-                .map(m => m.getName())
-                .join(', ')}`,
+                .map((m) => m.getName())
+                .join(", ")}`,
             );
           }
         }
@@ -272,7 +272,7 @@ export function getSymbolInfo(
 
         if (instanceType) {
           const instanceMembers = checker.getPropertiesOfType(instanceType);
-          const instanceMember = instanceMembers.find(s => s.getName() === member);
+          const instanceMember = instanceMembers.find((s) => s.getName() === member);
 
           if (instanceMember) {
             targetSymbol = instanceMember;
@@ -283,12 +283,12 @@ export function getSymbolInfo(
             name = `${symbolName}#${member}`;
           } else {
             return createExtractError(
-              'MEMBER_NOT_FOUND',
+              "MEMBER_NOT_FOUND",
               `Instance member '${member}' not found on '${symbolName}'`,
             );
           }
         } else {
-          return createExtractError('TYPE_ERROR', `'${symbolName}' is not a constructor or class`);
+          return createExtractError("TYPE_ERROR", `'${symbolName}' is not a constructor or class`);
         }
       }
     }

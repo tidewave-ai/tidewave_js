@@ -79,9 +79,9 @@ $ bun add --dev tidewave @tanstack/devtools-vite
 Configure your `vite.config.js` (also works for `.ts` and `.mjs`):
 
 ```javascript
-import { defineConfig } from 'vite';
-import { devtools } from '@tanstack/devtools-vite';
-import tidewave from 'tidewave/vite-plugin';
+import { defineConfig } from "vite";
+import { devtools } from "@tanstack/devtools-vite";
+import tidewave from "tidewave/vite-plugin";
 
 export default defineConfig({
   plugins: [devtools(), tidewave()],
@@ -97,11 +97,11 @@ the first plugin.
 Finally, create or modify `src/start.ts` to import Tidewave in development:
 
 ```ts
-import { createStart } from '@tanstack/react-start';
+import { createStart } from "@tanstack/react-start";
 
 // Import Tidewave only in development.
-if (process.env.NODE_ENV === 'development' && typeof window === 'undefined') {
-  import('tidewave/tanstack');
+if (process.env.NODE_ENV === "development" && typeof window === "undefined") {
+  import("tidewave/tanstack");
 }
 
 export const startInstance = createStart(() => {
@@ -131,8 +131,8 @@ $ bun add --dev tidewave
 Configure your `vite.config.js` (also works for `.ts` and `.mjs`):
 
 ```javascript
-import { defineConfig } from 'vite';
-import tidewave from 'tidewave/vite-plugin';
+import { defineConfig } from "vite";
+import tidewave from "tidewave/vite-plugin";
 
 export default defineConfig({
   plugins: [tidewave()],
@@ -221,10 +221,10 @@ pnpm install             # Install dependencies
 pnpm build               # Build with tsdown
 pnpm dev                 # Build in watch mode
 pnpm test                # Run tests with Vitest
-pnpm lint                # ESLint checking
-pnpm lint:fix            # ESLint with auto-fix
-pnpm format              # Prettier formatting
-pnpm format:check        # Check Prettier formatting
+pnpm lint                # Lint with oxlint
+pnpm lint:fix            # Lint with auto-fix
+pnpm format              # Format with oxfmt
+pnpm format:check        # Check formatting
 ```
 
 ## Acknowledgements

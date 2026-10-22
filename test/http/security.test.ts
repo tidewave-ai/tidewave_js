@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   checkRemoteIp,
   checkOrigin,
@@ -6,13 +6,13 @@ import {
   parseUrl,
   isOriginAllowed,
   getDefaultAllowedOrigins,
-} from '../../src/http/security';
-import type { TidewaveRequest, TidewaveResponse } from '../../src/http/types';
-import type { TidewaveConfig } from '../../src/core';
+} from "../../src/http/security";
+import type { TidewaveRequest, TidewaveResponse } from "../../src/http/types";
+import type { TidewaveConfig } from "../../src/core";
 
 // Mock request/response helpers
 const createMockRequest = (
-  remoteAddress = '127.0.0.1',
+  remoteAddress = "127.0.0.1",
   origin?: string,
 ): Partial<TidewaveRequest> => ({
   socket: { remoteAddress } as any,
@@ -36,47 +36,47 @@ const createMockResponse = () => {
   };
 };
 
-describe('HTTP Security', () => {
+describe("HTTP Security", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     console.warn = vi.fn();
   });
 
-  describe('isLocalIp', () => {
-    it('should identify IPv4 localhost addresses', () => {
-      expect(isLocalIp('127.0.0.1')).toBe(true);
-      expect(isLocalIp('127.0.0.100')).toBe(true);
-      expect(isLocalIp('127.0.0.255')).toBe(true);
+  describe("isLocalIp", () => {
+    it("should identify IPv4 localhost addresses", () => {
+      expect(isLocalIp("127.0.0.1")).toBe(true);
+      expect(isLocalIp("127.0.0.100")).toBe(true);
+      expect(isLocalIp("127.0.0.255")).toBe(true);
     });
 
-    it('should identify IPv6 localhost addresses', () => {
-      expect(isLocalIp('::1')).toBe(true);
-      expect(isLocalIp('::ffff:127.0.0.1')).toBe(true);
+    it("should identify IPv6 localhost addresses", () => {
+      expect(isLocalIp("::1")).toBe(true);
+      expect(isLocalIp("::ffff:127.0.0.1")).toBe(true);
     });
 
-    it('should reject remote IP addresses', () => {
-      expect(isLocalIp('192.168.1.1')).toBe(false);
-      expect(isLocalIp('10.0.0.1')).toBe(false);
-      expect(isLocalIp('8.8.8.8')).toBe(false);
-      expect(isLocalIp('2001:db8::1')).toBe(false);
+    it("should reject remote IP addresses", () => {
+      expect(isLocalIp("192.168.1.1")).toBe(false);
+      expect(isLocalIp("10.0.0.1")).toBe(false);
+      expect(isLocalIp("8.8.8.8")).toBe(false);
+      expect(isLocalIp("2001:db8::1")).toBe(false);
     });
 
-    it('should reject non-127.0.0.x localhost ranges', () => {
-      expect(isLocalIp('127.1.2.3')).toBe(false);
-      expect(isLocalIp('127.2.0.1')).toBe(false);
-      expect(isLocalIp('127.255.255.255')).toBe(false);
+    it("should reject non-127.0.0.x localhost ranges", () => {
+      expect(isLocalIp("127.1.2.3")).toBe(false);
+      expect(isLocalIp("127.2.0.1")).toBe(false);
+      expect(isLocalIp("127.255.255.255")).toBe(false);
     });
 
-    it('should handle edge cases', () => {
+    it("should handle edge cases", () => {
       expect(isLocalIp(undefined)).toBe(false);
-      expect(isLocalIp('')).toBe(false);
-      expect(isLocalIp('not-an-ip')).toBe(false);
+      expect(isLocalIp("")).toBe(false);
+      expect(isLocalIp("not-an-ip")).toBe(false);
     });
   });
 
-  describe('checkRemoteIp', () => {
-    it('should allow local IP addresses', () => {
-      const req = createMockRequest('127.0.0.1');
+  describe("checkRemoteIp", () => {
+    it("should allow local IP addresses", () => {
+      const req = createMockRequest("127.0.0.1");
       const { res } = createMockResponse();
       const config: TidewaveConfig = {};
 
@@ -86,8 +86,8 @@ describe('HTTP Security', () => {
       expect(res.statusCode).toBe(200);
     });
 
-    it('should block remote IP by default', () => {
-      const req = createMockRequest('192.168.1.1');
+    it("should block remote IP by default", () => {
+      const req = createMockRequest("192.168.1.1");
       const { res, mockEnd } = createMockResponse();
       const config: TidewaveConfig = {};
 
@@ -95,11 +95,11 @@ describe('HTTP Security', () => {
 
       expect(result).toBe(false);
       expect(res.statusCode).toBe(403);
-      expect(mockEnd).toHaveBeenCalledWith(expect.stringContaining('security reasons'));
+      expect(mockEnd).toHaveBeenCalledWith(expect.stringContaining("security reasons"));
     });
 
-    it('should allow remote IP when allowRemoteAccess is true', () => {
-      const req = createMockRequest('192.168.1.1');
+    it("should allow remote IP when allowRemoteAccess is true", () => {
+      const req = createMockRequest("192.168.1.1");
       const { res } = createMockResponse();
       const config: TidewaveConfig = { allowRemoteAccess: true };
 
@@ -110,100 +110,100 @@ describe('HTTP Security', () => {
     });
   });
 
-  describe('parseUrl', () => {
-    it('should parse complete URLs', () => {
-      const result = parseUrl('https://example.com:8080');
+  describe("parseUrl", () => {
+    it("should parse complete URLs", () => {
+      const result = parseUrl("https://example.com:8080");
       expect(result).toEqual({
-        scheme: 'https',
-        host: 'example.com',
+        scheme: "https",
+        host: "example.com",
         port: 8080,
       });
     });
 
-    it('should parse URLs without port', () => {
-      const result = parseUrl('http://localhost');
+    it("should parse URLs without port", () => {
+      const result = parseUrl("http://localhost");
       expect(result).toEqual({
-        scheme: 'http',
-        host: 'localhost',
+        scheme: "http",
+        host: "localhost",
         port: undefined,
       });
     });
 
-    it('should handle protocol-relative URLs', () => {
-      const result = parseUrl('//example.com');
+    it("should handle protocol-relative URLs", () => {
+      const result = parseUrl("//example.com");
       expect(result).toEqual({
         scheme: undefined,
-        host: 'example.com',
+        host: "example.com",
         port: undefined,
       });
     });
 
-    it('should return null for invalid URLs', () => {
-      expect(parseUrl('not-a-url')).toBe(null);
-      expect(parseUrl('')).toBe(null);
+    it("should return null for invalid URLs", () => {
+      expect(parseUrl("not-a-url")).toBe(null);
+      expect(parseUrl("")).toBe(null);
     });
   });
 
-  describe('isOriginAllowed', () => {
-    it('should match exact origins', () => {
-      const origin = parseUrl('https://example.com:8080');
-      const allowed = parseUrl('https://example.com:8080');
+  describe("isOriginAllowed", () => {
+    it("should match exact origins", () => {
+      const origin = parseUrl("https://example.com:8080");
+      const allowed = parseUrl("https://example.com:8080");
 
       expect(isOriginAllowed(origin, allowed)).toBe(true);
     });
 
-    it('should handle scheme flexibility', () => {
-      const origin = parseUrl('https://example.com');
-      const allowed = parseUrl('//example.com'); // no scheme specified
+    it("should handle scheme flexibility", () => {
+      const origin = parseUrl("https://example.com");
+      const allowed = parseUrl("//example.com"); // no scheme specified
 
       expect(isOriginAllowed(origin, allowed)).toBe(true);
     });
 
-    it('should handle port flexibility', () => {
-      const origin = parseUrl('https://example.com:443');
-      const allowed = parseUrl('https://example.com'); // no port specified
+    it("should handle port flexibility", () => {
+      const origin = parseUrl("https://example.com:443");
+      const allowed = parseUrl("https://example.com"); // no port specified
 
       expect(isOriginAllowed(origin, allowed)).toBe(true);
     });
 
-    it('should support wildcard domains', () => {
-      const origin1 = parseUrl('https://sub.example.com');
-      const origin2 = parseUrl('https://example.com');
-      const allowed = { scheme: 'https' as const, host: '*.example.com', port: undefined };
+    it("should support wildcard domains", () => {
+      const origin1 = parseUrl("https://sub.example.com");
+      const origin2 = parseUrl("https://example.com");
+      const allowed = { scheme: "https" as const, host: "*.example.com", port: undefined };
 
       expect(isOriginAllowed(origin1, allowed)).toBe(true);
       expect(isOriginAllowed(origin2, allowed)).toBe(true);
     });
 
-    it('should reject mismatched origins', () => {
-      const origin = parseUrl('https://evil.com');
-      const allowed = parseUrl('https://example.com');
+    it("should reject mismatched origins", () => {
+      const origin = parseUrl("https://evil.com");
+      const allowed = parseUrl("https://example.com");
 
       expect(isOriginAllowed(origin, allowed)).toBe(false);
     });
 
-    it('should handle null inputs', () => {
+    it("should handle null inputs", () => {
       expect(isOriginAllowed(null, null)).toBe(false);
-      expect(isOriginAllowed(parseUrl('https://example.com'), null)).toBe(false);
-      expect(isOriginAllowed(null, parseUrl('https://example.com'))).toBe(false);
+      expect(isOriginAllowed(parseUrl("https://example.com"), null)).toBe(false);
+      expect(isOriginAllowed(null, parseUrl("https://example.com"))).toBe(false);
     });
   });
 
-  describe('getDefaultAllowedOrigins', () => {
-    it('should generate default origins from Vite config', () => {
-      const config: TidewaveConfig = { host: 'localhost', port: 3000 };
+  describe("getDefaultAllowedOrigins", () => {
+    it("should generate default origins from Vite config", () => {
+      const config: TidewaveConfig = { host: "localhost", port: 3000 };
 
       const origins = getDefaultAllowedOrigins(config);
 
-      expect(origins).toEqual(['http://localhost:3000', 'https://localhost:3000']);
+      expect(origins).toEqual(["http://localhost:3000", "https://localhost:3000"]);
     });
   });
 
-  describe('checkOrigin', () => {
-    it('should allow requests without origin header', () => {
-      const req = createMockRequest('127.0.0.1'); // no origin
+  describe("checkOrigin", () => {
+    it("should allow requests without origin header", () => {
+      const req = createMockRequest("127.0.0.1"); // no origin
       const { res } = createMockResponse();
-      const config: TidewaveConfig = { port: 5173, host: 'localhost' };
+      const config: TidewaveConfig = { port: 5173, host: "localhost" };
 
       const result = checkOrigin(req as TidewaveRequest, res as TidewaveResponse, config);
 
@@ -211,10 +211,10 @@ describe('HTTP Security', () => {
       expect(res.statusCode).toBe(200);
     });
 
-    it('should allow default Vite dev server origin', () => {
-      const req = createMockRequest('127.0.0.1', 'http://localhost:5173');
+    it("should allow default Vite dev server origin", () => {
+      const req = createMockRequest("127.0.0.1", "http://localhost:5173");
       const { res } = createMockResponse();
-      const config: TidewaveConfig = { host: 'localhost', port: 5173 };
+      const config: TidewaveConfig = { host: "localhost", port: 5173 };
 
       const result = checkOrigin(req as TidewaveRequest, res as TidewaveResponse, config);
 
@@ -222,12 +222,12 @@ describe('HTTP Security', () => {
       expect(res.statusCode).toBe(200);
     });
 
-    it('should allow custom allowed origins', () => {
-      const req = createMockRequest('127.0.0.1', 'https://custom.example.com');
+    it("should allow custom allowed origins", () => {
+      const req = createMockRequest("127.0.0.1", "https://custom.example.com");
       const { res } = createMockResponse();
       const config: TidewaveConfig = {
-        allowedOrigins: ['https://custom.example.com'],
-        host: 'localhost',
+        allowedOrigins: ["https://custom.example.com"],
+        host: "localhost",
         port: 5173,
       };
 
@@ -237,28 +237,28 @@ describe('HTTP Security', () => {
       expect(res.statusCode).toBe(200);
     });
 
-    it('should block unauthorized origins', () => {
-      const req = createMockRequest('127.0.0.1', 'https://evil.com');
+    it("should block unauthorized origins", () => {
+      const req = createMockRequest("127.0.0.1", "https://evil.com");
       const { res, mockEnd } = createMockResponse();
-      const config: TidewaveConfig = { host: 'localhost', port: 5173 };
+      const config: TidewaveConfig = { host: "localhost", port: 5173 };
 
       const result = checkOrigin(req as TidewaveRequest, res as TidewaveResponse, config);
 
       expect(result).toBe(false);
       expect(res.statusCode).toBe(403);
-      expect(mockEnd).toHaveBeenCalledWith(expect.stringContaining('security reasons'));
+      expect(mockEnd).toHaveBeenCalledWith(expect.stringContaining("security reasons"));
     });
 
-    it('should handle invalid origin header', () => {
-      const req = createMockRequest('127.0.0.1', 'not-a-url');
+    it("should handle invalid origin header", () => {
+      const req = createMockRequest("127.0.0.1", "not-a-url");
       const { res, mockEnd } = createMockResponse();
-      const config: TidewaveConfig = { host: 'localhost', port: 5173 };
+      const config: TidewaveConfig = { host: "localhost", port: 5173 };
 
       const result = checkOrigin(req as TidewaveRequest, res as TidewaveResponse, config);
 
       expect(result).toBe(false);
       expect(res.statusCode).toBe(403);
-      expect(mockEnd).toHaveBeenCalledWith(expect.stringContaining('Invalid origin'));
+      expect(mockEnd).toHaveBeenCalledWith(expect.stringContaining("Invalid origin"));
     });
   });
 });

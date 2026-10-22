@@ -1,8 +1,8 @@
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { serveMcp, type Evaluate, type ServeMcpOptions } from '../../mcp';
-import type { TidewaveConfig } from '../../core';
-import type { LocalRequestInfoGetter } from '../../config';
-import type { TidewaveNext, TidewaveRequest, TidewaveResponse } from '../types';
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { serveMcp, type Evaluate, type ServeMcpOptions } from "../../mcp";
+import type { TidewaveConfig } from "../../core";
+import type { LocalRequestInfoGetter } from "../../config";
+import type { TidewaveNext, TidewaveRequest, TidewaveResponse } from "../types";
 
 export interface McpHandlerOptions {
   getLocalRequestInfo?: LocalRequestInfoGetter<TidewaveRequest>;
@@ -28,7 +28,7 @@ export async function handleMcp(
       return;
     }
 
-    if (req.method !== 'POST') {
+    if (req.method !== "POST") {
       methodNotAllowed(res);
       return;
     }
@@ -40,7 +40,7 @@ export async function handleMcp(
     });
 
     if (!(req.body || res.headersSent)) {
-      mcpErrorResponse(res, 'Request body was not parsed');
+      mcpErrorResponse(res, "Request body was not parsed");
       return;
     }
 
@@ -72,8 +72,8 @@ function serveOptions(
 function includeBrowserTools(req: TidewaveRequest): boolean {
   try {
     return (
-      new URL(req.url || '/', 'http://localhost').searchParams.get('include_browser_tools') !==
-      'false'
+      new URL(req.url || "/", "http://localhost").searchParams.get("include_browser_tools") !==
+      "false"
     );
   } catch {
     return false;
@@ -87,12 +87,12 @@ function localOrigin(
 ): string {
   const localRequestInfo = getLocalRequestInfo?.(req);
   const host = firstHeaderValue(req.headers.host) || configuredHost(config, localRequestInfo?.port);
-  const scheme = localRequestInfo?.scheme || 'http';
+  const scheme = localRequestInfo?.scheme || "http";
   return `${scheme}://${host}`;
 }
 
 function configuredHost(config: TidewaveConfig, localPort?: number): string {
-  const host = config.host || 'localhost';
+  const host = config.host || "localhost";
   const port = localPort || config.port;
   return port ? `${host}:${port}` : host;
 }
@@ -103,14 +103,14 @@ function firstHeaderValue(value: string | string[] | undefined): string | undefi
 
 function mcpErrorResponse(res: TidewaveResponse, err: Error | unknown): void {
   res.statusCode = 500;
-  res.setHeader('content-type', 'application/json');
+  res.setHeader("content-type", "application/json");
   res.end(
     JSON.stringify({
       jsonrpc: 2.0,
       id: null,
       error: {
         code: -32603,
-        message: 'Internal server error',
+        message: "Internal server error",
         data: err instanceof Error ? err.message : String(err),
       },
     }),
@@ -119,13 +119,13 @@ function mcpErrorResponse(res: TidewaveResponse, err: Error | unknown): void {
 
 function methodNotAllowed(res: TidewaveResponse): void {
   res.statusCode = 405;
-  res.setHeader('Allow', 'POST');
+  res.setHeader("Allow", "POST");
   res.end();
 }
 
 function originNotAllowed(res: TidewaveResponse): void {
   const message =
-    'For security reasons, Tidewave does not accept requests with an origin header for this endpoint.';
+    "For security reasons, Tidewave does not accept requests with an origin header for this endpoint.";
   console.warn(message);
   res.statusCode = 403;
   res.end(message);

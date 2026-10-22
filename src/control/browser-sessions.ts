@@ -1,38 +1,38 @@
-import { CallToolResultSchema, type CallToolResult } from '@modelcontextprotocol/sdk/types.js';
-import { z } from 'zod';
+import { CallToolResultSchema, type CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { z } from "zod";
 
 export interface ControlToolReply {
   result: CallToolResult;
 }
 
 export type BrowserSessionErrorReason =
-  | 'invalid_sid'
-  | 'unknown_client'
-  | 'no_clients'
-  | 'timeout'
-  | 'disconnected';
+  | "invalid_sid"
+  | "unknown_client"
+  | "no_clients"
+  | "timeout"
+  | "disconnected";
 
 export type BrowserSessionResult =
   | { ok: true; reply: ControlToolReply }
   | { ok: false; reason: BrowserSessionErrorReason };
 
 export type ControlOutgoingMessage =
-  | { type: 'hello_ok'; name: string }
-  | { type: 'hello_error'; reason: 'name_taken' }
-  | { type: 'run_tool'; ref: number; name: string; sid: string | null; input: unknown };
+  | { type: "hello_ok"; name: string }
+  | { type: "hello_error"; reason: "name_taken" }
+  | { type: "run_tool"; ref: number; name: string; sid: string | null; input: unknown };
 
 type PendingRequest = {
   resolveReply(reply: ControlToolReply): void;
   resolveDisconnect(): void;
 };
 
-const controlIncomingMessageSchema = z.discriminatedUnion('type', [
+const controlIncomingMessageSchema = z.discriminatedUnion("type", [
   z.object({
-    type: z.literal('hello'),
+    type: z.literal("hello"),
     name: z.string(),
   }),
   z.object({
-    type: z.literal('tool_reply'),
+    type: z.literal("tool_reply"),
     ref: z.number(),
     reply: z.object({
       result: CallToolResultSchema,
@@ -64,12 +64,12 @@ export class BrowserClient {
     if (!result.success) return;
 
     const message = result.data;
-    if (message.type === 'hello') {
+    if (message.type === "hello") {
       const registration = this.sessions.registerClient(message.name, this);
-      if (registration === 'ok') {
-        this.push({ type: 'hello_ok', name: message.name });
+      if (registration === "ok") {
+        this.push({ type: "hello_ok", name: message.name });
       } else {
-        this.push({ type: 'hello_error', reason: 'name_taken' });
+        this.push({ type: "hello_error", reason: "name_taken" });
       }
       return;
     }
@@ -98,7 +98,7 @@ export class BrowserClient {
   }
 
   runTool(ref: number, sid: string | null, name: string, input: unknown): boolean {
-    return this.push({ type: 'run_tool', ref, name, sid, input });
+    return this.push({ type: "run_tool", ref, name, sid, input });
   }
 
   private reply(ref: number, reply: ControlToolReply): void {
@@ -127,9 +127,9 @@ export class BrowserSessions {
     return new BrowserClient(this, sendMessage);
   }
 
-  registerClient(name: string, client: BrowserClient): 'ok' | 'name_taken' {
+  registerClient(name: string, client: BrowserClient): "ok" | "name_taken" {
     const current = this.clients.get(name);
-    if (current && current !== client) return 'name_taken';
+    if (current && current !== client) return "name_taken";
 
     if (client.name && client.name !== name && this.clients.get(client.name) === client) {
       this.clients.delete(client.name);
@@ -137,7 +137,7 @@ export class BrowserSessions {
 
     client.name = name;
     this.clients.set(name, client);
-    return 'ok';
+    return "ok";
   }
 
   unregisterClient(client: BrowserClient): void {
@@ -158,12 +158,12 @@ export class BrowserSessions {
     timeout = Infinity,
   ): Promise<BrowserSessionResult> {
     const clientName = parseSid(sid);
-    if (!clientName) return Promise.resolve({ ok: false, reason: 'invalid_sid' });
+    if (!clientName) return Promise.resolve({ ok: false, reason: "invalid_sid" });
 
     const client = this.clients.get(clientName);
-    if (!client) return Promise.resolve({ ok: false, reason: 'unknown_client' });
+    if (!client) return Promise.resolve({ ok: false, reason: "unknown_client" });
 
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       let settled = false;
       const ref = this.allocateRef();
 
@@ -176,27 +176,27 @@ export class BrowserSessions {
       };
 
       const timer = setRequestTimeout(() => {
-        settle({ ok: false, reason: 'timeout' });
+        settle({ ok: false, reason: "timeout" });
       }, timeout);
 
       client.addPending(ref, {
-        resolveReply: reply => settle({ ok: true, reply }),
-        resolveDisconnect: () => settle({ ok: false, reason: 'disconnected' }),
+        resolveReply: (reply) => settle({ ok: true, reply }),
+        resolveDisconnect: () => settle({ ok: false, reason: "disconnected" }),
       });
 
       if (!client.runTool(ref, sid, name, input)) {
-        settle({ ok: false, reason: 'disconnected' });
+        settle({ ok: false, reason: "disconnected" });
       }
     });
   }
 
   broadcastRun(name: string, input: unknown, timeout: number): Promise<BrowserSessionResult> {
     const clients = [...this.listClients()];
-    if (clients.length === 0) return Promise.resolve({ ok: false, reason: 'no_clients' });
+    if (clients.length === 0) return Promise.resolve({ ok: false, reason: "no_clients" });
 
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       let settled = false;
-      const refs = clients.map(client => ({ client, ref: this.allocateRef() }));
+      const refs = clients.map((client) => ({ client, ref: this.allocateRef() }));
 
       const cleanup = (): void => {
         for (const { client, ref } of refs) {
@@ -208,12 +208,12 @@ export class BrowserSessions {
         if (settled) return;
         settled = true;
         cleanup();
-        resolve({ ok: false, reason: 'timeout' });
+        resolve({ ok: false, reason: "timeout" });
       }, timeout);
 
       for (const { client, ref } of refs) {
         client.addPending(ref, {
-          resolveReply: result => {
+          resolveReply: (result) => {
             if (settled) return;
             settled = true;
             clearRequestTimeout(timer);
@@ -265,7 +265,7 @@ function clearRequestTimeout(timer: ReturnType<typeof setTimeout> | null): void 
 }
 
 function parseSid(sid: string): string | null {
-  const parts = sid.split('#');
+  const parts = sid.split("#");
   if (parts.length !== 2) return null;
   const [name, suffix] = parts;
   if (!name || !suffix) return null;

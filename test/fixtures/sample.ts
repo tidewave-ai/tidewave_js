@@ -27,7 +27,7 @@ export class UserManager {
    * @returns The user or undefined
    */
   getUserById(id: number): User | undefined {
-    return this.users.find(u => u.id === id);
+    return this.users.find((u) => u.id === id);
   }
 
   /**

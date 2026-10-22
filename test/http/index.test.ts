@@ -1,18 +1,18 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { TidewaveRequest, TidewaveResponse } from '../../src/http/types';
-import { handleMcp } from '../../src/http/handlers/mcp';
-import { createHandleConfig } from '../../src/http/handlers/config';
-import { createHandleControlHtml, createHandleHtml } from '../../src/http/handlers/html';
-import { createHandleResponseHeaders } from '../../src/http/headers';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { TidewaveRequest, TidewaveResponse } from "../../src/http/types";
+import { handleMcp } from "../../src/http/handlers/mcp";
+import { createHandleConfig } from "../../src/http/handlers/config";
+import { createHandleControlHtml, createHandleHtml } from "../../src/http/handlers/html";
+import { createHandleResponseHeaders } from "../../src/http/headers";
 
 const TIDEWAVE_CONFIG = {
-  projectName: 'test_app',
-  framework: 'vite',
+  projectName: "test_app",
+  framework: "vite",
 };
 
 // Mock request/response helpers
 const createMockRequest = (headers: Record<string, string> = {}): Partial<TidewaveRequest> => ({
-  socket: { remoteAddress: '127.0.0.1' } as any,
+  socket: { remoteAddress: "127.0.0.1" } as any,
   headers,
 });
 
@@ -54,41 +54,41 @@ const createMockResponse = () => {
   };
 };
 
-describe('HTTP Utilities', () => {
+describe("HTTP Utilities", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     console.warn = vi.fn();
     console.error = vi.fn();
   });
 
-  describe('handleMcp', () => {
-    it('should return 403 if origin header is set', async () => {
-      const req = createMockRequest({ origin: 'http://localhost:4000' });
+  describe("handleMcp", () => {
+    it("should return 403 if origin header is set", async () => {
+      const req = createMockRequest({ origin: "http://localhost:4000" });
       const { res, mockEnd } = createMockResponse();
       const next = vi.fn();
 
       await handleMcp(req as TidewaveRequest, res as TidewaveResponse, next);
 
       expect(res.statusCode).toBe(403);
-      expect(mockEnd).toHaveBeenCalledWith(expect.stringContaining('origin'));
+      expect(mockEnd).toHaveBeenCalledWith(expect.stringContaining("origin"));
     });
 
-    it('should return 405 for non-POST requests', async () => {
-      const req = { ...createMockRequest(), method: 'GET' };
+    it("should return 405 for non-POST requests", async () => {
+      const req = { ...createMockRequest(), method: "GET" };
       const { res, mockEnd, mockSetHeader } = createMockResponse();
       const next = vi.fn();
 
       await handleMcp(req as TidewaveRequest, res as TidewaveResponse, next);
 
       expect(res.statusCode).toBe(405);
-      expect(mockSetHeader).toHaveBeenCalledWith('Allow', 'POST');
+      expect(mockSetHeader).toHaveBeenCalledWith("Allow", "POST");
       expect(mockEnd).toHaveBeenCalled();
     });
   });
 
-  describe('handleHtml', () => {
-    it('should allow arbitrary origin headers for the root page', async () => {
-      const req = { ...createMockRequest({ origin: 'http://example.com' }), url: '/' };
+  describe("handleHtml", () => {
+    it("should allow arbitrary origin headers for the root page", async () => {
+      const req = { ...createMockRequest({ origin: "http://example.com" }), url: "/" };
       const { res, mockEnd, mockSetHeader } = createMockResponse();
       const next = vi.fn();
 
@@ -96,14 +96,14 @@ describe('HTTP Utilities', () => {
       await handler(req as TidewaveRequest, res as TidewaveResponse, next);
 
       expect(res.statusCode).toBe(200);
-      expect(mockSetHeader).toHaveBeenCalledWith('Content-Type', 'text/html');
-      expect(mockEnd).toHaveBeenCalledWith(expect.stringContaining('<html>'));
-      expect(mockEnd).toHaveBeenCalledWith(expect.stringContaining('/tc/tc.js'));
+      expect(mockSetHeader).toHaveBeenCalledWith("Content-Type", "text/html");
+      expect(mockEnd).toHaveBeenCalledWith(expect.stringContaining("<html>"));
+      expect(mockEnd).toHaveBeenCalledWith(expect.stringContaining("/tc/tc.js"));
       expect(next).not.toHaveBeenCalled();
     });
 
-    it('should serve the entrypoint page even when an entrypoint query parameter is given', async () => {
-      const req = { ...createMockRequest(), url: '/?entrypoint=foo' };
+    it("should serve the entrypoint page even when an entrypoint query parameter is given", async () => {
+      const req = { ...createMockRequest(), url: "/?entrypoint=foo" };
       const { res, mockEnd } = createMockResponse();
       const next = vi.fn();
 
@@ -111,212 +111,212 @@ describe('HTTP Utilities', () => {
       await handler(req as TidewaveRequest, res as TidewaveResponse, next);
 
       expect(res.statusCode).toBe(200);
-      expect(mockEnd).toHaveBeenCalledWith(expect.stringContaining('/tc/tc.js'));
-      expect(mockEnd).not.toHaveBeenCalledWith(expect.stringContaining('/tc/control.js'));
+      expect(mockEnd).toHaveBeenCalledWith(expect.stringContaining("/tc/tc.js"));
+      expect(mockEnd).not.toHaveBeenCalledWith(expect.stringContaining("/tc/control.js"));
       expect(next).not.toHaveBeenCalled();
     });
 
-    it('should serve the control app with a content security policy', async () => {
-      const req = { ...createMockRequest(), url: '/' };
+    it("should serve the control app with a content security policy", async () => {
+      const req = { ...createMockRequest(), url: "/" };
       const { res, mockEnd, mockSetHeader } = createMockResponse();
       const next = vi.fn();
 
       const handler = createHandleControlHtml(
         {
-          framework: 'vite',
-          projectName: 'test_app',
+          framework: "vite",
+          projectName: "test_app",
         },
-        () => ({ port: 5173, scheme: 'http' }),
+        () => ({ port: 5173, scheme: "http" }),
       );
       await handler(req as TidewaveRequest, res as TidewaveResponse, next);
 
       expect(res.statusCode).toBe(200);
-      expect(mockSetHeader).toHaveBeenCalledWith('Content-Type', 'text/html');
+      expect(mockSetHeader).toHaveBeenCalledWith("Content-Type", "text/html");
       expect(mockSetHeader).toHaveBeenCalledWith(
-        'Content-Security-Policy',
+        "Content-Security-Policy",
         "base-uri 'self'; frame-ancestors 'self';",
       );
-      expect(mockEnd).toHaveBeenCalledWith(expect.stringContaining('/tc/control.js'));
+      expect(mockEnd).toHaveBeenCalledWith(expect.stringContaining("/tc/control.js"));
       expect(mockEnd).toHaveBeenCalledWith(expect.stringContaining('name="tidewave:config"'));
       expect(mockEnd).toHaveBeenCalledWith(
-        expect.stringContaining('&quot;framework_type&quot;:&quot;vite&quot;'),
+        expect.stringContaining("&quot;framework_type&quot;:&quot;vite&quot;"),
       );
       expect(mockEnd).toHaveBeenCalledWith(
-        expect.stringContaining('&quot;local_scheme&quot;:&quot;http&quot;'),
+        expect.stringContaining("&quot;local_scheme&quot;:&quot;http&quot;"),
       );
       expect(next).not.toHaveBeenCalled();
     });
   });
 
-  describe('handleConfig', () => {
-    it('should allow origin header and return CORS config', async () => {
-      const req = createMockRequest({ origin: 'http://localhost:4001' });
+  describe("handleConfig", () => {
+    it("should allow origin header and return CORS config", async () => {
+      const req = createMockRequest({ origin: "http://localhost:4001" });
       const { res, mockEnd, mockSetHeader } = createMockResponse();
       const next = vi.fn();
 
       const handler = createHandleConfig(
         {
-          framework: 'vite',
-          projectName: 'test_app',
-          tmpDir: 'custom-tmp',
+          framework: "vite",
+          projectName: "test_app",
+          tmpDir: "custom-tmp",
         },
-        () => ({ port: 5173, scheme: 'http' }),
+        () => ({ port: 5173, scheme: "http" }),
       );
       await handler(req as TidewaveRequest, res as TidewaveResponse, next);
 
       expect(res.statusCode).toBe(200);
-      expect(mockSetHeader).toHaveBeenCalledWith('Content-Type', 'application/json');
-      expect(mockSetHeader).toHaveBeenCalledWith('Access-Control-Allow-Origin', '*');
+      expect(mockSetHeader).toHaveBeenCalledWith("Content-Type", "application/json");
+      expect(mockSetHeader).toHaveBeenCalledWith("Access-Control-Allow-Origin", "*");
       expect(JSON.parse(String(mockEnd.mock.calls[0]![0]))).toMatchObject({
-        project_name: 'test_app',
-        framework_type: 'vite',
+        project_name: "test_app",
+        framework_type: "vite",
         local_port: 5173,
-        local_scheme: 'http',
-        tmp_dir: 'custom-tmp',
+        local_scheme: "http",
+        tmp_dir: "custom-tmp",
       });
     });
   });
 
-  describe('handleResponseHeaders', () => {
-    it('should stream HTML writes and inject the toolbar when the closing head is seen', async () => {
+  describe("handleResponseHeaders", () => {
+    it("should stream HTML writes and inject the toolbar when the closing head is seen", async () => {
       const req = {
-        ...createMockRequest({ accept: 'text/html' }),
-        url: '/',
+        ...createMockRequest({ accept: "text/html" }),
+        url: "/",
       };
       const { res, mockEnd, mockWrite } = createMockResponse();
       const next = vi.fn();
 
       const handler = createHandleResponseHeaders(
-        { ...TIDEWAVE_CONFIG, clientUrl: 'http://localhost:4000' },
+        { ...TIDEWAVE_CONFIG, clientUrl: "http://localhost:4000" },
         () => ({
           port: 5173,
-          scheme: 'http',
+          scheme: "http",
         }),
       );
       const response = res as TidewaveResponse;
       await handler(req as TidewaveRequest, response, next);
 
-      response.setHeader('Content-Type', 'text/html; charset=utf-8');
-      const firstWrite = response.write('<html><head><title>App</title>');
+      response.setHeader("Content-Type", "text/html; charset=utf-8");
+      const firstWrite = response.write("<html><head><title>App</title>");
 
       expect(firstWrite).toBe(true);
       expect(next).toHaveBeenCalledOnce();
-      expect(mockWrite).toHaveBeenCalledWith('<html><head><title>App</title>');
+      expect(mockWrite).toHaveBeenCalledWith("<html><head><title>App</title>");
       expect(mockEnd).not.toHaveBeenCalled();
 
-      response.write('</head><body>Hello');
-      response.write('</body>');
-      response.end('</html>');
+      response.write("</head><body>Hello");
+      response.write("</body>");
+      response.end("</html>");
 
       expect(mockWrite).toHaveBeenCalledTimes(3);
-      expect(mockWrite.mock.calls[2]![0]).toBe('</body>');
-      expect(mockEnd).toHaveBeenCalledWith('</html>');
+      expect(mockWrite.mock.calls[2]![0]).toBe("</body>");
+      expect(mockEnd).toHaveBeenCalledWith("</html>");
 
       const injectedChunk = String(mockWrite.mock.calls[1]![0]);
       expect(injectedChunk).toContain('name="tidewave:config"');
-      expect(injectedChunk).toContain('http://localhost:4000/tc/toolbar.js');
-      expect(injectedChunk.indexOf('/tc/toolbar.js')).toBeLessThan(
-        injectedChunk.indexOf('</head>'),
+      expect(injectedChunk).toContain("http://localhost:4000/tc/toolbar.js");
+      expect(injectedChunk.indexOf("/tc/toolbar.js")).toBeLessThan(
+        injectedChunk.indexOf("</head>"),
       );
     });
 
-    it('should inject the toolbar when the closing head is split across writes', async () => {
+    it("should inject the toolbar when the closing head is split across writes", async () => {
       const req = {
-        ...createMockRequest({ accept: 'text/html' }),
-        url: '/',
+        ...createMockRequest({ accept: "text/html" }),
+        url: "/",
       };
       const { res, mockEnd, mockWrite } = createMockResponse();
       const next = vi.fn();
 
       const handler = createHandleResponseHeaders(
-        { ...TIDEWAVE_CONFIG, clientUrl: 'http://localhost:4000' },
+        { ...TIDEWAVE_CONFIG, clientUrl: "http://localhost:4000" },
         () => ({
           port: 5173,
-          scheme: 'http',
+          scheme: "http",
         }),
       );
       const response = res as TidewaveResponse;
       await handler(req as TidewaveRequest, response, next);
 
-      response.setHeader('Content-Type', 'text/html; charset=utf-8');
-      response.write('<html><head><title>App</title></he');
-      response.write('ad><body>Hello');
-      response.end('</body></html>');
+      response.setHeader("Content-Type", "text/html; charset=utf-8");
+      response.write("<html><head><title>App</title></he");
+      response.write("ad><body>Hello");
+      response.end("</body></html>");
 
       const body = [
-        ...mockWrite.mock.calls.map(call => String(call[0])),
+        ...mockWrite.mock.calls.map((call) => String(call[0])),
         String(mockEnd.mock.calls[0]![0]),
-      ].join('');
+      ].join("");
 
       expect(body).toContain('name="tidewave:config"');
-      expect(body).toContain('http://localhost:4000/tc/toolbar.js');
-      expect(body.indexOf('/tc/toolbar.js')).toBeLessThan(body.indexOf('</head>'));
-      expect(body).toContain('<body>Hello</body></html>');
+      expect(body).toContain("http://localhost:4000/tc/toolbar.js");
+      expect(body.indexOf("/tc/toolbar.js")).toBeLessThan(body.indexOf("</head>"));
+      expect(body).toContain("<body>Hello</body></html>");
     });
 
-    it('should inject the toolbar when the closing head is completed by end', async () => {
+    it("should inject the toolbar when the closing head is completed by end", async () => {
       const req = {
-        ...createMockRequest({ accept: 'text/html' }),
-        url: '/',
+        ...createMockRequest({ accept: "text/html" }),
+        url: "/",
       };
       const { res, mockEnd, mockWrite } = createMockResponse();
       const next = vi.fn();
 
       const handler = createHandleResponseHeaders(
-        { ...TIDEWAVE_CONFIG, clientUrl: 'http://localhost:4000' },
+        { ...TIDEWAVE_CONFIG, clientUrl: "http://localhost:4000" },
         () => ({
           port: 5173,
-          scheme: 'http',
+          scheme: "http",
         }),
       );
       const response = res as TidewaveResponse;
       await handler(req as TidewaveRequest, response, next);
 
-      response.setHeader('Content-Type', 'text/html; charset=utf-8');
-      response.write('<html><head><title>App</title></he');
-      response.end('ad><body>Hello</body></html>');
+      response.setHeader("Content-Type", "text/html; charset=utf-8");
+      response.write("<html><head><title>App</title></he");
+      response.end("ad><body>Hello</body></html>");
 
       const body = [
-        ...mockWrite.mock.calls.map(call => String(call[0])),
+        ...mockWrite.mock.calls.map((call) => String(call[0])),
         String(mockEnd.mock.calls[0]![0]),
-      ].join('');
+      ].join("");
 
       expect(body).toContain('name="tidewave:config"');
-      expect(body).toContain('http://localhost:4000/tc/toolbar.js');
-      expect(body.indexOf('/tc/toolbar.js')).toBeLessThan(body.indexOf('</head>'));
-      expect(body).toContain('<body>Hello</body></html>');
+      expect(body).toContain("http://localhost:4000/tc/toolbar.js");
+      expect(body.indexOf("/tc/toolbar.js")).toBeLessThan(body.indexOf("</head>"));
+      expect(body).toContain("<body>Hello</body></html>");
     });
 
-    it('should flush a buffered closing head prefix when the response ends', async () => {
+    it("should flush a buffered closing head prefix when the response ends", async () => {
       const req = {
-        ...createMockRequest({ accept: 'text/html' }),
-        url: '/',
+        ...createMockRequest({ accept: "text/html" }),
+        url: "/",
       };
       const { res, mockEnd, mockWrite } = createMockResponse();
       const next = vi.fn();
-      const html = '<html><head></he';
+      const html = "<html><head></he";
 
       const handler = createHandleResponseHeaders(TIDEWAVE_CONFIG);
       const response = res as TidewaveResponse;
       await handler(req as TidewaveRequest, response, next);
 
-      response.setHeader('Content-Type', 'text/html');
+      response.setHeader("Content-Type", "text/html");
       response.write(html);
       response.end();
 
       const body = [
-        ...mockWrite.mock.calls.map(call => String(call[0])),
+        ...mockWrite.mock.calls.map((call) => String(call[0])),
         String(mockEnd.mock.calls[0]![0]),
-      ].join('');
+      ].join("");
 
       expect(body).toBe(html);
-      expect(body).not.toContain('/tc/toolbar.js');
+      expect(body).not.toContain("/tc/toolbar.js");
     });
 
-    it('should still inject the toolbar into an HTML response completed with end', async () => {
+    it("should still inject the toolbar into an HTML response completed with end", async () => {
       const req = {
-        ...createMockRequest({ accept: 'text/html' }),
-        url: '/',
+        ...createMockRequest({ accept: "text/html" }),
+        url: "/",
       };
       const { res, mockEnd, mockRemoveHeader, mockWrite } = createMockResponse();
       const next = vi.fn();
@@ -325,25 +325,25 @@ describe('HTTP Utilities', () => {
       const response = res as TidewaveResponse;
       await handler(req as TidewaveRequest, response, next);
 
-      response.setHeader('Content-Type', 'text/html');
-      response.setHeader('Content-Length', '39');
-      response.end('<html><head></head><body></body></html>');
+      response.setHeader("Content-Type", "text/html");
+      response.setHeader("Content-Length", "39");
+      response.end("<html><head></head><body></body></html>");
 
       expect(mockWrite).not.toHaveBeenCalled();
-      expect(mockRemoveHeader).toHaveBeenCalledWith('content-length');
-      expect(String(mockEnd.mock.calls[0]![0])).toContain('/tc/toolbar.js');
+      expect(mockRemoveHeader).toHaveBeenCalledWith("content-length");
+      expect(String(mockEnd.mock.calls[0]![0])).toContain("/tc/toolbar.js");
     });
 
-    it('should inspect HTML headers passed through writeHead', async () => {
+    it("should inspect HTML headers passed through writeHead", async () => {
       const req = {
-        ...createMockRequest({ accept: 'text/html' }),
-        url: '/',
+        ...createMockRequest({ accept: "text/html" }),
+        url: "/",
       };
       const { res, mockWrite, mockWriteHead } = createMockResponse();
       const next = vi.fn();
       const headers = {
-        'Content-Type': 'text/html',
-        'Content-Length': '39',
+        "Content-Type": "text/html",
+        "Content-Length": "39",
       };
 
       const handler = createHandleResponseHeaders(TIDEWAVE_CONFIG);
@@ -351,23 +351,23 @@ describe('HTTP Utilities', () => {
       await handler(req as TidewaveRequest, response, next);
 
       response.writeHead(200, headers);
-      response.write('<html><head></head>');
+      response.write("<html><head></head>");
 
-      expect(headers).not.toHaveProperty('Content-Length');
+      expect(headers).not.toHaveProperty("Content-Length");
       expect(mockWriteHead).toHaveBeenCalledWith(200, headers);
-      expect(String(mockWrite.mock.calls[0]![0])).toContain('/tc/toolbar.js');
+      expect(String(mockWrite.mock.calls[0]![0])).toContain("/tc/toolbar.js");
     });
 
-    it('should keep injecting after writeHead sends headers prepared by the wrapper', async () => {
+    it("should keep injecting after writeHead sends headers prepared by the wrapper", async () => {
       const req = {
-        ...createMockRequest({ accept: 'text/html' }),
-        url: '/',
+        ...createMockRequest({ accept: "text/html" }),
+        url: "/",
       };
       const { res, mockWrite, mockWriteHead } = createMockResponse();
       const next = vi.fn();
       const headers = {
-        'Content-Type': 'text/html',
-        'Content-Length': '39',
+        "Content-Type": "text/html",
+        "Content-Length": "39",
       };
 
       const handler = createHandleResponseHeaders(TIDEWAVE_CONFIG);
@@ -376,72 +376,72 @@ describe('HTTP Utilities', () => {
 
       response.writeHead(200, headers);
       (response as any).headersSent = true;
-      response.write('<html><head></head>');
+      response.write("<html><head></head>");
 
-      expect(headers).not.toHaveProperty('Content-Length');
+      expect(headers).not.toHaveProperty("Content-Length");
       expect(mockWriteHead).toHaveBeenCalledWith(200, headers);
-      expect(String(mockWrite.mock.calls[0]![0])).toContain('/tc/toolbar.js');
+      expect(String(mockWrite.mock.calls[0]![0])).toContain("/tc/toolbar.js");
     });
 
-    it('should skip injection when headers were already sent before body inspection', async () => {
+    it("should skip injection when headers were already sent before body inspection", async () => {
       const req = {
-        ...createMockRequest({ accept: 'text/html' }),
-        url: '/',
+        ...createMockRequest({ accept: "text/html" }),
+        url: "/",
       };
       const { res, mockEnd, mockRemoveHeader } = createMockResponse();
       const next = vi.fn();
-      const html = '<html><head></head><body></body></html>';
+      const html = "<html><head></head><body></body></html>";
 
       const handler = createHandleResponseHeaders(TIDEWAVE_CONFIG);
       const response = res as TidewaveResponse;
       await handler(req as TidewaveRequest, response, next);
 
-      response.setHeader('Content-Type', 'text/html');
-      response.setHeader('Content-Length', '39');
+      response.setHeader("Content-Type", "text/html");
+      response.setHeader("Content-Length", "39");
       (response as any).headersSent = true;
       response.end(html);
 
       expect(mockRemoveHeader).not.toHaveBeenCalled();
       expect(mockEnd).toHaveBeenCalledWith(html);
-      expect(String(mockEnd.mock.calls[0]![0])).not.toContain('/tc/toolbar.js');
+      expect(String(mockEnd.mock.calls[0]![0])).not.toContain("/tc/toolbar.js");
     });
 
-    it('should skip injection for encoded HTML responses', async () => {
+    it("should skip injection for encoded HTML responses", async () => {
       const req = {
-        ...createMockRequest({ accept: 'text/html' }),
-        url: '/',
+        ...createMockRequest({ accept: "text/html" }),
+        url: "/",
       };
       const { res, mockEnd, mockRemoveHeader } = createMockResponse();
       const next = vi.fn();
-      const html = '<html><head></head><body></body></html>';
+      const html = "<html><head></head><body></body></html>";
 
       const handler = createHandleResponseHeaders(TIDEWAVE_CONFIG);
       const response = res as TidewaveResponse;
       await handler(req as TidewaveRequest, response, next);
 
-      response.setHeader('Content-Type', 'text/html');
-      response.setHeader('Content-Encoding', 'gzip');
-      response.setHeader('Content-Length', '39');
+      response.setHeader("Content-Type", "text/html");
+      response.setHeader("Content-Encoding", "gzip");
+      response.setHeader("Content-Length", "39");
       response.end(html);
 
       expect(mockRemoveHeader).not.toHaveBeenCalled();
       expect(mockEnd).toHaveBeenCalledWith(html);
-      expect(String(mockEnd.mock.calls[0]![0])).not.toContain('/tc/toolbar.js');
+      expect(String(mockEnd.mock.calls[0]![0])).not.toContain("/tc/toolbar.js");
     });
 
-    it('should skip injection for encoded HTML headers passed through writeHead', async () => {
+    it("should skip injection for encoded HTML headers passed through writeHead", async () => {
       const req = {
-        ...createMockRequest({ accept: 'text/html' }),
-        url: '/',
+        ...createMockRequest({ accept: "text/html" }),
+        url: "/",
       };
       const { res, mockEnd, mockRemoveHeader, mockWriteHead } = createMockResponse();
       const next = vi.fn();
       const headers = {
-        'Content-Type': 'text/html',
-        'Content-Encoding': 'gzip',
-        'Content-Length': '39',
+        "Content-Type": "text/html",
+        "Content-Encoding": "gzip",
+        "Content-Length": "39",
       };
-      const html = '<html><head></head><body></body></html>';
+      const html = "<html><head></head><body></body></html>";
 
       const handler = createHandleResponseHeaders(TIDEWAVE_CONFIG);
       const response = res as TidewaveResponse;
@@ -450,17 +450,17 @@ describe('HTTP Utilities', () => {
       response.writeHead(200, headers);
       response.end(html);
 
-      expect(headers).toHaveProperty('Content-Length');
+      expect(headers).toHaveProperty("Content-Length");
       expect(mockRemoveHeader).not.toHaveBeenCalled();
       expect(mockWriteHead).toHaveBeenCalledWith(200, headers);
       expect(mockEnd).toHaveBeenCalledWith(html);
-      expect(String(mockEnd.mock.calls[0]![0])).not.toContain('/tc/toolbar.js');
+      expect(String(mockEnd.mock.calls[0]![0])).not.toContain("/tc/toolbar.js");
     });
 
-    it('should pass non-HTML writes through without injecting', async () => {
+    it("should pass non-HTML writes through without injecting", async () => {
       const req = {
-        ...createMockRequest({ accept: 'text/html' }),
-        url: '/',
+        ...createMockRequest({ accept: "text/html" }),
+        url: "/",
       };
       const { res, mockEnd, mockRemoveHeader, mockWrite } = createMockResponse();
       const next = vi.fn();
@@ -469,12 +469,12 @@ describe('HTTP Utilities', () => {
       const response = res as TidewaveResponse;
       await handler(req as TidewaveRequest, response, next);
 
-      response.setHeader('Content-Type', 'text/plain');
-      response.write('hello');
-      response.end('world');
+      response.setHeader("Content-Type", "text/plain");
+      response.write("hello");
+      response.end("world");
 
-      expect(mockWrite).toHaveBeenCalledWith('hello');
-      expect(mockEnd).toHaveBeenCalledWith('world');
+      expect(mockWrite).toHaveBeenCalledWith("hello");
+      expect(mockEnd).toHaveBeenCalledWith("world");
       expect(mockRemoveHeader).not.toHaveBeenCalled();
     });
   });

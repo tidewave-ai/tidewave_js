@@ -1,14 +1,14 @@
 // This module runs in the app server runtime (the Vite process or a
 // separate worker), loaded through the Vite module runner.
 
-import { AsyncLocalStorage } from 'node:async_hooks';
-import { format } from 'node:util';
-import type { EvaluatedModuleResult } from '../core';
-import { stripAnsiCodes } from '../logger/ansi';
+import { AsyncLocalStorage } from "node:async_hooks";
+import { format } from "node:util";
+import type { EvaluatedModuleResult } from "../core";
+import { stripAnsiCodes } from "../logger/ansi";
 
-export const READY_EVENT = 'tidewave:ready';
-export const EVAL_EVENT = 'tidewave:eval';
-export const EVAL_RESULT_EVENT = 'tidewave:eval-result';
+export const READY_EVENT = "tidewave:ready";
+export const EVAL_EVENT = "tidewave:eval";
+export const EVAL_RESULT_EVENT = "tidewave:eval-result";
 
 export interface EvalMessage {
   id: string;
@@ -40,7 +40,7 @@ export function installEvalListener(hot: HotContext | undefined, importModule: I
   hot.on(EVAL_EVENT, ({ id, url, args }) => {
     // The runner handles messages one at a time and waits for listeners,
     // so we do not return the promise, to avoid blocking HMR
-    void evaluate(importModule, url, args).then(result => {
+    void evaluate(importModule, url, args).then((result) => {
       hot.send(EVAL_RESULT_EVENT, { id, result });
     });
   });
@@ -80,7 +80,7 @@ function isSupportedRuntime(): boolean {
 
 // The result is sent between processes, so we limit it to JSON values,
 // same as evaluation in a forked process.
-function serialize(result: unknown): EvaluatedModuleResult['result'] {
+function serialize(result: unknown): EvaluatedModuleResult["result"] {
   if (result === undefined) return null;
 
   try {
@@ -94,10 +94,10 @@ function collect(output: Output): { stdout: string; stderr: string } {
   // Code started by the evaluation may still log, but the output is
   // already returned, so further logs go to the regular console.
   output.open = false;
-  return { stdout: output.stdout.join(''), stderr: output.stderr.join('') };
+  return { stdout: output.stdout.join(""), stderr: output.stderr.join("") };
 }
 
-const STORAGE_KEY = '__TIDEWAVE_EVAL_OUTPUT__';
+const STORAGE_KEY = "__TIDEWAVE_EVAL_OUTPUT__";
 
 // The app runtime can evaluate this module multiple times (on reload),
 // so we keep the console patch global.
@@ -113,11 +113,11 @@ function patchConsole(): AsyncLocalStorage<Output> {
   const storage = new AsyncLocalStorage<Output>();
 
   const streams = [
-    ['log', 'stdout'],
-    ['info', 'stdout'],
-    ['debug', 'stdout'],
-    ['warn', 'stderr'],
-    ['error', 'stderr'],
+    ["log", "stdout"],
+    ["info", "stdout"],
+    ["debug", "stdout"],
+    ["warn", "stderr"],
+    ["error", "stderr"],
   ] as const;
 
   for (const [method, stream] of streams) {
@@ -127,7 +127,7 @@ function patchConsole(): AsyncLocalStorage<Output> {
       const output = storage.getStore();
 
       if (output?.open) {
-        output[stream].push(format(...args) + '\n');
+        output[stream].push(format(...args) + "\n");
       } else {
         original.apply(console, args);
       }

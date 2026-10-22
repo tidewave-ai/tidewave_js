@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 export type DocsInputSchema = z.infer<typeof docsInputSchema>;
 export type SourceInputSchema = z.infer<typeof sourceInputSchema>;
@@ -25,10 +25,10 @@ export interface Tool<InputSchema> {
 export interface Tools {
   docs: Tool<typeof docsInputSchema>;
   source: Tool<typeof sourceInputSchema>;
-  eval: Omit<Tool<typeof projectEvalInputSchema>, 'cli'>;
-  logs: Omit<Tool<typeof getLogsInputSchema>, 'cli'>;
-  browserEval: Omit<Tool<typeof browserEvalInputSchema>, 'cli'>;
-  createDesignCanvas: Omit<Tool<typeof createDesignCanvasInputSchema>, 'cli'>;
+  eval: Omit<Tool<typeof projectEvalInputSchema>, "cli">;
+  logs: Omit<Tool<typeof getLogsInputSchema>, "cli">;
+  browserEval: Omit<Tool<typeof browserEvalInputSchema>, "cli">;
+  createDesignCanvas: Omit<Tool<typeof createDesignCanvasInputSchema>, "cli">;
 }
 
 const projectEvalDescription = `
@@ -54,19 +54,19 @@ Avoid long-running synchronous code, it blocks the app server.
 `;
 
 export const projectEvalInputSchema = z.object({
-  code: z.string().describe('The JavaScript code to evaluate.'),
+  code: z.string().describe("The JavaScript code to evaluate."),
   arguments: z
     .array(z.unknown())
     .optional()
     .default([])
     .describe(
-      'The arguments to pass to evaluation. They are available inside the evaluated code as `arguments`.',
+      "The arguments to pass to evaluation. They are available inside the evaluated code as `arguments`.",
     ),
   json: z
     .boolean()
     .optional()
     .default(false)
-    .describe('Whether to return the result as JSON or not (string)'),
+    .describe("Whether to return the result as JSON or not (string)"),
 });
 
 const referenceDescription = `Module/file path, optionally with symbol in format 'module[:symbol[#method|.method]]'. Supports local files, dependencies, and Node.js builtins.
@@ -96,13 +96,13 @@ const sourceInputSchema = z.object({
 });
 
 export const getLogsInputSchema = z.object({
-  tail: z.number().describe('Number of log entries to return from the end'),
-  grep: z.string().optional().describe('Filter logs with regex pattern (case insensitive)'),
+  tail: z.number().describe("Number of log entries to return from the end"),
+  grep: z.string().optional().describe("Filter logs with regex pattern (case insensitive)"),
   level: z
-    .enum(['DEBUG', 'INFO', 'WARN', 'ERROR'])
+    .enum(["DEBUG", "INFO", "WARN", "ERROR"])
     .optional()
-    .describe('Filter by log severity level'),
-  since: z.string().optional().describe('ISO 8601 timestamp - return logs after this time'),
+    .describe("Filter by log severity level"),
+  since: z.string().optional().describe("ISO 8601 timestamp - return logs after this time"),
 });
 
 export const browserEvalInputSchema = z.object({
@@ -118,14 +118,14 @@ export const createDesignCanvasInputSchema = z.object({
   path: z
     .string()
     .describe(
-      'The absolute path for the canvas file, with .html file extension. The file must not exist yet.',
+      "The absolute path for the canvas file, with .html file extension. The file must not exist yet.",
     ),
 });
 
 export const tools: Tools = {
   docs: {
     mcp: {
-      name: 'get_docs',
+      name: "get_docs",
       description: `Extract TypeScript/JavaScript documentation and type information. Works for modules in the current project, dependencies, and builtin node modules.
 
 Reference format determines what is returned:
@@ -149,38 +149,38 @@ Start with module-only references to explore, then drill into specific symbols f
       inputSchema: docsInputSchema,
     },
     cli: {
-      command: 'docs',
-      description: 'Extract documentation for a symbol',
-      argument: '<module-path>',
+      command: "docs",
+      description: "Extract documentation for a symbol",
+      argument: "<module-path>",
       argumentDescription: referenceDescription,
       options: {
         prefix: {
-          flag: '-p, --prefix <path>',
-          desc: 'Path to a custom project path (which contains tsconfig.json/package.json)',
+          flag: "-p, --prefix <path>",
+          desc: "Path to a custom project path (which contains tsconfig.json/package.json)",
         },
         json: {
-          flag: '-j, --json',
-          desc: 'If the output should be in JSON format or not',
+          flag: "-j, --json",
+          desc: "If the output should be in JSON format or not",
         },
       },
     },
   },
   source: {
     mcp: {
-      name: 'get_source_location',
+      name: "get_source_location",
       description:
-        'Extract TypeScript/JavaScript source location for the given reference. This works for modules in the current project, as well as dependencies, and builtin node modules',
+        "Extract TypeScript/JavaScript source location for the given reference. This works for modules in the current project, as well as dependencies, and builtin node modules",
       inputSchema: sourceInputSchema,
     },
     cli: {
-      command: 'source',
-      description: 'Get the source file path for a module',
-      argument: '<module>',
+      command: "source",
+      description: "Get the source file path for a module",
+      argument: "<module>",
       argumentDescription: referenceDescription,
       options: {
         prefix: {
-          flag: '-p, --prefix <path>',
-          desc: 'Path to a custom project path (which contains tsconfig.json/package.json)',
+          flag: "-p, --prefix <path>",
+          desc: "Path to a custom project path (which contains tsconfig.json/package.json)",
         },
       },
     },
@@ -189,12 +189,12 @@ Start with module-only references to explore, then drill into specific symbols f
     mcp: {
       inputSchema: projectEvalInputSchema,
       description: projectEvalDescription,
-      name: 'project_eval',
+      name: "project_eval",
     },
   },
   logs: {
     mcp: {
-      name: 'get_logs',
+      name: "get_logs",
       description:
         "Retrieve application logs within your project's build tool (or server for full-stack applications). Supports filtering by level, time, and pattern matching.",
       inputSchema: getLogsInputSchema,
@@ -202,7 +202,7 @@ Start with module-only references to explore, then drill into specific symbols f
   },
   browserEval: {
     mcp: {
-      name: 'browser_eval',
+      name: "browser_eval",
       description: `Runs JavaScript in a real browser to interact with the application.
 
 You MUST use "help" action first to learn the full API.`,
@@ -211,7 +211,7 @@ You MUST use "help" action first to learn the full API.`,
   },
   createDesignCanvas: {
     mcp: {
-      name: 'create_design_canvas',
+      name: "create_design_canvas",
       description: `Creates a new design canvas, an HTML file for presenting design explorations.
 
 The tool returns the absolute path of the HTML file. The file includes usage

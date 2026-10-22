@@ -1,12 +1,12 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
-import { serveMcp } from '../src/mcp';
+import { afterEach, describe, expect, it } from "vitest";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import { serveMcp } from "../src/mcp";
 import {
   browserSessions,
   resetBrowserSessionsForTest,
   type ControlOutgoingMessage,
-} from '../src/control/browser-sessions';
+} from "../src/control/browser-sessions";
 
 let mcpClient: Client | null = null;
 
@@ -16,90 +16,90 @@ afterEach(async () => {
   resetBrowserSessionsForTest();
 });
 
-describe('browser_eval MCP tool', () => {
-  it('is only listed with browser tools enabled and requires an action', async () => {
+describe("browser_eval MCP tool", () => {
+  it("is only listed with browser tools enabled and requires an action", async () => {
     const withoutBrowserTools = await connectMcp({ includeBrowserTools: false });
     const toolsWithoutBrowserEval = await withoutBrowserTools.listTools();
-    expect(toolsWithoutBrowserEval.tools.map(tool => tool.name)).not.toContain('browser_eval');
+    expect(toolsWithoutBrowserEval.tools.map((tool) => tool.name)).not.toContain("browser_eval");
     await withoutBrowserTools.close();
 
     const client = await connectMcp({ includeBrowserTools: true });
     const tools = await client.listTools();
-    const browserEval = tools.tools.find(tool => tool.name === 'browser_eval');
+    const browserEval = tools.tools.find((tool) => tool.name === "browser_eval");
 
     expect(browserEval).toBeDefined();
     expect(browserEval?.description).toContain('You MUST use "help" action first');
-    expect(browserEval?.inputSchema.required).toContain('action');
-    expect(browserEval?.inputSchema.properties?.['action']).toMatchObject({
-      type: 'string',
+    expect(browserEval?.inputSchema.required).toContain("action");
+    expect(browserEval?.inputSchema.properties?.["action"]).toMatchObject({
+      type: "string",
     });
-    expect(browserEval?.inputSchema.properties?.['action_inputs']).toMatchObject({
-      type: 'object',
+    expect(browserEval?.inputSchema.properties?.["action_inputs"]).toMatchObject({
+      type: "object",
       additionalProperties: {},
     });
   });
 
-  it('errors when no sid is given and no browser is connected', async () => {
+  it("errors when no sid is given and no browser is connected", async () => {
     const client = await connectMcp({
       includeBrowserTools: true,
-      url: 'http://localhost:4000',
+      url: "http://localhost:4000",
     });
 
     const result = await client.callTool({
-      name: 'browser_eval',
-      arguments: { action: 'help' },
+      name: "browser_eval",
+      arguments: { action: "help" },
     });
 
     expect(result).toMatchObject({
       isError: true,
       content: [
         {
-          type: 'text',
+          type: "text",
           text:
-            'No browser is connected to the Tidewave control page. ' +
-            'Use the `open` command (or similar) to open http://localhost:4000/tidewave in the browser and try again.',
+            "No browser is connected to the Tidewave control page. " +
+            "Use the `open` command (or similar) to open http://localhost:4000/tidewave in the browser and try again.",
         },
       ],
     });
   });
 
-  it('broadcasts when the sid is blank', async () => {
+  it("broadcasts when the sid is blank", async () => {
     const client = await connectMcp({
       includeBrowserTools: true,
-      url: 'http://localhost:4000',
+      url: "http://localhost:4000",
     });
 
     const result = await client.callTool({
-      name: 'browser_eval',
-      arguments: { action: 'eval', sid: '' },
+      name: "browser_eval",
+      arguments: { action: "eval", sid: "" },
     });
 
     expect(result).toMatchObject({
       isError: true,
       content: [
         {
-          type: 'text',
+          type: "text",
           text:
-            'No browser is connected to the Tidewave control page. ' +
-            'Use the `open` command (or similar) to open http://localhost:4000/tidewave in the browser and try again.',
+            "No browser is connected to the Tidewave control page. " +
+            "Use the `open` command (or similar) to open http://localhost:4000/tidewave in the browser and try again.",
         },
       ],
     });
   });
 
-  it('suggests starting a new session when a targeted sid is stale', async () => {
+  it("suggests starting a new session when a targeted sid is stale", async () => {
     const client = await connectMcp({ includeBrowserTools: true });
 
     const result = await client.callTool({
-      name: 'browser_eval',
-      arguments: { action: 'eval', sid: 'ghost#1' },
+      name: "browser_eval",
+      arguments: { action: "eval", sid: "ghost#1" },
     });
 
     expect(result).toMatchObject({
       isError: true,
       content: [
         {
-          type: 'text',
+          type: "text",
           text:
             'No connected browser owns sid "ghost#1". It may have disconnected - ' +
             'call browser_eval({"action": "new-session"}) to start a new one.',
@@ -108,39 +108,39 @@ describe('browser_eval MCP tool', () => {
     });
   });
 
-  it('routes eval action to the targeted browser session', async () => {
+  it("routes eval action to the targeted browser session", async () => {
     const client = await connectMcp({ includeBrowserTools: true });
     const sent: ControlOutgoingMessage[] = [];
-    const browserClient = browserSessions().createClient(message => {
+    const browserClient = browserSessions().createClient((message) => {
       sent.push(message);
       return true;
     });
-    browserClient.receive(JSON.stringify({ type: 'hello', name: 'nice-cactus' }));
+    browserClient.receive(JSON.stringify({ type: "hello", name: "nice-cactus" }));
 
     const resultPromise = client.callTool({
-      name: 'browser_eval',
-      arguments: { action: 'eval', sid: 'nice-cactus#1', action_inputs: { code: '1+1' } },
+      name: "browser_eval",
+      arguments: { action: "eval", sid: "nice-cactus#1", action_inputs: { code: "1+1" } },
     });
     const runTool = await waitForRunTool(sent);
 
     expect(runTool).toMatchObject({
-      type: 'run_tool',
-      name: 'browser_eval',
-      sid: 'nice-cactus#1',
-      input: { action: 'eval', sid: 'nice-cactus#1', action_inputs: { code: '1+1' } },
+      type: "run_tool",
+      name: "browser_eval",
+      sid: "nice-cactus#1",
+      input: { action: "eval", sid: "nice-cactus#1", action_inputs: { code: "1+1" } },
     });
 
     browserClient.receive(
       JSON.stringify({
-        type: 'tool_reply',
+        type: "tool_reply",
         ref: runTool.ref,
-        reply: { result: { content: [{ type: 'text', text: 'ok' }], isError: false } },
+        reply: { result: { content: [{ type: "text", text: "ok" }], isError: false } },
       }),
     );
 
     await expect(resultPromise).resolves.toMatchObject({
       isError: false,
-      content: [{ type: 'text', text: 'ok' }],
+      content: [{ type: "text", text: "ok" }],
     });
   });
 });
@@ -150,7 +150,7 @@ async function connectMcp(options: {
   url?: string;
 }): Promise<Client> {
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
-  const client = new Client({ name: 'test-client', version: '1.0.0' });
+  const client = new Client({ name: "test-client", version: "1.0.0" });
   await serveMcp(serverTransport, options);
   await client.connect(clientTransport);
   mcpClient = client;
@@ -159,15 +159,15 @@ async function connectMcp(options: {
 
 async function waitForRunTool(
   sent: ControlOutgoingMessage[],
-): Promise<Extract<ControlOutgoingMessage, { type: 'run_tool' }>> {
+): Promise<Extract<ControlOutgoingMessage, { type: "run_tool" }>> {
   for (let i = 0; i < 50; i += 1) {
     const message = sent.find(
-      (entry): entry is Extract<ControlOutgoingMessage, { type: 'run_tool' }> =>
-        entry.type === 'run_tool',
+      (entry): entry is Extract<ControlOutgoingMessage, { type: "run_tool" }> =>
+        entry.type === "run_tool",
     );
     if (message) return message;
-    await new Promise(resolve => setTimeout(resolve, 1));
+    await new Promise((resolve) => setTimeout(resolve, 1));
   }
 
-  throw new Error('Expected browser_eval run_tool message');
+  throw new Error("Expected browser_eval run_tool message");
 }
