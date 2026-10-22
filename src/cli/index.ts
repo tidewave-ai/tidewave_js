@@ -8,8 +8,6 @@ import { Tidewave } from '../index';
 import { isExtractError, isResolveError } from '../core';
 
 import { name, version } from '../../package.json';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { serveMcp } from '../mcp';
 import { handleInstall } from './install';
 
 function chdir(path: string): void {
@@ -61,19 +59,6 @@ async function handleGetSourcePath(
   console.log(sourceResult.path);
 }
 
-interface McpOptions {
-  prefix?: string;
-}
-
-async function handleMcp(options: McpOptions): Promise<void> {
-  if (options.prefix) chdir(options.prefix);
-
-  console.log('[Tidewave] Starting MCP server');
-
-  const transport = new StdioServerTransport(process.stdin, process.stdout);
-  await serveMcp(transport);
-}
-
 const {
   docs: { cli: docsCli },
   source: { cli: sourceCli },
@@ -85,12 +70,6 @@ program
   .option('--prefix <path>', 'Specify the directory containing package.json')
   .option('--dry-run', 'Preview changes without modifying files')
   .action(handleInstall);
-
-program
-  .command('mcp')
-  .description('Starts a MCP server for tidewave (stdio)')
-  .option(docsCli.options.prefix!.flag, docsCli.options.prefix!.desc)
-  .action(handleMcp);
 
 program
   .command(docsCli.command)

@@ -182,26 +182,8 @@ Vite's `tidewave` plugin accepts the configuration options below:
 
 ## CLI
 
-Tidewave.js also comes with a CLI for developers who want to use it as a
-standalone MCP or query its functionality directly. Note this functionality is
-separate from Tidewave Web.
-
-### STDIO MCP
-
-Configure your editor to run `tidewave` in the same directory as your
-`package.json` as a STDIO MCP Server:
-
-```bash
-npx tidewave mcp
-# or with Bun
-bunx tidewave mcp
-# or with Deno
-deno run npm:tidewave mcp
-```
-
-Available options:
-
-- `--prefix path` - Specify the directory to find the `package.json` file
+Tidewave.js also comes with a CLI for developers who want to query its
+functionality directly. Note this functionality is separate from Tidewave Web.
 
 ### Get docs / get source
 

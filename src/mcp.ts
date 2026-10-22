@@ -343,11 +343,15 @@ export async function serveMcp(transport: Transport, options: ServeMcpOptions = 
     handleGetSourcePath,
   );
 
-  server.registerTool(
-    evalMcp.name,
-    { description: evalMcp.description, inputSchema: evalMcp.inputSchema.shape },
-    args => handleProjectEvaluation(args, options.evaluate ?? Tidewave.executeIsolated),
-  );
+  const { evaluate } = options;
+
+  if (evaluate) {
+    server.registerTool(
+      evalMcp.name,
+      { description: evalMcp.description, inputSchema: evalMcp.inputSchema.shape },
+      args => handleProjectEvaluation(args, evaluate),
+    );
+  }
 
   // Only register logs MCP if console has been patched
   // @ts-expect-error - Flag set when console is patched
