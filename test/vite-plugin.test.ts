@@ -32,6 +32,9 @@ const createMockServer = (
     middlewares: {
       use: middlewareUse,
     } as any,
+    environments: {
+      ssr: { hot: { on: vi.fn() } },
+    } as any,
     _middlewareUse: middlewareUse, // Helper to access the mock
     _httpServerOn: httpServerOn,
     _httpServerOnce: httpServerOnce,

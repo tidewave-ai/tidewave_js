@@ -6,6 +6,7 @@ import { patchConsole } from './logger/console-patch';
 import { installControlWebSocket } from './control/websocket';
 import type { LocalRequestInfoGetter, LocalScheme } from './config';
 import type { TidewaveRequest } from './http/types';
+import { createViteEvaluator, type ViteEvaluator } from './evaluation/vite';
 
 patchConsole();
 
@@ -19,15 +20,23 @@ const DEFAULT_CONFIG: TidewaveConfig = {
 export default function tidewave(
   config: TidewaveConfig = { port: 5173, host: 'localhost' },
 ): Plugin {
+  const evaluator = createViteEvaluator();
+
   return {
     name: 'vite-plugin-tidewave',
     apply: 'serve',
-    configureServer: server => tidewaveServer(server, config),
+    config: () => evaluator.config(),
+    resolveId(id): string | undefined {
+      return evaluator.resolveId(id, this.environment.config.root);
+    },
+    load: id => evaluator.load(id),
+    configureServer: server => tidewaveServer(server, evaluator, config),
   };
 }
 
 async function tidewaveServer(
   server: ViteDevServer,
+  evaluator: ViteEvaluator,
   config: TidewaveConfig = DEFAULT_CONFIG,
 ): Promise<void> {
   const { config: serverConfig } = server;
@@ -63,8 +72,10 @@ async function tidewaveServer(
     scheme: localScheme(req, fallbackLocalScheme),
   });
 
+  evaluator.listen(server);
   configureServer(server.middlewares, config, {
     getLocalRequestInfo,
+    evaluate: request => evaluator.evaluate(server, request),
   });
   installControlWebSocket(server.httpServer, config);
 }

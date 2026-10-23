@@ -86,7 +86,6 @@ export interface ExtractError {
 export interface EvaluationRequest {
   code: string;
   args: unknown[];
-  timeout: number;
 }
 
 export interface EvaluatedModuleResult {
@@ -94,6 +93,7 @@ export interface EvaluatedModuleResult {
   result: string | null;
   stdout: string;
   stderr: string;
+  note?: string;
 }
 
 export type ResolveResult = ResolvedModule | ResolveError;

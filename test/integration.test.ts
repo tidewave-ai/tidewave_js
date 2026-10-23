@@ -4,7 +4,6 @@ import {
   isExtractError,
   isResolveError,
   isFileInfo,
-  type EvaluationRequest,
   type ResolvedModule,
   type SymbolInfo,
   type FileInfo,
@@ -204,94 +203,6 @@ describe('Integration Tests', () => {
       expect(formatted).toContain('Signature:');
       expect(formatted).toContain('processItems');
     });
-  });
-});
-
-describe('Project scoped evaluation', () => {
-  it('should fork the process correcly and finish execution', async () => {
-    const request: EvaluationRequest = {
-      args: [],
-      timeout: 1_000,
-      code: "console.log('hello, world!');",
-    };
-
-    const result = await Tidewave.executeIsolated(request);
-    expect(result.success).toBe(true);
-    expect(result.stderr).toBeFalsy();
-    expect(result.result).toBe(null);
-    expect(result.stdout).toBe('hello, world!\n');
-  });
-
-  it('should fork the process and return a custom result', async () => {
-    const request: EvaluationRequest = {
-      args: [],
-      timeout: 1_000,
-      code: `
-        console.log('hello, world!');
-        return 42;
-      `,
-    };
-
-    const result = await Tidewave.executeIsolated(request);
-    expect(result.success).toBe(true);
-    expect(result.stderr).toBeFalsy();
-    expect(result.stdout).toBe('hello, world!\n');
-    expect(result.result).toBe(42);
-  });
-
-  it('should fork the process and respect the timeout', async () => {
-    const request: EvaluationRequest = {
-      args: [],
-      timeout: 1,
-      code: "console.log('hello, world!');",
-    };
-
-    const result = await Tidewave.executeIsolated(request);
-    expect(result.success).toBe(false);
-    expect(result.stderr).toBeFalsy();
-    expect(result.stdout).toBeFalsy();
-    expect(result.result).toBe('Evaluation timed out after 1 milliseconds');
-  });
-
-  it('should fork the process and finish the program with args', async () => {
-    const request: EvaluationRequest = {
-      args: [42],
-      timeout: 10_000,
-      code: `
-      const digit = arguments[0]
-      console.log(\`Code is: $\{digit}\`);
-      return (new Number(digit) + 1);
-      `,
-    };
-
-    const result = await Tidewave.executeIsolated(request);
-    expect(result.success).toBe(true);
-    expect(result.stderr).toBeFalsy();
-    expect(result.stdout).toBe('Code is: 42\n');
-    expect(result.result).toBe(43);
-  });
-
-  it('should fork the process and finish the program with imports', async () => {
-    const request: EvaluationRequest = {
-      args: [],
-      timeout: 10_000,
-      code: `
-      const {resolve} = await import('node:path');
-      const path = resolve(process.cwd());
-
-      console.log(JSON.stringify({a: 1}));
-      console.log(\`Global length: \${Object.keys(global).length > 0}\`);
-
-      return path;
-      `,
-    };
-
-    const result = await Tidewave.executeIsolated(request);
-    expect(result.success).toBe(true);
-    expect(result.stderr).toBeFalsy();
-    expect(result.stdout).toContain('{"a":1}');
-    expect(result.stdout).toContain('Global length: true');
-    expect(result.result).toContain(process.cwd());
   });
 });
 

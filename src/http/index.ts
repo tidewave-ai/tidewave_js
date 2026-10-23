@@ -1,5 +1,6 @@
 import { checkRemoteIp } from './security';
 import { createHandleMcp } from './handlers/mcp';
+import type { Evaluate } from '../mcp';
 import { createHandleControlHtml, createHandleHtml } from './handlers/html';
 import { createHandleConfig } from './handlers/config';
 import { createHandleUpload } from './handlers/upload';
@@ -21,6 +22,7 @@ const DEFAULT_OPTIONS: TidewaveConfig = {
 
 export interface HandlerOptions {
   getLocalRequestInfo?: LocalRequestInfoGetter<TidewaveRequest>;
+  evaluate?: Evaluate;
 }
 
 export function configureServer(

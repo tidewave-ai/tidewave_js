@@ -44,6 +44,13 @@ output. DO NOT use shell tools to evaluate JavaScript/TypeScript code.
 
 Imports are allowed only as the form of dynamic imports with async/await:
 const path = await import('node:path');
+
+The code runs in the same runtime as the server code, so you can import
+project modules (with paths relative to the project root, or aliases)
+and access their state:
+const db = await import('/src/db/index.ts');
+
+Avoid long-running synchronous code, it blocks the app server.
 `;
 
 export const projectEvalInputSchema = z.object({
@@ -54,13 +61,6 @@ export const projectEvalInputSchema = z.object({
     .default([])
     .describe(
       'The arguments to pass to evaluation. They are available inside the evaluated code as `arguments`.',
-    ),
-  timeout: z
-    .number()
-    .optional()
-    .default(30_000)
-    .describe(
-      'Optional. A timeout in milliseconds after which the execution stops if it did not finish yet.\nDefaults to 30000 (30 seconds).',
     ),
   json: z
     .boolean()
