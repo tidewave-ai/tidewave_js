@@ -10,7 +10,7 @@ export class TestClass {
   /**
    * Static property
    */
-  static readonly VERSION = '1.0.0';
+  static readonly VERSION = "1.0.0";
 
   /**
    * Static method

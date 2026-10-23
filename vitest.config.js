@@ -1,6 +1,7 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from "vitest/config";
+
 export default defineConfig({
   test: {
-    exclude: ['.bun', 'node_modules', 'dist', '.direnv'],
+    include: ["test/**/*.test.ts"],
   },
 });

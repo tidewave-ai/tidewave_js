@@ -1,7 +1,7 @@
-import type { TidewaveConfig } from './core';
-import { default as tidewavePackage } from '../package.json' with { type: 'json' };
+import type { TidewaveConfig } from "./core";
+import { default as tidewavePackage } from "../package.json" with { type: "json" };
 
-export type LocalScheme = 'http' | 'https';
+export type LocalScheme = "http" | "https";
 
 export interface LocalRequestInfo {
   port: number | undefined;
@@ -14,7 +14,7 @@ export interface TidewaveConfigPayload {
   project_name: string;
   framework_type: string;
   tidewave_version: string;
-  team: NonNullable<TidewaveConfig['team']> | Record<string, never>;
+  team: NonNullable<TidewaveConfig["team"]> | Record<string, never>;
   local_port: number | undefined;
   local_scheme: LocalScheme;
   tmp_dir: string;
@@ -36,11 +36,11 @@ export function tidewaveConfig<Request = unknown>(
   const localRequestInfo = getLocalRequestInfo?.(request) ?? defaultLocalRequestInfo();
 
   if (!config.projectName) {
-    throw new Error('Tidewave projectName must be configured');
+    throw new Error("Tidewave projectName must be configured");
   }
 
   if (!config.framework) {
-    throw new Error('Tidewave framework must be configured');
+    throw new Error("Tidewave framework must be configured");
   }
 
   return {
@@ -50,7 +50,7 @@ export function tidewaveConfig<Request = unknown>(
     team: config.team || {},
     local_port: localRequestInfo.port,
     local_scheme: localRequestInfo.scheme,
-    tmp_dir: config.tmpDir || 'tmp',
+    tmp_dir: config.tmpDir || "tmp",
   };
 }
 
@@ -62,8 +62,8 @@ export function tidewaveConfigMeta<Request = unknown>(
   return {
     tidewave: tidewaveConfig(config, getLocalRequestInfo, request),
     root: process.cwd(),
-    wsl_distro: process.env['WSL_DISTRO_NAME'] ?? null,
-    host_path: process.env['TIDEWAVE_HOST_PATH'] ?? null,
+    wsl_distro: process.env["WSL_DISTRO_NAME"] ?? null,
+    host_path: process.env["TIDEWAVE_HOST_PATH"] ?? null,
     framework: {},
   };
 }
@@ -79,13 +79,13 @@ export function tidewaveConfigMetaHtml<Request = unknown>(
 }
 
 function defaultLocalRequestInfo(): LocalRequestInfo {
-  return { port: undefined, scheme: 'http' };
+  return { port: undefined, scheme: "http" };
 }
 
 export function escapeHtmlAttribute(value: string): string {
   return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('"', '&quot;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;');
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
 }

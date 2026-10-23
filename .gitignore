@@ -67,8 +67,6 @@ jspm_packages/
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
-# bun
-/.bun/
 /dist/
 
 # Coding agents

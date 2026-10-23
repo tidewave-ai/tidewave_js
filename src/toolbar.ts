@@ -1,5 +1,5 @@
-import type { TidewaveConfig } from './core';
-import { escapeHtmlAttribute, type LocalRequestInfoGetter, tidewaveConfigMetaHtml } from './config';
+import type { TidewaveConfig } from "./core";
+import { escapeHtmlAttribute, type LocalRequestInfoGetter, tidewaveConfigMetaHtml } from "./config";
 
 export function injectToolbarHtml<Request = unknown>(
   html: string,
@@ -10,7 +10,7 @@ export function injectToolbarHtml<Request = unknown>(
   if (config.toolbar === false) return html;
   if (toolbarAlreadyInjected(html)) return html;
 
-  const closingHeadIndex = html.toLowerCase().indexOf('</head>');
+  const closingHeadIndex = html.toLowerCase().indexOf("</head>");
   if (closingHeadIndex === -1) return html;
 
   return `${html.slice(0, closingHeadIndex)}${toolbarHtml(config, getLocalRequestInfo, request)}${html.slice(closingHeadIndex)}`;
@@ -21,7 +21,7 @@ function toolbarHtml<Request = unknown>(
   getLocalRequestInfo?: LocalRequestInfoGetter<Request>,
   request?: Request,
 ): string {
-  const clientUrl = config.clientUrl || 'https://tidewave.ai';
+  const clientUrl = config.clientUrl || "https://tidewave.ai";
 
   return `
 ${tidewaveConfigMetaHtml(config, getLocalRequestInfo, request)}
@@ -30,5 +30,5 @@ ${tidewaveConfigMetaHtml(config, getLocalRequestInfo, request)}
 }
 
 export function toolbarAlreadyInjected(html: string): boolean {
-  return html.includes('name="tidewave:config"') || html.includes('/tc/toolbar.js');
+  return html.includes('name="tidewave:config"') || html.includes("/tc/toolbar.js");
 }

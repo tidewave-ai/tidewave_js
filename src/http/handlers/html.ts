@@ -1,10 +1,10 @@
-import type { TidewaveConfig } from '../../core';
+import type { TidewaveConfig } from "../../core";
 import {
   escapeHtmlAttribute,
   type LocalRequestInfoGetter,
   tidewaveConfigMetaHtml,
-} from '../../config';
-import type { TidewaveHandler, TidewaveNext, TidewaveRequest, TidewaveResponse } from '../types';
+} from "../../config";
+import type { TidewaveHandler, TidewaveNext, TidewaveRequest, TidewaveResponse } from "../types";
 
 export function createHandleHtml(config: TidewaveConfig): TidewaveHandler {
   return createHtmlHandler(() => entrypointHtml(config));
@@ -14,9 +14,9 @@ export function createHandleControlHtml(
   config: TidewaveConfig,
   getLocalRequestInfo?: LocalRequestInfoGetter<TidewaveRequest>,
 ): TidewaveHandler {
-  return createHtmlHandler(req => controlHtml(config, getLocalRequestInfo, req), {
+  return createHtmlHandler((req) => controlHtml(config, getLocalRequestInfo, req), {
     headers: {
-      'Content-Security-Policy': "base-uri 'self'; frame-ancestors 'self';",
+      "Content-Security-Policy": "base-uri 'self'; frame-ancestors 'self';",
     },
   });
 }
@@ -33,17 +33,17 @@ function createHtmlHandler(
     next: TidewaveNext,
   ): Promise<void> {
     // Only handle exact mounted paths, not sub-paths.
-    const url = req.url || '/';
-    const pathname = url.split('?')[0] || '';
+    const url = req.url || "/";
+    const pathname = url.split("?")[0] || "";
 
     // Vite strips the prefix passed to server.use, so we can always check /
-    if (pathname !== '/') {
+    if (pathname !== "/") {
       return next();
     }
 
     try {
       res.statusCode = 200;
-      res.setHeader('Content-Type', 'text/html');
+      res.setHeader("Content-Type", "text/html");
       for (const [header, value] of Object.entries(options.headers || {})) {
         res.setHeader(header, value);
       }
@@ -53,8 +53,8 @@ function createHtmlHandler(
 
       if (!res.headersSent) {
         res.statusCode = 500;
-        res.setHeader('Content-Type', 'text/html');
-        res.end('<!DOCTYPE html><html><body>Internal server error</body></html>');
+        res.setHeader("Content-Type", "text/html");
+        res.end("<!DOCTYPE html><html><body>Internal server error</body></html>");
       }
 
       next(err);
@@ -63,7 +63,7 @@ function createHtmlHandler(
 }
 
 function entrypointHtml(config: TidewaveConfig): string {
-  const clientUrl = config.clientUrl || 'https://tidewave.ai';
+  const clientUrl = config.clientUrl || "https://tidewave.ai";
 
   return `
 <!DOCTYPE html>
@@ -83,7 +83,7 @@ function controlHtml(
   getLocalRequestInfo?: LocalRequestInfoGetter<TidewaveRequest>,
   req?: TidewaveRequest,
 ): string {
-  const clientUrl = config.clientUrl || 'https://tidewave.ai';
+  const clientUrl = config.clientUrl || "https://tidewave.ai";
 
   return `
 <!DOCTYPE html>

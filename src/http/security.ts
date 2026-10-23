@@ -1,5 +1,5 @@
-import type { TidewaveConfig } from '../core';
-import type { TidewaveRequest, TidewaveResponse } from './types';
+import type { TidewaveConfig } from "../core";
+import type { TidewaveRequest, TidewaveResponse } from "./types";
 
 export type SecurityCheckResult =
   | { ok: true }
@@ -14,11 +14,11 @@ function fetchRemoteIp(req: TidewaveRequest): string | null {
 
   if (remote) return remote;
 
-  const realIp = firstHeaderValue(req.headers['x-real-ip']);
+  const realIp = firstHeaderValue(req.headers["x-real-ip"]);
   if (realIp) return realIp;
 
-  const forwardedFor = firstHeaderValue(req.headers['x-forwarded-for']);
-  if (forwardedFor) return forwardedFor.split(',')[0]?.trim() || null;
+  const forwardedFor = firstHeaderValue(req.headers["x-forwarded-for"]);
+  if (forwardedFor) return forwardedFor.split(",")[0]?.trim() || null;
 
   return null;
 }
@@ -51,7 +51,7 @@ export function validateRemoteIp(
       ok: false,
       statusCode: 403,
       message:
-        'For security reasons, Tidewave does not accept requests without a remote IP address.',
+        "For security reasons, Tidewave does not accept requests without a remote IP address.",
     };
   }
 
@@ -59,7 +59,7 @@ export function validateRemoteIp(
   if (config.allowRemoteAccess) return { ok: true };
 
   const message =
-    'For security reasons, Tidewave does not accept remote connections by default.\n\nIf you really want to allow remote connections, configure the Tidewave with the `allowRemoteAccess: true` option.';
+    "For security reasons, Tidewave does not accept remote connections by default.\n\nIf you really want to allow remote connections, configure the Tidewave with the `allowRemoteAccess: true` option.";
   return { ok: false, statusCode: 403, message };
 }
 
@@ -89,7 +89,7 @@ export function validateOrigin(req: TidewaveRequest, config: TidewaveConfig): Se
     return { ok: false, statusCode: 403, message };
   }
 
-  const isAllowed = allowedOrigins.some(allowed => isOriginAllowed(originUrl, parseUrl(allowed)));
+  const isAllowed = allowedOrigins.some((allowed) => isOriginAllowed(originUrl, parseUrl(allowed)));
 
   if (!isAllowed) {
     const message = `For security reasons, Tidewave only accepts requests from the same origin your web app is running on.\n\nIf you really want to allow remote connections, configure the Tidewave with the \`allowedOrigins: [${JSON.stringify(origin)}]\` option.`;
@@ -107,8 +107,8 @@ export function getDefaultAllowedOrigins(config: TidewaveConfig): string[] {
 
 export function parseUrl(url: string): { scheme?: string; host: string; port?: number } | null {
   try {
-    const isProtocolRelative = url.startsWith('//');
-    const parsed = new URL(isProtocolRelative ? 'http:' + url : url);
+    const isProtocolRelative = url.startsWith("//");
+    const parsed = new URL(isProtocolRelative ? "http:" + url : url);
     return {
       scheme: isProtocolRelative ? undefined : parsed.protocol?.slice(0, -1),
       host: parsed.hostname,
@@ -132,9 +132,9 @@ export function isOriginAllowed(
   if (allowed.port && origin.port !== allowed.port) return false;
 
   // Check host with wildcard support
-  if (allowed.host.startsWith('*.')) {
+  if (allowed.host.startsWith("*.")) {
     const allowedDomain = allowed.host.slice(2);
-    return origin.host === allowedDomain || origin.host.endsWith('.' + allowedDomain);
+    return origin.host === allowedDomain || origin.host.endsWith("." + allowedDomain);
   }
 
   return origin.host === allowed.host;
@@ -144,13 +144,13 @@ export function isLocalIp(ip?: string): boolean {
   if (!ip) return false;
 
   // IPv4 localhost (only 127.0.0.x range)
-  if (ip.startsWith('127.0.0.')) return true;
+  if (ip.startsWith("127.0.0.")) return true;
 
   // IPv6 localhost
-  if (ip === '::1') return true;
+  if (ip === "::1") return true;
 
   // IPv4 mapped IPv6 localhost (::ffff:127.0.0.1)
-  if (ip === '::ffff:127.0.0.1') return true;
+  if (ip === "::ffff:127.0.0.1") return true;
 
   return false;
 }

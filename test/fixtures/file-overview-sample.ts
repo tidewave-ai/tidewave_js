@@ -23,7 +23,7 @@ export function add(a: number, b: number): number {
 }
 
 // Export without documentation
-export const VERSION = '1.0.0';
+export const VERSION = "1.0.0";
 
 /**
  * Configuration interface for the service

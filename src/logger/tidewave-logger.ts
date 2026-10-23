@@ -1,7 +1,7 @@
-import { appendFile, readFile } from 'fs/promises';
-import * as path from 'path';
-import * as os from 'os';
-import * as crypto from 'crypto';
+import { appendFile, readFile } from "fs/promises";
+import * as path from "path";
+import * as os from "os";
+import * as crypto from "crypto";
 
 export interface StoredLogRecord {
   timestamp: string;
@@ -33,7 +33,7 @@ export class TidewaveLogger {
 
   constructor() {
     const cwd = process.cwd();
-    const digest = crypto.createHash('md5').update(cwd).digest('hex').slice(0, 16);
+    const digest = crypto.createHash("md5").update(cwd).digest("hex").slice(0, 16);
     const tempDir = os.tmpdir();
     this.logFilePath = path.join(tempDir, `${digest}.tidewave.ndjson`);
   }
@@ -42,12 +42,12 @@ export class TidewaveLogger {
    * Store a log entry.
    */
   async addLog(log: StoredLogRecord): Promise<void> {
-    const line = JSON.stringify(log) + '\n';
+    const line = JSON.stringify(log) + "\n";
 
     try {
-      await appendFile(this.logFilePath, line, 'utf8');
+      await appendFile(this.logFilePath, line, "utf8");
     } catch (error) {
-      console.log('[Tidewave] failed to write to log file, error:', error);
+      console.log("[Tidewave] failed to write to log file, error:", error);
     }
   }
 
@@ -59,17 +59,19 @@ export class TidewaveLogger {
 
     if (options?.level) {
       const level = options.level.toUpperCase();
-      logs = logs.filter(log => log.severityText === level);
+      logs = logs.filter((log) => log.severityText === level);
     }
 
     if (options?.since) {
       const sinceDate = new Date(options.since);
-      logs = logs.filter(log => new Date(log.timestamp) >= sinceDate);
+      logs = logs.filter((log) => new Date(log.timestamp) >= sinceDate);
     }
 
     if (options?.grep) {
-      const regex = new RegExp(options.grep, 'i');
-      logs = logs.filter(log => regex.test(log.body) || regex.test(JSON.stringify(log.attributes)));
+      const regex = new RegExp(options.grep, "i");
+      logs = logs.filter(
+        (log) => regex.test(log.body) || regex.test(JSON.stringify(log.attributes)),
+      );
     }
 
     if (options?.tail) {
@@ -81,20 +83,20 @@ export class TidewaveLogger {
 
   private async getAllLogs(): Promise<StoredLogRecord[]> {
     try {
-      const content = await readFile(this.logFilePath, 'utf8');
+      const content = await readFile(this.logFilePath, "utf8");
 
       return content
-        .split('\n')
-        .map(line => {
+        .split("\n")
+        .map((line) => {
           try {
             return JSON.parse(line) as StoredLogRecord;
           } catch {
             return null;
           }
         })
-        .filter(log => log !== null);
+        .filter((log) => log !== null);
     } catch (error) {
-      console.log('[Tidewave] failed to read from log file, error:', error);
+      console.log("[Tidewave] failed to read from log file, error:", error);
       return [];
     }
   }

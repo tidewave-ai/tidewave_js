@@ -1,3 +1,3 @@
-import { initialItems } from './data';
+import { initialItems } from "./data";
 
 export const items = [...initialItems];

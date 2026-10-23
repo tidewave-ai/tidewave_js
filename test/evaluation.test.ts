@@ -1,30 +1,30 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import path from 'node:path';
-import { createServer, DevEnvironment, type InlineConfig, type ViteDevServer } from 'vite';
-import { createViteEvaluator, type ViteEvaluator } from '../src/evaluation/vite';
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import path from "node:path";
+import { createServer, DevEnvironment, type InlineConfig, type ViteDevServer } from "vite";
+import { createViteEvaluator, type ViteEvaluator } from "../src/evaluation/vite";
 
 function startServer(evaluator: ViteEvaluator, config: InlineConfig = {}): Promise<ViteDevServer> {
   return createServer({
-    root: path.join(__dirname, 'fixtures/vite-app'),
+    root: path.join(__dirname, "fixtures/vite-app"),
     configFile: false,
-    logLevel: 'silent',
+    logLevel: "silent",
     server: { middlewareMode: true, hmr: false },
     plugins: [
       {
-        name: 'test-evaluator',
+        name: "test-evaluator",
         config: () => evaluator.config(),
         resolveId(id) {
           return evaluator.resolveId(id, this.environment.config.root);
         },
-        load: id => evaluator.load(id),
-        configureServer: server => evaluator.listen(server),
+        load: (id) => evaluator.load(id),
+        configureServer: (server) => evaluator.listen(server),
       },
     ],
     ...config,
   });
 }
 
-describe('Vite evaluation', () => {
+describe("Vite evaluation", () => {
   const evaluator = createViteEvaluator();
   let server: ViteDevServer;
 
@@ -38,36 +38,36 @@ describe('Vite evaluation', () => {
     await server.close();
   });
 
-  it('shares module state between evaluations', async () => {
+  it("shares module state between evaluations", async () => {
     const code = `
       const { items } = await import('./src/store');
       items.push(arguments[0]);
       return items;
     `;
 
-    expect((await run(code, ['second'])).result).toEqual(['first', 'second']);
-    expect((await run(code, ['third'])).result).toEqual(['first', 'second', 'third']);
+    expect((await run(code, ["second"])).result).toEqual(["first", "second"]);
+    expect((await run(code, ["third"])).result).toEqual(["first", "second", "third"]);
   });
 
-  it('supports TypeScript syntax', async () => {
-    const result = await run('const x: number = 41; return x + 1;');
+  it("supports TypeScript syntax", async () => {
+    const result = await run("const x: number = 41; return x + 1;");
     expect(result).toMatchObject({ success: true, result: 42 });
   });
 
-  it('reuses evaluation modules', async () => {
+  it("reuses evaluation modules", async () => {
     const evalModules = () =>
-      [...server.environments.ssr.moduleGraph.idToModuleMap.keys()].filter(id =>
-        id.includes('__tidewave_eval_'),
+      [...server.environments.ssr.moduleGraph.idToModuleMap.keys()].filter((id) =>
+        id.includes("__tidewave_eval_"),
       );
 
-    await run('return 1;');
+    await run("return 1;");
     const count = evalModules().length;
-    await run('return 2;');
+    await run("return 2;");
 
     expect(evalModules()).toHaveLength(count);
   });
 
-  it('captures console output', async () => {
+  it("captures console output", async () => {
     const result = await run(
       `
       console.log('hello', { a: 1 });
@@ -82,12 +82,12 @@ describe('Vite evaluation', () => {
     expect(result).toEqual({
       success: true,
       result: 3,
-      stdout: 'hello { a: 1 }\nafter await\n',
-      stderr: 'oops\n',
+      stdout: "hello { a: 1 }\nafter await\n",
+      stderr: "oops\n",
     });
   });
 
-  it('keeps output of concurrent evaluations separate', async () => {
+  it("keeps output of concurrent evaluations separate", async () => {
     const code = `
       for (let i = 0; i < 3; i++) {
         console.log(arguments[0]);
@@ -95,24 +95,24 @@ describe('Vite evaluation', () => {
       }
     `;
 
-    const [a, b] = await Promise.all([run(code, ['a']), run(code, ['b'])]);
+    const [a, b] = await Promise.all([run(code, ["a"]), run(code, ["b"])]);
 
-    expect(a.stdout).toBe('a\na\na\n');
-    expect(b.stdout).toBe('b\nb\nb\n');
+    expect(a.stdout).toBe("a\na\na\n");
+    expect(b.stdout).toBe("b\nb\nb\n");
   });
 
-  it('returns errors without terminal colors', async () => {
+  it("returns errors without terminal colors", async () => {
     const result = await run("throw new Error('\\x1b[31mboom\\x1b[0m');");
-    expect(result).toMatchObject({ success: false, result: 'Error: boom' });
+    expect(result).toMatchObject({ success: false, result: "Error: boom" });
   });
 
-  it('returns null for undefined results', async () => {
-    const result = await run('const x = 1;');
+  it("returns null for undefined results", async () => {
+    const result = await run("const x = 1;");
     expect(result).toMatchObject({ success: true, result: null });
   });
 });
 
-describe('Vite evaluation when the app runs in a separate runtime', () => {
+describe("Vite evaluation when the app runs in a separate runtime", () => {
   const evaluator = createViteEvaluator();
   let server: ViteDevServer;
 
@@ -142,13 +142,13 @@ describe('Vite evaluation when the app runs in a separate runtime', () => {
     await server.close();
   });
 
-  it('evaluates in the Vite process', async () => {
+  it("evaluates in the Vite process", async () => {
     const result = await evaluator.evaluate(server, {
       code: "const { items } = await import('./src/store'); return items;",
       args: [],
     });
 
-    expect(result).toMatchObject({ success: true, result: ['first'] });
-    expect(result.note).toContain('evaluated in the Vite process');
+    expect(result).toMatchObject({ success: true, result: ["first"] });
+    expect(result.note).toContain("evaluated in the Vite process");
   });
 });

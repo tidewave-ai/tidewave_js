@@ -33,9 +33,9 @@ export class Counter {
  * Status codes for operations.
  */
 export enum Status {
-  Ok = 'ok',
-  Error = 'error',
-  Pending = 'pending',
+  Ok = "ok",
+  Error = "error",
+  Pending = "pending",
 }
 
 /**

@@ -1,11 +1,11 @@
-import path from 'node:path';
-import fs from 'node:fs/promises';
-import { z } from 'zod';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { tools } from './tools';
-import { name, version } from '../package.json';
+import path from "node:path";
+import fs from "node:fs/promises";
+import { z } from "zod";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { tools } from "./tools";
+import { name, version } from "../package.json";
 
-import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
+import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import type {
   BrowserEvalInputSchema,
   CreateDesignCanvasInputSchema,
@@ -13,17 +13,17 @@ import type {
   GetLogsInputSchema,
   ProjectEvalInputSchema,
   SourceInputSchema,
-} from './tools';
-import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+} from "./tools";
+import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import {
   isExtractError,
   isResolveError,
   type EvaluatedModuleResult,
   type EvaluationRequest,
-} from './core';
-import { Tidewave } from '.';
-import { tidewaveLogger } from './logger/tidewave-logger';
-import { browserSessions, type BrowserSessionResult } from './control/browser-sessions';
+} from "./core";
+import { Tidewave } from ".";
+import { tidewaveLogger } from "./logger/tidewave-logger";
+import { browserSessions, type BrowserSessionResult } from "./control/browser-sessions";
 
 const {
   docs: { mcp: docsMcp },
@@ -48,19 +48,19 @@ async function handleProjectEvaluation(
   evaluate: Evaluate,
 ): Promise<CallToolResult> {
   const result = await evaluate({ code, args });
-  const note = result.note ? `Note: ${result.note}\n\n` : '';
+  const note = result.note ? `Note: ${result.note}\n\n` : "";
 
   if (!result.success) {
     if (json)
       return {
-        content: [{ type: 'text', text: JSON.stringify(result) }],
+        content: [{ type: "text", text: JSON.stringify(result) }],
         isError: true,
       };
 
     return {
       content: [
         {
-          type: 'text',
+          type: "text",
           text: `${note}Failed to evaluate code. Process exited with reason: ${result.stderr}\n\n${result.result}`,
         },
       ],
@@ -70,14 +70,14 @@ async function handleProjectEvaluation(
 
   if (json)
     return {
-      content: [{ type: 'text', text: JSON.stringify(result) }],
+      content: [{ type: "text", text: JSON.stringify(result) }],
       isError: false,
     };
 
   return {
     content: [
       {
-        type: 'text',
+        type: "text",
         text: `${note}Stdout:\n\n${result.stdout}\n\nStderr:${result.stderr}\n\nResult:${result.result}`,
       },
     ],
@@ -92,7 +92,7 @@ async function handleGetDocs({ reference }: DocsInputSchema): Promise<CallToolRe
     return {
       content: [
         {
-          type: 'text',
+          type: "text",
           text: `Documentation not found for ${reference}, got an error: ${JSON.stringify(docs)}`,
         },
       ],
@@ -101,7 +101,7 @@ async function handleGetDocs({ reference }: DocsInputSchema): Promise<CallToolRe
   }
 
   return {
-    content: [{ type: 'text', text: Tidewave.formatOutput(docs) }],
+    content: [{ type: "text", text: Tidewave.formatOutput(docs) }],
     isError: false,
   };
 }
@@ -113,7 +113,7 @@ async function handleGetSourcePath({ reference }: SourceInputSchema): Promise<Ca
     return {
       content: [
         {
-          type: 'text',
+          type: "text",
           text: `Failed to get source location for ${reference}: ${JSON.stringify(sourceResult)}`,
         },
       ],
@@ -126,7 +126,7 @@ async function handleGetSourcePath({ reference }: SourceInputSchema): Promise<Ca
   const { path, format } = sourceResult;
 
   return {
-    content: [{ type: 'text', text: `${path}(${format})` }],
+    content: [{ type: "text", text: `${path}(${format})` }],
     isError: false,
   };
 }
@@ -141,13 +141,13 @@ async function handleGetLogs(args: GetLogsInputSchema): Promise<CallToolResult> 
     });
 
     const output = logs
-      .map(log => `[${log.timestamp}] ${log.severityText}: ${log.body}`)
-      .join('\n');
+      .map((log) => `[${log.timestamp}] ${log.severityText}: ${log.body}`)
+      .join("\n");
 
     return {
       content: [
         {
-          type: 'text',
+          type: "text",
           text: output,
         },
       ],
@@ -158,7 +158,7 @@ async function handleGetLogs(args: GetLogsInputSchema): Promise<CallToolResult> 
     return {
       content: [
         {
-          type: 'text',
+          type: "text",
           text: `Error retrieving logs: ${errorMessage}`,
         },
       ],
@@ -171,11 +171,11 @@ async function handleBrowserEval(
   args: BrowserEvalInputSchema,
   options: ServeMcpOptions,
 ): Promise<CallToolResult> {
-  const url = options.url || 'http://localhost:5173';
+  const url = options.url || "http://localhost:5173";
 
-  if (typeof args.sid === 'string' && args.sid !== '') {
+  if (typeof args.sid === "string" && args.sid !== "") {
     return directBrowserResult(
-      await browserSessions().run(args.sid, 'browser_eval', args),
+      await browserSessions().run(args.sid, "browser_eval", args),
       args.sid,
       url,
     );
@@ -185,9 +185,9 @@ async function handleBrowserEval(
 }
 
 async function broadcastBrowserEval(args: BrowserEvalInputSchema): Promise<BrowserSessionResult> {
-  const first = await browserSessions().broadcastRun('browser_eval', args, 5_000);
-  if (!first.ok && first.reason === 'timeout') {
-    return browserSessions().broadcastRun('browser_eval', args, 5_000);
+  const first = await browserSessions().broadcastRun("browser_eval", args, 5_000);
+  if (!first.ok && first.reason === "timeout") {
+    return browserSessions().broadcastRun("browser_eval", args, 5_000);
   }
 
   return first;
@@ -201,17 +201,17 @@ function directBrowserResult(
   if (result.ok) return result.reply.result;
 
   switch (result.reason) {
-    case 'invalid_sid':
+    case "invalid_sid":
       return toolError(`Invalid sid "${sid}". A sid looks like "nice-cactus#1".`);
-    case 'unknown_client':
+    case "unknown_client":
       return toolError(
         `No connected browser owns sid "${sid}". It may have disconnected - call browser_eval({"action": "new-session"}) to start a new one.`,
       );
-    case 'timeout':
-      return toolError('browser_eval timed out waiting for the browser to respond.');
-    case 'disconnected':
+    case "timeout":
+      return toolError("browser_eval timed out waiting for the browser to respond.");
+    case "disconnected":
       return toolError(`The browser disconnected before responding. ${openMessage(url)}`);
-    case 'no_clients':
+    case "no_clients":
       return toolError(noBrowserMessage(url));
   }
 }
@@ -235,7 +235,7 @@ async function handleCreateDesignCanvas(
 ): Promise<CallToolResult> {
   const canvasPath = args.path;
 
-  if (!(path.isAbsolute(canvasPath) && canvasPath.endsWith('.html'))) {
+  if (!(path.isAbsolute(canvasPath) && canvasPath.endsWith(".html"))) {
     return toolError(
       `Invalid path ${JSON.stringify(canvasPath)}. It must be an absolute path with the .html file extension.`,
     );
@@ -243,7 +243,7 @@ async function handleCreateDesignCanvas(
 
   let html: string;
   try {
-    html = await fetchCanvasHtml(options.clientUrl || 'https://tidewave.ai');
+    html = await fetchCanvasHtml(options.clientUrl || "https://tidewave.ai");
   } catch (error) {
     return toolError(errorMessage(error));
   }
@@ -255,10 +255,10 @@ async function handleCreateDesignCanvas(
   }
 
   try {
-    await fs.writeFile(canvasPath, html, { flag: 'wx' });
+    await fs.writeFile(canvasPath, html, { flag: "wx" });
   } catch (error) {
-    if ((error as { code?: string }).code === 'EEXIST') {
-      return toolError('Failed to create the design canvas file, the file already exists.');
+    if ((error as { code?: string }).code === "EEXIST") {
+      return toolError("Failed to create the design canvas file, the file already exists.");
     }
 
     return toolError(`Failed to create the design canvas file: ${errorMessage(error)}`);
@@ -267,7 +267,7 @@ async function handleCreateDesignCanvas(
   return {
     content: [
       {
-        type: 'text',
+        type: "text",
         text: `Design canvas created at: <path>${canvasPath}</path>. Read the file for usage instructions.`,
       },
     ],
@@ -317,7 +317,7 @@ function errorMessage(error: unknown): string {
 
 function toolError(text: string): CallToolResult {
   return {
-    content: [{ type: 'text', text }],
+    content: [{ type: "text", text }],
     isError: true,
   };
 }
@@ -349,7 +349,7 @@ export async function serveMcp(transport: Transport, options: ServeMcpOptions = 
     server.registerTool(
       evalMcp.name,
       { description: evalMcp.description, inputSchema: evalMcp.inputSchema.shape },
-      args => handleProjectEvaluation(args, evaluate),
+      (args) => handleProjectEvaluation(args, evaluate),
     );
   }
 
@@ -373,7 +373,7 @@ export async function serveMcp(transport: Transport, options: ServeMcpOptions = 
         description: browserEvalMcp.description,
         inputSchema: browserEvalMcp.inputSchema.shape,
       },
-      args => handleBrowserEval(args, options),
+      (args) => handleBrowserEval(args, options),
     );
 
     server.registerTool(
@@ -382,7 +382,7 @@ export async function serveMcp(transport: Transport, options: ServeMcpOptions = 
         description: createDesignCanvasMcp.description,
         inputSchema: createDesignCanvasMcp.inputSchema.shape,
       },
-      args => handleCreateDesignCanvas(args, options),
+      (args) => handleCreateDesignCanvas(args, options),
     );
   }
 

@@ -1,15 +1,15 @@
-import path from 'node:path';
-import { mkdir, writeFile } from 'node:fs/promises';
-import type { TidewaveConfig } from '../../core';
-import type { TidewaveHandler, TidewaveNext, TidewaveRequest, TidewaveResponse } from '../types';
-import { magicByteType } from '../magic-bytes';
-import { checkOrigin } from '../security';
+import path from "node:path";
+import { mkdir, writeFile } from "node:fs/promises";
+import type { TidewaveConfig } from "../../core";
+import type { TidewaveHandler, TidewaveNext, TidewaveRequest, TidewaveResponse } from "../types";
+import { magicByteType } from "../magic-bytes";
+import { checkOrigin } from "../security";
 
 const MAX_UPLOAD_SIZE = 200_000_000;
-const ALLOWED_UPLOAD_CONTENT_TYPES = ['image/png', 'image/jpeg', 'video/webm'] as const;
-const ALLOWED_UPLOAD_TYPES = ['screenshot', 'recording'] as const;
-const ALLOWED_UPLOAD_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webm'] as const;
-const INVALID_UPLOAD = 'Bad Request: missing or invalid file parameter';
+const ALLOWED_UPLOAD_CONTENT_TYPES = ["image/png", "image/jpeg", "video/webm"] as const;
+const ALLOWED_UPLOAD_TYPES = ["screenshot", "recording"] as const;
+const ALLOWED_UPLOAD_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webm"] as const;
+const INVALID_UPLOAD = "Bad Request: missing or invalid file parameter";
 
 class InvalidUploadError extends Error {}
 
@@ -30,7 +30,7 @@ export function createHandleUpload(config: TidewaveConfig): TidewaveHandler {
     next: TidewaveNext,
   ): Promise<void> {
     try {
-      if (req.method !== 'POST') {
+      if (req.method !== "POST") {
         notFound(res);
         return;
       }
@@ -42,8 +42,8 @@ export function createHandleUpload(config: TidewaveConfig): TidewaveHandler {
       }
 
       const formData = await parseFormData(req);
-      const type = formData.get('type');
-      const file = formData.get('file');
+      const type = formData.get("type");
+      const file = formData.get("file");
 
       if (!isAllowedUploadType(type) || !isUploadedFile(file)) {
         badRequest(res);
@@ -67,8 +67,8 @@ export function createHandleUpload(config: TidewaveConfig): TidewaveHandler {
       await writeFile(destination, buffer);
 
       res.statusCode = 200;
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ status: 'ok', path: destination }));
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify({ status: "ok", path: destination }));
     } catch (err) {
       if (err instanceof InvalidUploadError) {
         badRequest(res);
@@ -79,7 +79,7 @@ export function createHandleUpload(config: TidewaveConfig): TidewaveHandler {
 
       if (!res.headersSent) {
         res.statusCode = 500;
-        res.end('Internal server error');
+        res.end("Internal server error");
       }
 
       next(err);
@@ -88,7 +88,7 @@ export function createHandleUpload(config: TidewaveConfig): TidewaveHandler {
 }
 
 function uploadTooLarge(req: TidewaveRequest): boolean {
-  const contentLength = firstHeaderValue(req.headers['content-length']);
+  const contentLength = firstHeaderValue(req.headers["content-length"]);
   if (!contentLength) return false;
 
   const size = Number(contentLength);
@@ -135,8 +135,8 @@ function toArrayBuffer(buffer: Buffer): ArrayBuffer {
 }
 
 function requestUrl(req: TidewaveRequest): string {
-  const host = firstHeaderValue(req.headers.host) || 'localhost';
-  return `http://${host}${req.url || '/'}`;
+  const host = firstHeaderValue(req.headers.host) || "localhost";
+  return `http://${host}${req.url || "/"}`;
 }
 
 function requestHeaders(req: TidewaveRequest): Headers {
@@ -159,31 +159,31 @@ function firstHeaderValue(value: string | string[] | undefined): string | undefi
 }
 
 function isAllowedUploadType(type: unknown): type is (typeof ALLOWED_UPLOAD_TYPES)[number] {
-  return typeof type === 'string' && isOneOf(ALLOWED_UPLOAD_TYPES, type);
+  return typeof type === "string" && isOneOf(ALLOWED_UPLOAD_TYPES, type);
 }
 
 function isUploadedFile(file: unknown): file is UploadedFile {
-  if (typeof file !== 'object' || file === null) return false;
+  if (typeof file !== "object" || file === null) return false;
 
   const candidate = file as Partial<UploadedFile>;
   return (
-    typeof candidate.name === 'string' &&
-    typeof candidate.type === 'string' &&
-    typeof candidate.arrayBuffer === 'function'
+    typeof candidate.name === "string" &&
+    typeof candidate.type === "string" &&
+    typeof candidate.arrayBuffer === "function"
   );
 }
 
 function isAllowedUpload(file: UploadedFile, buffer: Buffer): boolean {
-  const [contentType] = file.type.split(';');
+  const [contentType] = file.type.split(";");
 
   return (
-    isOneOf(ALLOWED_UPLOAD_CONTENT_TYPES, contentType || '') &&
-    magicByteType(buffer.subarray(0, 128)) !== 'unknown'
+    isOneOf(ALLOWED_UPLOAD_CONTENT_TYPES, contentType || "") &&
+    magicByteType(buffer.subarray(0, 128)) !== "unknown"
   );
 }
 
 function uploadDir(config: TidewaveConfig, type: (typeof ALLOWED_UPLOAD_TYPES)[number]): string {
-  return path.join(tmpDir(config), 'tidewave', folderForType(type));
+  return path.join(tmpDir(config), "tidewave", folderForType(type));
 }
 
 function uploadPath(
@@ -204,15 +204,15 @@ function isOneOf<const T extends readonly string[]>(values: T, value: string): v
 }
 
 function tmpDir(config: TidewaveConfig): string {
-  return config.tmpDir || 'tmp';
+  return config.tmpDir || "tmp";
 }
 
 function folderForType(type: (typeof ALLOWED_UPLOAD_TYPES)[number]): string {
   switch (type) {
-    case 'screenshot':
-      return 'screenshots';
-    case 'recording':
-      return 'recordings';
+    case "screenshot":
+      return "screenshots";
+    case "recording":
+      return "recordings";
   }
 }
 
@@ -223,5 +223,5 @@ function badRequest(res: TidewaveResponse): void {
 
 function notFound(res: TidewaveResponse): void {
   res.statusCode = 404;
-  res.end('Not Found');
+  res.end("Not Found");
 }

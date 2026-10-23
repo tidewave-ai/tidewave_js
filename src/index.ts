@@ -1,5 +1,5 @@
 // src/index.ts
-import { extractDocs, getSourceLocation, formatOutput } from './resolution';
+import { extractDocs, getSourceLocation, formatOutput } from "./resolution";
 
 export const Tidewave = {
   extractDocs,
