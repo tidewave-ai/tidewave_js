@@ -81,8 +81,63 @@ export const startInstance = createStart(() => {
 
     await handleInstall({ prefix: projectDir, skipDeps: true });
 
-    expect(read('vite.config.js')).toContain("import tidewave from 'tidewave/vite-plugin';");
-    expect(read('vite.config.js')).toContain('plugins: [tidewave()]');
+    expect(read('vite.config.js')).toBe(`import { defineConfig } from 'vite';
+import tidewave from 'tidewave/vite-plugin';
+import { devtools } from '@tanstack/devtools-vite';
+
+export default defineConfig({
+  server: {
+    port: 3000,
+  },
+  plugins: [devtools(), tidewave()],
+});
+`);
+    expect(read('src/start.ts')).toBe(`import { createStart } from '@tanstack/react-start';
+
+// Import Tidewave only in development.
+if (process.env.NODE_ENV === 'development' && typeof window === 'undefined') {
+  import('tidewave/tanstack');
+}
+
+export const startInstance = createStart(() => {
+  return {};
+});
+`);
+  });
+
+  test('adds Tidewave after an existing TanStack Devtools plugin', async () => {
+    write('package.json', JSON.stringify({ dependencies: { '@tanstack/react-start': '^1.0.0' } }));
+    write(
+      'vite.config.ts',
+      `import { defineConfig } from 'vite';
+import { devtools as tanstackDevtools } from '@tanstack/devtools-vite';
+import { tanstackStart } from '@tanstack/react-start/plugin/vite';
+
+export default defineConfig({
+  plugins: [tanstackDevtools(), tanstackStart()],
+});
+`,
+    );
+
+    await handleInstall({ prefix: projectDir, skipDeps: true });
+
+    expect(read('vite.config.ts')).toBe(`import { defineConfig } from 'vite';
+import { devtools as tanstackDevtools } from '@tanstack/devtools-vite';
+import { tanstackStart } from '@tanstack/react-start/plugin/vite';
+import tidewave from 'tidewave/vite-plugin';
+
+export default defineConfig({
+  plugins: [tanstackDevtools(), tidewave(), tanstackStart()],
+});
+`);
+  });
+
+  test('creates the TanStack Start entry point when missing', async () => {
+    write('package.json', JSON.stringify({ dependencies: { '@tanstack/react-start': '^1.0.0' } }));
+    write('vite.config.ts', 'export default defineConfig({ plugins: [] });\n');
+
+    await handleInstall({ prefix: projectDir, skipDeps: true });
+
     expect(read('src/start.ts')).toBe(`import { createStart } from '@tanstack/react-start';
 
 // Import Tidewave only in development.
