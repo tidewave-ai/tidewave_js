@@ -86,7 +86,6 @@ export interface ExtractError {
 export interface EvaluationRequest {
   code: string;
   args: unknown[];
-  timeout: number;
 }
 
 export interface EvaluatedModuleResult {

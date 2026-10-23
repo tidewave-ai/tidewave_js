@@ -97,8 +97,7 @@ export function createViteEvaluator(): ViteEvaluator {
     // We get the runner before evaluation, so that its connection log is
     // not captured as evaluation output
     const { runner } = env;
-    const result = evaluate(url => runner.import(url), url, request.args);
-    return (await withTimeout(result, request.timeout)) ?? timedOut(request);
+    return evaluate(url => runner.import(url), url, request.args);
   }
 
   async function evaluateRemote(
@@ -112,7 +111,7 @@ export function createViteEvaluator(): ViteEvaluator {
     try {
       const message: EvalMessage = { id, url, args: request.args };
       env.hot.send({ type: 'custom', event: EVAL_EVENT, data: message });
-      return (await withTimeout(result, request.timeout)) ?? timedOut(request);
+      return await result;
     } finally {
       pending.delete(id);
     }
@@ -184,20 +183,4 @@ function isRunnable(env: DevEnvironment): env is RunnableDevEnvironment {
 
 function evalUrl(slot: number): string {
   return `/__tidewave_eval_${slot}.ts`;
-}
-
-function timedOut(request: EvaluationRequest): EvaluatedModuleResult {
-  return {
-    success: false,
-    result: `Evaluation timed out after ${request.timeout} milliseconds`,
-    stdout: '',
-    stderr: '',
-  };
-}
-
-function withTimeout<T>(promise: Promise<T>, timeout: number): Promise<T | undefined> {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => resolve(undefined), timeout);
-    promise.then(resolve, reject).finally(() => clearTimeout(timer));
-  });
 }

@@ -28,8 +28,7 @@ describe('Vite evaluation', () => {
   const evaluator = createViteEvaluator();
   let server: ViteDevServer;
 
-  const run = (code: string, args: unknown[] = []) =>
-    evaluator.evaluate(server, { code, args, timeout: 5_000 });
+  const run = (code: string, args: unknown[] = []) => evaluator.evaluate(server, { code, args });
 
   beforeAll(async () => {
     server = await startServer(evaluator);
@@ -111,19 +110,6 @@ describe('Vite evaluation', () => {
     const result = await run('const x = 1;');
     expect(result).toMatchObject({ success: true, result: null });
   });
-
-  it('times out', async () => {
-    const result = await evaluator.evaluate(server, {
-      code: 'await new Promise(resolve => setTimeout(resolve, 1_000));',
-      args: [],
-      timeout: 10,
-    });
-
-    expect(result).toMatchObject({
-      success: false,
-      result: 'Evaluation timed out after 10 milliseconds',
-    });
-  });
 });
 
 describe('Vite evaluation when the app runs in a separate runtime', () => {
@@ -160,7 +146,6 @@ describe('Vite evaluation when the app runs in a separate runtime', () => {
     const result = await evaluator.evaluate(server, {
       code: "const { items } = await import('./src/store'); return items;",
       args: [],
-      timeout: 5_000,
     });
 
     expect(result).toMatchObject({ success: true, result: ['first'] });

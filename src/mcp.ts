@@ -44,10 +44,10 @@ export interface ServeMcpOptions {
 export type Evaluate = (request: EvaluationRequest) => Promise<EvaluatedModuleResult>;
 
 async function handleProjectEvaluation(
-  { code, timeout, arguments: args, json }: ProjectEvalInputSchema,
+  { code, arguments: args, json }: ProjectEvalInputSchema,
   evaluate: Evaluate,
 ): Promise<CallToolResult> {
-  const result = await evaluate({ code, timeout, args });
+  const result = await evaluate({ code, args });
   const note = result.note ? `Note: ${result.note}\n\n` : '';
 
   if (!result.success) {

@@ -62,13 +62,6 @@ export const projectEvalInputSchema = z.object({
     .describe(
       'The arguments to pass to evaluation. They are available inside the evaluated code as `arguments`.',
     ),
-  timeout: z
-    .number()
-    .optional()
-    .default(30_000)
-    .describe(
-      'Optional. A timeout in milliseconds after which the execution stops if it did not finish yet.\nDefaults to 30000 (30 seconds).',
-    ),
   json: z
     .boolean()
     .optional()
